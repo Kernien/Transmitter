@@ -7,7 +7,7 @@ servers, end-to-end encrypted.**
 
 Copy a link on your phone — a couple of seconds later it's on your computer.
 Drop a document into the window at work — it's waiting for you on your phone.
-Everything is stored in **your own cloud** (currently Dropbox) and encrypted
+Everything is stored in **your own cloud** (Dropbox or Google Drive) and encrypted
 right on the device: the cloud only ever sees meaningless bytes.
 
 | | |
@@ -16,7 +16,7 @@ right on the device: the cloud only ever sees meaningless bytes.
 | 🖥️ **Windows** | app, drag-and-drop files into the window |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — nothing to install |
 
-Version **0.2.0**.
+Version **0.3.0**.
 
 > **Interface language.** The app's interface is currently in Russian only.
 > In this guide, button names are given in English with the label you will
@@ -61,7 +61,9 @@ browser.
 - **End-to-end AES-256-GCM encryption.** Links and files are encrypted before
   they are sent and decrypted only on your devices.
 - **No server of our own.** Your data lives only in your cloud, in a separate
-  `Apps/<app name>` folder. Transmitter cannot see any other files there.
+  `Apps/<app name>` folder in Dropbox or the `Transmitter` folder in Google
+  Drive. Transmitter cannot see any other files there. Details: the
+  [privacy policy](https://kernien.github.io/transmitter-web/privacy.html).
 - **The key is both the address and the password.** Any device with a vault
   key can read and write to that vault. Share keys only with your own devices.
 - **A lost key cannot be recovered.** As long as the key is on at least one
@@ -75,20 +77,20 @@ browser.
 ### Android
 
 1. Download the APK from [**Releases**](https://github.com/Kernien/Transmitter/releases):
-   - `Transmitter-0.2.0-android-arm64.apk` — for most phones from recent
+   - `Transmitter-0.3.0-android-arm64.apk` — for most phones from recent
      years;
-   - `Transmitter-0.2.0-android-armv7.apk` — for older or budget models, if
+   - `Transmitter-0.3.0-android-armv7.apk` — for older or budget models, if
      the first one doesn't install.
 2. Open the file on your phone. Android will ask to allow installs from this
    source (your browser or file manager) — allow it.
 
 **Work profile (Shelter).** Install Transmitter in your personal profile, then
 select it in Shelter and choose **Clone to work profile**. Signing in to
-Dropbox in the work profile also needs a browser there — clone one as well.
+the cloud in the work profile also needs a browser there — clone one as well.
 
 ### Windows
 
-1. Download `Transmitter-0.2.0-windows-x64.zip` from [**Releases**](https://github.com/Kernien/Transmitter/releases).
+1. Download `Transmitter-0.3.0-windows-x64.zip` from [**Releases**](https://github.com/Kernien/Transmitter/releases).
 2. Unpack it to a convenient folder (e.g. `C:\Program Files\Transmitter` or
    `Documents\Transmitter`) and run `transmitter.exe`.
 3. On first launch Windows may say “Windows protected your PC” — the app has
@@ -106,10 +108,10 @@ are remembered in that browser.
 ### 1. First device: create a vault
 
 1. Tap **New key** («Новый ключ»), give it a name (e.g. “Personal ↔ Work”)
-   and choose the **Dropbox** cloud and the **maximum file size** («Максимальный размер файла»; it can't be changed later) → **Create** («Создать»).
+   and choose the cloud (**Dropbox** or **Google Drive**) and the **maximum file size** («Максимальный размер файла»; it can't be changed later) → **Create** («Создать»).
 2. The key's QR code appears — you can close it; it's always available from
    the ⋮ menu.
-3. Tap the new vault → **Sign in to Dropbox** («Войти в Dropbox»). Sign in and
+3. Tap the new vault → **Sign in to Dropbox** («Войти в Dropbox», or Google Drive). Sign in and
    allow access — the feed opens.
 
 ### 2. Other devices: connect the same vault
@@ -119,7 +121,12 @@ are remembered in that browser.
 2. On the new device: the QR icon at the top → **Scan QR code**
    («Сканировать QR-код») (phone, or a browser with a camera), or paste the
    key string `TRM1.…` copied with **Copy key** («Скопировать ключ»).
-3. Sign in to the **same** Dropbox account — and the feed appears.
+3. Sign in to the **same** cloud account — and the feed appears.
+
+**Google Drive notes.** During sign-in Google warns that the app isn't
+verified — choose **Advanced → Go to Transmitter**. On the phone, tap
+**Return to Transmitter** («Вернуться в Transmitter») after signing in. In the
+browser Google grants access for about an hour, then you sign in again.
 
 **The other profile on the same phone.** You can't scan a QR code shown on
 the phone's own screen, so copy the key as text and paste it into Transmitter
@@ -166,8 +173,9 @@ open.
 
 | What happens | What to do |
 |---|---|
-| The browser doesn't open the Dropbox sign-in window | Allow pop-ups for the site; in Brave, turn off Shields for this address |
-| Dropbox sign-in won't open in the work profile | Clone a browser into the work profile with Shelter |
+| The browser doesn't open the cloud sign-in window | Allow pop-ups for the site; in Brave, turn off Shields for this address |
+| Google Drive asks to sign in again in the browser | Google limits server-less web apps to about an hour of access. ☁ → Google Drive → **Sign in** («Войти») |
+| Cloud sign-in won't open in the work profile | Clone a browser into the work profile with Shelter |
 | “File larger than N MB” | That is the vault's limit chosen when it was created. For bigger files create a vault with a higher limit (up to 100 MB) or send a split archive |
 | An item didn't show up on another device | Check your connection and that the same vault is open; the feed refreshes every 5 seconds. In Shelter, make sure Transmitter isn't frozen in the work profile |
 | “Sign in to the cloud again” | ☁ on the main screen → **Sign out** («Выйти») → **Sign in** («Войти») |
@@ -177,7 +185,7 @@ open.
 
 ## What's next
 
-- Google Drive and OneDrive, then MEGA;
+- the MEGA cloud;
 - a Windows installer;
 - an iPhone version;
 - viewing photos, audio and video right in the app.

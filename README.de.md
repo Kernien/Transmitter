@@ -7,7 +7,7 @@ Registrierung, ohne fremde Server, mit Ende-zu-Ende-Verschlüsselung.**
 
 Einen Link auf dem Handy kopieren — ein paar Sekunden später ist er auf dem
 Computer. Ein Dokument im Büro ins Fenster ziehen — es wartet schon auf dem
-Handy. Alles liegt in **deiner eigenen Cloud** (derzeit Dropbox) und wird
+Handy. Alles liegt in **deiner eigenen Cloud** (Dropbox oder Google Drive) und wird
 direkt auf dem Gerät verschlüsselt: Die Cloud sieht nur bedeutungslose Bytes.
 
 | | |
@@ -16,7 +16,7 @@ direkt auf dem Gerät verschlüsselt: Die Cloud sieht nur bedeutungslose Bytes.
 | 🖥️ **Windows** | App, Dateien per Drag & Drop ins Fenster |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — keine Installation nötig |
 
-Version **0.2.0**.
+Version **0.3.0**.
 
 > **Sprache der Oberfläche.** Die App ist derzeit nur auf Russisch. In dieser
 > Anleitung stehen die Schaltflächen auf Deutsch, dahinter in Klammern die
@@ -64,7 +64,9 @@ Computer und Browser.
 - **Ende-zu-Ende-Verschlüsselung mit AES-256-GCM.** Links und Dateien werden
   vor dem Senden verschlüsselt und nur auf deinen Geräten entschlüsselt.
 - **Kein eigener Server.** Deine Daten liegen nur in deiner Cloud, in einem
-  eigenen Ordner `Apps/<App-Name>`. Andere Dateien sieht Transmitter nicht.
+  eigenen Ordner: `Apps/<App-Name>` in Dropbox oder `Transmitter` in Google
+  Drive. Andere Dateien sieht Transmitter nicht. Mehr dazu in der
+  [Datenschutzerklärung](https://kernien.github.io/transmitter-web/privacy.html).
 - **Der Schlüssel ist Adresse und Passwort zugleich.** Jedes Gerät mit dem
   Schlüssel eines Tresors kann darin lesen und schreiben. Gib Schlüssel nur an
   deine eigenen Geräte weiter.
@@ -79,21 +81,21 @@ Computer und Browser.
 ### Android
 
 1. Lade die APK unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter:
-   - `Transmitter-0.2.0-android-arm64.apk` — für die meisten Handys der
+   - `Transmitter-0.3.0-android-arm64.apk` — für die meisten Handys der
      letzten Jahre;
-   - `Transmitter-0.2.0-android-armv7.apk` — für ältere oder günstige
+   - `Transmitter-0.3.0-android-armv7.apk` — für ältere oder günstige
      Modelle, falls sich die erste nicht installieren lässt.
 2. Öffne die Datei auf dem Handy. Android fragt, ob Installationen aus dieser
    Quelle (Browser oder Dateimanager) erlaubt sind — erlaube es.
 
 **Arbeitsprofil (Shelter).** Installiere Transmitter im privaten Profil, wähle
 es dann in Shelter aus und tippe auf **In Arbeitsprofil klonen**. Für die
-Dropbox-Anmeldung im Arbeitsprofil wird dort auch ein Browser gebraucht —
+Cloud-Anmeldung im Arbeitsprofil wird dort auch ein Browser gebraucht —
 klone ihn ebenfalls.
 
 ### Windows
 
-1. Lade `Transmitter-0.2.0-windows-x64.zip` unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter.
+1. Lade `Transmitter-0.3.0-windows-x64.zip` unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter.
 2. Entpacke es in einen passenden Ordner (z. B. `C:\Program Files\Transmitter`
    oder `Dokumente\Transmitter`) und starte `transmitter.exe`.
 3. Beim ersten Start meldet Windows eventuell „Der Computer wurde durch
@@ -113,11 +115,11 @@ Cloud-Anmeldung werden in diesem Browser gespeichert.
 ### 1. Erstes Gerät: Tresor anlegen
 
 1. Tippe auf **Neuer Schlüssel** («Новый ключ»), gib einen Namen ein (z. B.
-   „Privat ↔ Arbeit“) und wähle die Cloud **Dropbox** und die **maximale Dateigröße** («Максимальный размер файла»; später nicht änderbar) → **Erstellen**
+   „Privat ↔ Arbeit“) und wähle die Cloud (**Dropbox** oder **Google Drive**) und die **maximale Dateigröße** («Максимальный размер файла»; später nicht änderbar) → **Erstellen**
    («Создать»).
 2. Der QR-Code des Schlüssels erscheint — du kannst ihn schließen, er ist
    jederzeit über das ⋮-Menü erreichbar.
-3. Tippe auf den neuen Tresor → **Bei Dropbox anmelden** («Войти в Dropbox»).
+3. Tippe auf den neuen Tresor → **Bei Dropbox anmelden** («Войти в Dropbox», bzw. Google Drive).
    Melde dich an und erlaube den Zugriff — der Verlauf öffnet sich.
 
 ### 2. Weitere Geräte: denselben Tresor verbinden
@@ -128,7 +130,13 @@ Cloud-Anmeldung werden in diesem Browser gespeichert.
    («Сканировать QR-код») (Handy oder Browser mit Kamera) oder die
    Schlüsselzeichenfolge `TRM1.…` einfügen, kopiert mit **Schlüssel kopieren**
    («Скопировать ключ»).
-3. Melde dich beim **selben** Dropbox-Konto an — und der Verlauf erscheint.
+3. Melde dich beim **selben** Cloud-Konto an — und der Verlauf erscheint.
+
+**Besonderheiten von Google Drive.** Bei der Anmeldung warnt Google, dass die
+App nicht überprüft ist — wähle **Erweitert → Weiter zu Transmitter**. Auf dem
+Handy nach der Anmeldung **Zurück zu Transmitter** («Вернуться в Transmitter»)
+tippen. Im Browser gewährt Google den Zugriff etwa eine Stunde, danach erneut
+anmelden.
 
 **Das andere Profil auf demselben Handy.** Einen QR-Code vom eigenen
 Bildschirm kann man nicht scannen — kopiere den Schlüssel deshalb als Text
@@ -178,8 +186,9 @@ der Verlauf geöffnet ist.
 
 | Was passiert | Was tun |
 |---|---|
-| Der Browser öffnet das Dropbox-Anmeldefenster nicht | Pop-ups für die Seite erlauben; in Brave die Shields für diese Adresse ausschalten |
-| Im Arbeitsprofil öffnet sich die Dropbox-Anmeldung nicht | Mit Shelter einen Browser ins Arbeitsprofil klonen |
+| Der Browser öffnet das Cloud-Anmeldefenster nicht | Pop-ups für die Seite erlauben; in Brave die Shields für diese Adresse ausschalten |
+| Google Drive verlangt im Browser eine neue Anmeldung | Google begrenzt Web-Apps ohne Server auf etwa eine Stunde Zugriff. ☁ → Google Drive → **Anmelden** («Войти») |
+| Im Arbeitsprofil öffnet sich die Cloud-Anmeldung nicht | Mit Shelter einen Browser ins Arbeitsprofil klonen |
 | „Datei größer als N MB“ | Das ist die beim Anlegen gewählte Grenze des Tresors. Für größere Dateien einen Tresor mit höherer Grenze (bis 100 MB) anlegen oder ein geteiltes Archiv senden |
 | Ein Eintrag erscheint nicht auf einem anderen Gerät | Internetverbindung prüfen und ob derselbe Tresor geöffnet ist; der Verlauf aktualisiert sich alle 5 Sekunden. In Shelter prüfen, dass Transmitter im Arbeitsprofil nicht eingefroren ist |
 | „Erneut bei der Cloud anmelden“ | ☁ auf dem Startbildschirm → **Abmelden** («Выйти») → **Anmelden** («Войти») |
@@ -189,7 +198,7 @@ der Verlauf geöffnet ist.
 
 ## Wie es weitergeht
 
-- Google Drive und OneDrive, danach MEGA;
+- die Cloud MEGA;
 - ein Installationsprogramm für Windows;
 - eine Version für das iPhone;
 - Fotos, Audio und Videos direkt in der App ansehen.
