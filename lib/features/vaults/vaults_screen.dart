@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/widgets/content_width.dart';
 import '../../core/storage/cloud_connection_service.dart';
 import '../../core/vault/vault_key.dart';
 import '../cloud_connect/clouds_screen.dart';
@@ -26,9 +27,8 @@ class VaultsScreen extends StatelessWidget {
           IconButton(
             tooltip: 'Облака',
             icon: const Icon(Icons.cloud_outlined),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const CloudsScreen()),
-            ),
+            onPressed: () => Navigator.of(context)
+                .push(MaterialPageRoute(builder: (_) => const CloudsScreen())),
           ),
           IconButton(
             tooltip: 'Добавить ключ',
@@ -37,13 +37,15 @@ class VaultsScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: vaults.isEmpty
-          ? const _EmptyState()
-          : ListView.separated(
-              itemCount: vaults.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
-              itemBuilder: (context, i) => _VaultTile(vault: vaults[i]),
-            ),
+      body: ContentWidth(
+        child: vaults.isEmpty
+            ? const _EmptyState()
+            : ListView.separated(
+                itemCount: vaults.length,
+                separatorBuilder: (_, _) => const Divider(height: 1),
+                itemBuilder: (context, i) => _VaultTile(vault: vaults[i]),
+              ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.add),
         label: const Text('Новый ключ'),
@@ -76,20 +78,21 @@ Future<void> openVault(BuildContext context, VaultKey key) async {
   final messenger = ScaffoldMessenger.of(context);
 
   if (!connections.isSupported(key.provider)) {
-    messenger.showSnackBar(SnackBar(
-      content: Text('${key.provider.title} пока не поддерживается'),
-    ));
+    messenger.showSnackBar(
+      SnackBar(content: Text('${key.provider.title} пока не поддерживается')),
+    );
     return;
   }
   if (!connections.isConnected(key.provider)) {
     final connected = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => ConnectCloudScreen(provider: key.provider)),
+      MaterialPageRoute(
+        builder: (_) => ConnectCloudScreen(provider: key.provider),
+      ),
     );
     if (connected != true || !context.mounted) return;
   }
-  await Navigator.of(context).push(
-    MaterialPageRoute(builder: (_) => FeedScreen(vaultKey: key)),
-  );
+  await Navigator.of(context)
+      .push(MaterialPageRoute(builder: (_) => FeedScreen(vaultKey: key)));
 }
 
 class _VaultTile extends StatelessWidget {
@@ -99,20 +102,33 @@ class _VaultTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final connected = context.watch<CloudConnectionService>().isConnected(vault.provider);
+    final connected = context.watch<CloudConnectionService>().isConnected(
+      vault.provider,
+    );
     return ListTile(
       leading: const CircleAvatar(child: Icon(Icons.key)),
       title: Text(vault.label.isEmpty ? 'Без названия' : vault.label),
       subtitle: Text(
-        connected ? vault.provider.title : '${vault.provider.title} · не подключено',
+        connected
+            ? vault.provider.title
+            : '${vault.provider.title} · не подключено',
       ),
       onTap: () => openVault(context, vault),
       trailing: PopupMenuButton<_VaultAction>(
         onSelected: (action) => _onAction(context, action),
         itemBuilder: (_) => const [
-          PopupMenuItem(value: _VaultAction.share, child: Text('Показать ключ / QR')),
-          PopupMenuItem(value: _VaultAction.rename, child: Text('Переименовать')),
-          PopupMenuItem(value: _VaultAction.remove, child: Text('Удалить с устройства')),
+          PopupMenuItem(
+            value: _VaultAction.share,
+            child: Text('Показать ключ / QR'),
+          ),
+          PopupMenuItem(
+            value: _VaultAction.rename,
+            child: Text('Переименовать'),
+          ),
+          PopupMenuItem(
+            value: _VaultAction.remove,
+            child: Text('Удалить с устройства'),
+          ),
         ],
       ),
     );
@@ -139,7 +155,10 @@ class _VaultTile extends StatelessWidget {
         title: const Text('Название'),
         content: TextField(controller: text, autofocus: true),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Отмена')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Отмена'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(context, text.text),
             child: const Text('Сохранить'),
@@ -159,8 +178,14 @@ class _VaultTile extends StatelessWidget {
           'останутся. Если у вас нет копии ключа, доступ к базе будет потерян.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Отмена')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Удалить')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Отмена'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Удалить'),
+          ),
         ],
       ),
     );

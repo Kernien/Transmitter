@@ -74,7 +74,9 @@ class _ComposeBarState extends State<ComposeBar> {
 
   /// Текст из поля ввода становится подписью к файлу.
   Future<void> _attach() async {
-    final ok = await context.read<FeedController>().attachFile(caption: _text.text);
+    final ok = await context.read<FeedController>().attachFile(
+      caption: _text.text,
+    );
     if (ok) _text.clear();
   }
 }

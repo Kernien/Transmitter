@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/widgets/content_width.dart';
 import 'qr_scanner_page.dart';
 import 'vaults_controller.dart';
 
@@ -30,40 +31,45 @@ class _ImportVaultScreenState extends State<ImportVaultScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Добавить ключ')),
-      body: ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          if (_scannerAvailable) ...[
-            FilledButton.icon(
-              icon: const Icon(Icons.qr_code_scanner),
-              label: const Text('Сканировать QR-код'),
-              onPressed: _scan,
+      body: ContentWidth(
+        maxWidth: 600,
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            if (_scannerAvailable) ...[
+              FilledButton.icon(
+                icon: const Icon(Icons.qr_code_scanner),
+                label: const Text('Сканировать QR-код'),
+                onPressed: _scan,
+              ),
+              const SizedBox(height: 24),
+              const Text('или вставьте ключ:'),
+              const SizedBox(height: 8),
+            ],
+            TextField(
+              controller: _code,
+              minLines: 2,
+              maxLines: 4,
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                hintText: 'TRM1.…',
+                errorText: _error,
+              ),
             ),
-            const SizedBox(height: 24),
-            const Text('или вставьте ключ:'),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: () => _submit(_code.text),
+              child: const Text('Добавить'),
+            ),
           ],
-          TextField(
-            controller: _code,
-            minLines: 2,
-            maxLines: 4,
-            decoration: InputDecoration(
-              border: const OutlineInputBorder(),
-              hintText: 'TRM1.…',
-              errorText: _error,
-            ),
-          ),
-          const SizedBox(height: 16),
-          FilledButton(onPressed: () => _submit(_code.text), child: const Text('Добавить')),
-        ],
+        ),
       ),
     );
   }
 
   Future<void> _scan() async {
-    final code = await Navigator.of(context).push<String>(
-      MaterialPageRoute(builder: (_) => const QrScannerPage()),
-    );
+    final code = await Navigator.of(context)
+        .push<String>(MaterialPageRoute(builder: (_) => const QrScannerPage()));
     if (code != null) await _submit(code);
   }
 

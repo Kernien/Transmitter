@@ -7,118 +7,137 @@ import '../../../core/utils/format_size.dart';
 import '../../../domain/post.dart';
 import '../feed_controller.dart';
 
-enum _PostAction { save, copy, delete }
+enum _PostAction { select, save, copy, delete }
 
-/// Один пост в ленте. Нажатие открывает ссылку или сохраняет файл; действия
-/// доступны через кнопку ⋮ и долгим нажатием.
+/// Один пост в ленте. Нажатие открывает ссылку или сохраняет файл, долгое
+/// нажатие выделяет пост (см. режим выделения в FeedController), остальные
+/// действия — через кнопку ⋮.
 class PostTile extends StatelessWidget {
   const PostTile({super.key, required this.post});
 
   final Post post;
 
   List<_PostAction> get _actions => [
-        if (post.attachment != null) _PostAction.save,
-        if (post.text.isNotEmpty) _PostAction.copy,
-        _PostAction.delete,
-      ];
+    _PostAction.select,
+    if (post.attachment != null) _PostAction.save,
+    if (post.text.isNotEmpty) _PostAction.copy,
+    _PostAction.delete,
+  ];
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final time = TimeOfDay.fromDateTime(post.createdAt.toLocal()).format(context);
-    final date = MaterialLocalizations.of(context).formatShortDate(post.createdAt.toLocal());
+    final time = TimeOfDay.fromDateTime(post.createdAt.toLocal())
+        .format(context);
+    final date = MaterialLocalizations.of(context)
+        .formatShortDate(post.createdAt.toLocal());
+    final (selecting, selected) = context.select<FeedController, (bool, bool)>(
+      (f) => (f.isSelecting, f.isSelected(post)),
+    );
+    void toggle() => context.read<FeedController>().toggleSelection(post);
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      color: selected ? theme.colorScheme.primaryContainer : null,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: switch (post.kind) {
-          PostKind.link => () => _openLink(post.text),
-          PostKind.file => () => _perform(context, _PostAction.save),
-          PostKind.text => null,
-        },
-        onLongPress: () => _showActionSheet(context),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 4, 4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        onTap: selecting
+            ? toggle
+            : switch (post.kind) {
+                PostKind.link => () => _openLink(post.text),
+                PostKind.file => () => _perform(context, _PostAction.save),
+                PostKind.text => null,
+              },
+        onLongPress: toggle,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (selecting)
               Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: _content(theme),
+                padding: const EdgeInsets.only(left: 4, top: 4),
+                child: Checkbox(value: selected, onChanged: (_) => toggle()),
               ),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      '${post.senderDevice} · $date $time',
-                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(selecting ? 4 : 12, 12, 4, 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: _content(theme),
                     ),
-                  ),
-                  PopupMenuButton<_PostAction>(
-                    tooltip: 'Действия',
-                    icon: Icon(Icons.more_vert, size: 18, color: theme.colorScheme.outline),
-                    onSelected: (action) => _perform(context, action),
-                    itemBuilder: (_) => [
-                      for (final action in _actions)
-                        PopupMenuItem(value: action, child: _ActionLabel(action)),
-                    ],
-                  ),
-                ],
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Text(
+                              '${post.senderDevice} · $date $time',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.outline,
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (!selecting)
+                          PopupMenuButton<_PostAction>(
+                            tooltip: 'Действия',
+                            icon: Icon(
+                              Icons.more_vert,
+                              size: 18,
+                              color: theme.colorScheme.outline,
+                            ),
+                            onSelected: (action) => _perform(context, action),
+                            itemBuilder: (_) => [
+                              for (final action in _actions)
+                                PopupMenuItem(
+                                  value: action,
+                                  child: _ActionLabel(action),
+                                ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _content(ThemeData theme) => switch (post.kind) {
-        PostKind.text => SelectableText(post.text),
-        PostKind.link => Row(
-            children: [
-              Icon(Icons.link, color: theme.colorScheme.primary),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  post.text,
-                  style: TextStyle(
-                    color: theme.colorScheme.primary,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ),
-            ],
+    PostKind.text => Text(post.text),
+    PostKind.link => Row(
+      children: [
+        Icon(Icons.link, color: theme.colorScheme.primary),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            post.text,
+            style: TextStyle(
+              color: theme.colorScheme.primary,
+              decoration: TextDecoration.underline,
+            ),
           ),
-        PostKind.file => _FileContent(post: post),
-      };
+        ),
+      ],
+    ),
+    PostKind.file => _FileContent(post: post),
+  };
 
   Future<void> _openLink(String url) =>
       launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-
-  Future<void> _showActionSheet(BuildContext context) async {
-    final action = await showModalBottomSheet<_PostAction>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final action in _actions)
-              ListTile(
-                title: _ActionLabel(action),
-                onTap: () => Navigator.pop(context, action),
-              ),
-          ],
-        ),
-      ),
-    );
-    if (action != null && context.mounted) await _perform(context, action);
-  }
 
   Future<void> _perform(BuildContext context, _PostAction action) async {
     final feed = context.read<FeedController>();
     final messenger = ScaffoldMessenger.of(context);
     switch (action) {
+      case _PostAction.select:
+        feed.toggleSelection(post);
       case _PostAction.save:
         await _save(context, post);
       case _PostAction.copy:
@@ -132,7 +151,9 @@ class PostTile extends StatelessWidget {
   static Future<void> _save(BuildContext context, Post post) async {
     final messenger = ScaffoldMessenger.of(context);
     if (await context.read<FeedController>().saveAttachment(post)) {
-      messenger.showSnackBar(SnackBar(content: Text('Сохранено: ${post.attachment!.fileName}')));
+      messenger.showSnackBar(
+        SnackBar(content: Text('Сохранено: ${post.attachment!.fileName}')),
+      );
     }
   }
 
@@ -140,11 +161,19 @@ class PostTile extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(post.kind == PostKind.file ? 'Удалить файл?' : 'Удалить сообщение?'),
+        title: Text(
+          post.kind == PostKind.file ? 'Удалить файл?' : 'Удалить сообщение?',
+        ),
         content: const Text('Оно исчезнет из облака и со всех устройств.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Отмена')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Удалить')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Отмена'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Удалить'),
+          ),
         ],
       ),
     );
@@ -160,9 +189,13 @@ class _ActionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (icon, text) = switch (action) {
+      _PostAction.select => (Icons.check_box_outlined, 'Выбрать'),
       _PostAction.save => (Icons.download, 'Сохранить файл'),
       _PostAction.copy => (Icons.copy, 'Копировать текст'),
-      _PostAction.delete => (Icons.delete_outline, 'Удалить для всех устройств'),
+      _PostAction.delete => (
+        Icons.delete_outline,
+        'Удалить для всех устройств',
+      ),
     };
     return Row(
       children: [Icon(icon, size: 20), const SizedBox(width: 12), Text(text)],
@@ -180,22 +213,33 @@ class _FileContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final attachment = post.attachment;
-    final saving = context.select<FeedController, bool>((f) => f.isSaving(post));
+    final saving = context.select<FeedController, bool>(
+      (f) => f.isSaving(post),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(Icons.insert_drive_file_outlined, color: theme.colorScheme.primary),
+            Icon(
+              Icons.insert_drive_file_outlined,
+              color: theme.colorScheme.primary,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(attachment?.fileName ?? 'Файл', style: theme.textTheme.titleSmall),
+                  Text(
+                    attachment?.fileName ?? 'Файл',
+                    style: theme.textTheme.titleSmall,
+                  ),
                   if (attachment != null)
-                    Text(formatFileSize(attachment.size), style: theme.textTheme.bodySmall),
+                    Text(
+                      formatFileSize(attachment.size),
+                      style: theme.textTheme.bodySmall,
+                    ),
                 ],
               ),
             ),
@@ -216,7 +260,7 @@ class _FileContent extends StatelessWidget {
         ),
         if (post.text.isNotEmpty) ...[
           const SizedBox(height: 6),
-          SelectableText(post.text),
+          Text(post.text),
         ],
       ],
     );

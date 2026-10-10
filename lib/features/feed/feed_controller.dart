@@ -4,8 +4,10 @@ import 'package:flutter/foundation.dart';
 
 import '../../core/files/file_transfer_service.dart';
 import '../../core/storage/cloud_storage.dart';
+import '../../core/utils/clock.dart';
 import '../../data/post_repository.dart';
 import '../../domain/post.dart';
+import 'selection_exporter.dart';
 
 /// Состояние ленты одной базы: загрузка, периодический опрос облака,
 /// отправка, удаление постов и сохранение файлов.
@@ -14,11 +16,14 @@ class FeedController extends ChangeNotifier {
     this._repository, {
     required this._files,
     required this._pollInterval,
-  });
+    this._clock = DateTime.now,
+  }) : _exporter = SelectionExporter(_repository);
 
   final PostRepository _repository;
   final FileTransferService _files;
   final Duration _pollInterval;
+  final Clock _clock;
+  final SelectionExporter _exporter;
   Timer? _timer;
   bool _refreshing = false;
   bool _disposed = false;
@@ -26,7 +31,9 @@ class FeedController extends ChangeNotifier {
   List<Post> _posts = const [];
   bool _initialLoad = true;
   bool _sending = false;
+  bool _bulkBusy = false;
   final Set<String> _saving = {};
+  final Set<String> _selected = {};
   String? _error;
 
   List<Post> get posts => _posts;
@@ -36,6 +43,79 @@ class FeedController extends ChangeNotifier {
 
   /// Идёт ли сейчас скачивание файла из этого поста.
   bool isSaving(Post post) => _saving.contains(post.id);
+
+  // ---- Выделение нескольких постов ----
+
+  bool get isSelecting => _selected.isNotEmpty;
+  int get selectedCount => _selected.length;
+
+  /// Идёт групповое скачивание или удаление.
+  bool get isBulkBusy => _bulkBusy;
+
+  bool isSelected(Post post) => _selected.contains(post.id);
+
+  void toggleSelection(Post post) {
+    if (!_selected.remove(post.id)) _selected.add(post.id);
+    _notify();
+  }
+
+  void selectAll() {
+    _selected.addAll(_posts.map((p) => p.id));
+    _notify();
+  }
+
+  void clearSelection() {
+    _selected.clear();
+    _notify();
+  }
+
+  List<Post> get _selectedPosts =>
+      _posts.where((p) => _selected.contains(p.id)).toList();
+
+  /// Сохраняет выбранное одним файлом (см. [SelectionExporter]).
+  /// Возвращает `true`, если файл сохранён; после этого выделение снимается.
+  Future<bool> saveSelected() => _runBulk(() async {
+    final exported = await _exporter.export(_selectedPosts, now: _clock());
+    final saved = await _files.saveFile(
+      fileName: exported.fileName,
+      bytes: exported.bytes,
+      mimeType: exported.mimeType,
+    );
+    if (saved) _selected.clear();
+    return saved;
+  });
+
+  /// Удаляет выбранные посты на всех устройствах. Возвращает число удалённых.
+  Future<int> deleteSelected() async {
+    var deleted = 0;
+    await _runBulk(() async {
+      for (final post in _selectedPosts) {
+        await _repository.deletePost(post);
+        _posts = _posts.where((p) => p.id != post.id).toList();
+        _selected.remove(post.id);
+        deleted++;
+        _notify();
+      }
+      return true;
+    });
+    return deleted;
+  }
+
+  Future<bool> _runBulk(Future<bool> Function() action) async {
+    if (_bulkBusy || _selected.isEmpty) return false;
+    _bulkBusy = true;
+    _error = null;
+    _notify();
+    try {
+      return await action();
+    } catch (e) {
+      _error = _describe(e);
+      return false;
+    } finally {
+      _bulkBusy = false;
+      _notify();
+    }
+  }
 
   void start() {
     refresh();
@@ -47,6 +127,9 @@ class FeedController extends ChangeNotifier {
     _refreshing = true;
     try {
       _posts = await _repository.fetchPosts();
+      // Посты, удалённые на других устройствах, больше нельзя выбрать.
+      final ids = _posts.map((p) => p.id).toSet();
+      _selected.retainWhere(ids.contains);
       _error = null;
     } catch (e) {
       _error = _describe(e);
@@ -84,7 +167,10 @@ class FeedController extends ChangeNotifier {
     String? lastError;
     for (final file in files) {
       try {
-        final picked = await _files.readFile(file, maxSize: PostRepository.maxFileSize);
+        final picked = await _files.readFile(
+          file,
+          maxSize: PostRepository.maxFileSize,
+        );
         if (await _sendPicked(picked)) {
           sent++;
         } else {
@@ -100,17 +186,20 @@ class FeedController extends ChangeNotifier {
   }
 
   Future<bool> _sendPicked(PickedFile picked, {String caption = ''}) =>
-      _runSend(() => _repository.sendFile(
-            fileName: picked.name,
-            bytes: picked.bytes,
-            mimeType: picked.mimeType,
-            caption: caption,
-          ));
+      _runSend(
+        () => _repository.sendFile(
+          fileName: picked.name,
+          bytes: picked.bytes,
+          mimeType: picked.mimeType,
+          caption: caption,
+        ),
+      );
 
   /// Удаляет все посты базы на всех устройствах. Возвращает число удалённых.
   Future<int> clearAll() async {
     var deleted = 0;
     _error = null;
+    _selected.clear();
     for (final post in List.of(_posts)) {
       try {
         await _repository.deletePost(post);
@@ -153,6 +242,7 @@ class FeedController extends ChangeNotifier {
     try {
       await _repository.deletePost(post);
       _posts = _posts.where((p) => p.id != post.id).toList();
+      _selected.remove(post.id);
       _error = null;
     } catch (e) {
       _error = _describe(e);
@@ -179,11 +269,11 @@ class FeedController extends ChangeNotifier {
   }
 
   static String _describe(Object error) => switch (error) {
-        StorageNotFoundException _ => 'Файл уже удалён из облака',
-        StorageException e => e.message,
-        FileTooLargeException e => e.toString(),
-        _ => 'Ошибка: $error',
-      };
+    StorageNotFoundException _ => 'Файл уже удалён из облака',
+    StorageException e => e.message,
+    FileTooLargeException e => e.toString(),
+    _ => 'Ошибка: $error',
+  };
 
   void _notify() {
     if (!_disposed) notifyListeners();

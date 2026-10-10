@@ -21,7 +21,9 @@ class _CreateVaultDialogState extends State<CreateVaultDialog> {
   void initState() {
     super.initState();
     final connections = context.read<CloudConnectionService>();
-    _provider = CloudProviderId.values.where(connections.isSupported).firstOrNull;
+    _provider = CloudProviderId.values
+        .where(connections.isSupported)
+        .firstOrNull;
   }
 
   @override
@@ -41,7 +43,9 @@ class _CreateVaultDialogState extends State<CreateVaultDialog> {
           TextField(
             controller: _label,
             autofocus: true,
-            decoration: const InputDecoration(labelText: 'Название, например «Работа»'),
+            decoration: const InputDecoration(
+              labelText: 'Название, например «Работа»',
+            ),
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<CloudProviderId>(
@@ -52,7 +56,9 @@ class _CreateVaultDialogState extends State<CreateVaultDialog> {
                 DropdownMenuItem(
                   value: p,
                   enabled: connections.isSupported(p),
-                  child: Text(connections.isSupported(p) ? p.title : '${p.title} (скоро)'),
+                  child: Text(
+                    connections.isSupported(p) ? p.title : '${p.title} (скоро)',
+                  ),
                 ),
             ],
             onChanged: (p) => setState(() => _provider = p),
@@ -60,7 +66,10 @@ class _CreateVaultDialogState extends State<CreateVaultDialog> {
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Отмена')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Отмена'),
+        ),
         FilledButton(
           onPressed: _provider == null ? null : _submit,
           child: const Text('Создать'),
@@ -71,9 +80,9 @@ class _CreateVaultDialogState extends State<CreateVaultDialog> {
 
   Future<void> _submit() async {
     final key = await context.read<VaultsController>().create(
-          label: _label.text,
-          provider: _provider!,
-        );
+      label: _label.text,
+      provider: _provider!,
+    );
     if (mounted) Navigator.pop(context, key);
   }
 }

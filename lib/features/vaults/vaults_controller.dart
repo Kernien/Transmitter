@@ -45,8 +45,9 @@ class VaultsController extends ChangeNotifier {
   String exportCode(VaultKey key) => _codec.encode(key);
 
   Future<void> rename(VaultKey key, String label) => _save([
-        for (final k in _vaults) k.sameVaultAs(key) ? k.copyWith(label: label.trim()) : k,
-      ]);
+    for (final k in _vaults)
+      k.sameVaultAs(key) ? k.copyWith(label: label.trim()) : k,
+  ]);
 
   /// Удаляет ключ только с этого устройства. Данные в облаке остаются.
   Future<void> remove(VaultKey key) =>
