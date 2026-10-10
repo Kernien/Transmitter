@@ -17,11 +17,13 @@ class VaultKeyStore {
     final raw = await _store.read(_storeKey);
     if (raw == null) return [];
     final list = jsonDecode(raw) as List;
-    return [for (final item in list) _codec.fromJson(item as Map<String, dynamic>)];
+    return [
+      for (final item in list) _codec.fromJson(item as Map<String, dynamic>),
+    ];
   }
 
   Future<void> saveAll(List<VaultKey> keys) => _store.write(
-        _storeKey,
-        jsonEncode([for (final k in keys) _codec.toJson(k)]),
-      );
+    _storeKey,
+    jsonEncode([for (final k in keys) _codec.toJson(k)]),
+  );
 }

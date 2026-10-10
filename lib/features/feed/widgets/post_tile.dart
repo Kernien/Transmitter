@@ -7,7 +7,7 @@ import '../../../core/utils/format_size.dart';
 import '../../../domain/post.dart';
 import '../feed_controller.dart';
 
-enum _PostAction { select, save, copy, delete }
+enum _PostAction { select, share, save, copy, delete }
 
 /// Один пост в ленте. Нажатие открывает ссылку или сохраняет файл, долгое
 /// нажатие выделяет пост (см. режим выделения в FeedController), остальные
@@ -17,8 +17,9 @@ class PostTile extends StatelessWidget {
 
   final Post post;
 
-  List<_PostAction> get _actions => [
+  List<_PostAction> _actions({required bool canShare}) => [
     _PostAction.select,
+    if (canShare) _PostAction.share,
     if (post.attachment != null) _PostAction.save,
     if (post.text.isNotEmpty) _PostAction.copy,
     _PostAction.delete,
@@ -90,7 +91,11 @@ class PostTile extends StatelessWidget {
                             ),
                             onSelected: (action) => _perform(context, action),
                             itemBuilder: (_) => [
-                              for (final action in _actions)
+                              for (final action in _actions(
+                                canShare: context
+                                    .read<FeedController>()
+                                    .canShare,
+                              ))
                                 PopupMenuItem(
                                   value: action,
                                   child: _ActionLabel(action),
@@ -138,6 +143,8 @@ class PostTile extends StatelessWidget {
     switch (action) {
       case _PostAction.select:
         feed.toggleSelection(post);
+      case _PostAction.share:
+        await feed.sharePost(post);
       case _PostAction.save:
         await _save(context, post);
       case _PostAction.copy:
@@ -190,6 +197,7 @@ class _ActionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     final (icon, text) = switch (action) {
       _PostAction.select => (Icons.check_box_outlined, 'Выбрать'),
+      _PostAction.share => (Icons.share, 'Поделиться'),
       _PostAction.save => (Icons.download, 'Сохранить файл'),
       _PostAction.copy => (Icons.copy, 'Копировать текст'),
       _PostAction.delete => (

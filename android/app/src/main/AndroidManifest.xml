@@ -32,6 +32,17 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="app.transmitter" android:host="oauth"/>
             </intent-filter>
+            <!-- Transmitter в системном меню «Поделиться» (ShareReceiver.kt). -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="*/*"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="*/*"/>
+            </intent-filter>
             <!-- Ссылки обрабатывает app_links, а не навигатор Flutter. -->
             <meta-data android:name="flutter_deeplinking_enabled" android:value="false"/>
         </activity>

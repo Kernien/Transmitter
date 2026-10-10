@@ -31,10 +31,10 @@ class EncryptedCloudPostRepository implements PostRepository {
     Clock? clock,
     IdGenerator? idGenerator,
     this._linkDetector = const LinkDetector(),
-  })  : _clock = clock ?? DateTime.now,
-        _newId = idGenerator ?? const Uuid().v4,
-        _postsDir = '$vaultId/posts',
-        _filesDir = '$vaultId/files';
+  }) : _clock = clock ?? DateTime.now,
+       _newId = idGenerator ?? const Uuid().v4,
+       _postsDir = '$vaultId/posts',
+       _filesDir = '$vaultId/files';
 
   static const String _postExtension = '.post';
 
@@ -66,8 +66,9 @@ class EncryptedCloudPostRepository implements PostRepository {
     // Посты, удалённые на других устройствах.
     _cache.removeWhere((name, _) => !remote.contains(name));
 
-    final fresh = remote
-        .where((n) => !_cache.containsKey(n) && !_unreadable.contains(n));
+    final fresh = remote.where(
+      (n) => !_cache.containsKey(n) && !_unreadable.contains(n),
+    );
     await Future.wait(fresh.map(_loadPost));
 
     final posts = _cache.values.toList()
@@ -79,7 +80,9 @@ class EncryptedCloudPostRepository implements PostRepository {
     try {
       final encrypted = await _storage.download('$_postsDir/$fileName');
       final json = utf8.decode(await _cipher.decrypt(encrypted));
-      _cache[fileName] = Post.fromJson(jsonDecode(json) as Map<String, dynamic>);
+      _cache[fileName] = Post.fromJson(
+        jsonDecode(json) as Map<String, dynamic>,
+      );
     } on StorageNotFoundException {
       // Файл удалили, пока мы его скачивали.
     } on DecryptionException catch (e) {
@@ -100,10 +103,12 @@ class EncryptedCloudPostRepository implements PostRepository {
   Future<Post> sendText(String text) {
     final trimmed = text.trim();
     if (trimmed.isEmpty) throw ArgumentError('Пустое сообщение');
-    return _publish(_newPost(
-      kind: _linkDetector.isLink(trimmed) ? PostKind.link : PostKind.text,
-      text: trimmed,
-    ));
+    return _publish(
+      _newPost(
+        kind: _linkDetector.isLink(trimmed) ? PostKind.link : PostKind.text,
+        text: trimmed,
+      ),
+    );
   }
 
   @override
@@ -126,12 +131,17 @@ class EncryptedCloudPostRepository implements PostRepository {
       await _storage.ensureFolder(_filesDir);
       _filesDirReady = true;
     }
-    await _storage.upload(_attachmentPath(attachment), await _cipher.encrypt(bytes));
-    return _publish(_newPost(
-      kind: PostKind.file,
-      text: caption.trim(),
-      attachment: attachment,
-    ));
+    await _storage.upload(
+      _attachmentPath(attachment),
+      await _cipher.encrypt(bytes),
+    );
+    return _publish(
+      _newPost(
+        kind: PostKind.file,
+        text: caption.trim(),
+        attachment: attachment,
+      ),
+    );
   }
 
   @override
@@ -153,15 +163,14 @@ class EncryptedCloudPostRepository implements PostRepository {
     required PostKind kind,
     required String text,
     Attachment? attachment,
-  }) =>
-      Post(
-        id: _newId(),
-        kind: kind,
-        createdAt: _clock().toUtc(),
-        senderDevice: _deviceName,
-        text: text,
-        attachment: attachment,
-      );
+  }) => Post(
+    id: _newId(),
+    kind: kind,
+    createdAt: _clock().toUtc(),
+    senderDevice: _deviceName,
+    text: text,
+    attachment: attachment,
+  );
 
   Future<Post> _publish(Post post) async {
     if (!_postsDirReady) {
@@ -169,7 +178,9 @@ class EncryptedCloudPostRepository implements PostRepository {
       _postsDirReady = true;
     }
     final fileName = _fileNameFor(post);
-    final encrypted = await _cipher.encrypt(utf8.encode(jsonEncode(post.toJson())));
+    final encrypted = await _cipher.encrypt(
+      utf8.encode(jsonEncode(post.toJson())),
+    );
     await _storage.upload('$_postsDir/$fileName', encrypted);
     _cache[fileName] = post;
     return post;
@@ -178,7 +189,10 @@ class EncryptedCloudPostRepository implements PostRepository {
   String _attachmentPath(Attachment a) => '$_filesDir/${a.id}.bin';
 
   static String _fileNameFor(Post post) {
-    final ts = post.createdAt.millisecondsSinceEpoch.toString().padLeft(15, '0');
+    final ts = post.createdAt.millisecondsSinceEpoch.toString().padLeft(
+      15,
+      '0',
+    );
     return '${ts}_${post.id}$_postExtension';
   }
 }

@@ -32,7 +32,9 @@ String _uniqueName(String name, Set<String> used) {
   final safe = name.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
   var candidate = safe;
   final dot = safe.lastIndexOf('.');
-  final (base, ext) = dot > 0 ? (safe.substring(0, dot), safe.substring(dot)) : (safe, '');
+  final (base, ext) = dot > 0
+      ? (safe.substring(0, dot), safe.substring(dot))
+      : (safe, '');
   for (var i = 2; !used.add(candidate.toLowerCase()); i++) {
     candidate = '$base ($i)$ext';
   }

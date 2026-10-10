@@ -19,19 +19,23 @@ void main() {
   var tick = 0;
 
   FeedController controllerFor(String device) => FeedController(
-        EncryptedCloudPostRepository(
-          storage: cloud,
-          vaultId: 'v',
-          cipher: AesGcmCipher(List<int>.filled(32, 5)),
-          deviceName: device,
-          clock: () => DateTime.utc(2026, 3, 1, 9).add(Duration(minutes: tick++)),
-        ),
-        files: files,
-        pollInterval: const Duration(hours: 1),
-        clock: () => DateTime(2026, 3, 1, 18, 30),
-      );
+    EncryptedCloudPostRepository(
+      storage: cloud,
+      vaultId: 'v',
+      cipher: AesGcmCipher(List<int>.filled(32, 5)),
+      deviceName: device,
+      clock: () => DateTime.utc(2026, 3, 1, 9).add(Duration(minutes: tick++)),
+    ),
+    files: files,
+    pollInterval: const Duration(hours: 1),
+    clock: () => DateTime(2026, 3, 1, 18, 30),
+  );
 
-  Future<void> sendFile(String name, List<int> bytes, {String caption = ''}) async {
+  Future<void> sendFile(
+    String name,
+    List<int> bytes, {
+    String caption = '',
+  }) async {
     files.nextPick = PickedFile(name: name, bytes: Uint8List.fromList(bytes));
     await feed.attachFile(caption: caption);
   }
@@ -101,7 +105,10 @@ void main() {
 
     final archive = ZipDecoder().decodeBytes(bytes);
     final byName = {for (final f in archive) f.name: f.content};
-    expect(byName.keys, containsAll(['a.txt', 'a (2).txt', SelectionExporter.messagesFileName]));
+    expect(
+      byName.keys,
+      containsAll(['a.txt', 'a (2).txt', SelectionExporter.messagesFileName]),
+    );
     expect(byName['a.txt'], [1]);
     expect(byName['a (2).txt'], [2]);
 
@@ -123,17 +130,20 @@ void main() {
     expect(feed.isSelecting, isTrue);
   });
 
-  test('пост, удалённый на другом устройстве, пропадает из выделения', () async {
-    await feed.sendText('a');
-    await feed.sendText('b');
-    feed.selectAll();
+  test(
+    'пост, удалённый на другом устройстве, пропадает из выделения',
+    () async {
+      await feed.sendText('a');
+      await feed.sendText('b');
+      feed.selectAll();
 
-    final other = controllerFor('Android');
-    await other.refresh();
-    await other.delete(other.posts.first);
-    other.dispose();
+      final other = controllerFor('Android');
+      await other.refresh();
+      await other.delete(other.posts.first);
+      other.dispose();
 
-    await feed.refresh();
-    expect(feed.selectedCount, 1);
-  });
+      await feed.refresh();
+      expect(feed.selectedCount, 1);
+    },
+  );
 }

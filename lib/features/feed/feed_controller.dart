@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../core/files/file_transfer_service.dart';
+import '../../core/share/outgoing_share.dart';
 import '../../core/storage/cloud_storage.dart';
 import '../../core/utils/clock.dart';
 import '../../data/post_repository.dart';
@@ -16,11 +17,13 @@ class FeedController extends ChangeNotifier {
     this._repository, {
     required this._files,
     required this._pollInterval,
+    this._share = const DisabledShareSender(),
     this._clock = DateTime.now,
   }) : _exporter = SelectionExporter(_repository);
 
   final PostRepository _repository;
   final FileTransferService _files;
+  final ShareSender _share;
   final Duration _pollInterval;
   final Clock _clock;
   final SelectionExporter _exporter;
@@ -99,6 +102,53 @@ class FeedController extends ChangeNotifier {
       return true;
     });
     return deleted;
+  }
+
+  // ---- «Поделиться» в другие приложения ----
+
+  bool get canShare => _share.isAvailable;
+
+  /// Открывает системное меню «Поделиться» для одного поста.
+  Future<void> sharePost(Post post) async {
+    if (_saving.contains(post.id)) return;
+    _saving.add(post.id);
+    _notify();
+    try {
+      await _shareMany([post]);
+      _error = null;
+    } catch (e) {
+      _error = _describe(e);
+    } finally {
+      _saving.remove(post.id);
+      _notify();
+    }
+  }
+
+  /// Делится выбранными постами разом: тексты одним сообщением, файлы
+  /// вложениями. После этого выделение снимается.
+  Future<bool> shareSelected() => _runBulk(() async {
+    await _shareMany(_selectedPosts);
+    _selected.clear();
+    return true;
+  });
+
+  Future<void> _shareMany(List<Post> posts) async {
+    final ordered = [...posts]
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    final text = ordered
+        .map((p) => p.text)
+        .where((t) => t.isNotEmpty)
+        .join('\n\n');
+    final files = <OutgoingFile>[
+      for (final post in ordered)
+        if (post.attachment case final attachment?)
+          OutgoingFile(
+            name: attachment.fileName,
+            bytes: await _repository.downloadAttachment(attachment),
+            mimeType: attachment.mimeType,
+          ),
+    ];
+    await _share.share(text: text, files: files);
   }
 
   Future<bool> _runBulk(Future<bool> Function() action) async {

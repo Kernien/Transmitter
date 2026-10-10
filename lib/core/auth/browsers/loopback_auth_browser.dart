@@ -11,7 +11,8 @@ class LoopbackAuthBrowser implements AuthBrowser {
   /// Фиксированный порт: облака требуют заранее прописать точный адрес возврата.
   static const int port = 47819;
 
-  static const String _successPage = '<!DOCTYPE html><meta charset="utf-8">'
+  static const String _successPage =
+      '<!DOCTYPE html><meta charset="utf-8">'
       '<title>Transmitter</title>'
       '<body style="font-family:sans-serif;text-align:center;padding-top:15vh">'
       '<h2>Вход выполнен</h2><p>Можно закрыть эту вкладку и вернуться в Transmitter.</p>';
@@ -42,7 +43,10 @@ class LoopbackAuthBrowser implements AuthBrowser {
     }
 
     try {
-      final opened = await launchUrl(authorizeUrl, mode: LaunchMode.externalApplication);
+      final opened = await launchUrl(
+        authorizeUrl,
+        mode: LaunchMode.externalApplication,
+      );
       if (!opened) throw const AuthException('Не удалось открыть браузер');
       return await result.future.timeout(
         authTimeout,
@@ -58,7 +62,10 @@ class LoopbackAuthBrowser implements AuthBrowser {
   /// Слушаем и IPv4, и IPv6: браузер может открыть `localhost` по любому из них.
   static Future<List<HttpServer>> _bindLoopback() async {
     final servers = <HttpServer>[];
-    for (final address in [InternetAddress.loopbackIPv4, InternetAddress.loopbackIPv6]) {
+    for (final address in [
+      InternetAddress.loopbackIPv4,
+      InternetAddress.loopbackIPv6,
+    ]) {
       try {
         servers.add(await HttpServer.bind(address, port));
       } on SocketException {

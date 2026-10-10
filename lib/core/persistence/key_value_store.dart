@@ -10,7 +10,9 @@ abstract interface class SecureKeyValueStore {
 /// Реализация на системных хранилищах: Android Keystore, Windows Credential
 /// Manager, в вебе — шифрование через WebCrypto.
 class FlutterSecureKeyValueStore implements SecureKeyValueStore {
-  const FlutterSecureKeyValueStore([this._storage = const FlutterSecureStorage()]);
+  const FlutterSecureKeyValueStore([
+    this._storage = const FlutterSecureStorage(),
+  ]);
 
   final FlutterSecureStorage _storage;
 

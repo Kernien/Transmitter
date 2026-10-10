@@ -30,11 +30,12 @@ class OAuthCredentials {
   final String refreshToken;
   final DateTime expiresAt;
 
-  bool needsRefreshAt(DateTime now) => !now.isBefore(expiresAt.subtract(refreshMargin));
+  bool needsRefreshAt(DateTime now) =>
+      !now.isBefore(expiresAt.subtract(refreshMargin));
 
   String encode() => jsonEncode({
-        'access': accessToken,
-        'refresh': refreshToken,
-        'exp': expiresAt.toUtc().millisecondsSinceEpoch,
-      });
+    'access': accessToken,
+    'refresh': refreshToken,
+    'exp': expiresAt.toUtc().millisecondsSinceEpoch,
+  });
 }

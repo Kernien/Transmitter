@@ -6,6 +6,7 @@ import '../../app/app_config.dart';
 import '../../app/vault_session_factory.dart';
 import '../../app/widgets/content_width.dart';
 import '../../core/files/file_transfer_service.dart';
+import '../../core/share/outgoing_share.dart';
 import '../../core/vault/vault_key.dart';
 import '../../data/post_repository.dart';
 import 'feed_controller.dart';
@@ -50,6 +51,7 @@ class _FeedScreenState extends State<FeedScreen> {
           create: (context) => FeedController(
             repository,
             files: context.read<FileTransferService>(),
+            share: context.read<ShareSender>(),
             pollInterval: AppConfig.pollInterval,
           )..start(),
           child: _FeedView(title: _title),
@@ -118,6 +120,12 @@ class _FeedView extends StatelessWidget {
           icon: const Icon(Icons.select_all),
           onPressed: busy ? null : feed.selectAll,
         ),
+        if (feed.canShare)
+          IconButton(
+            tooltip: 'Поделиться',
+            icon: const Icon(Icons.share),
+            onPressed: busy ? null : feed.shareSelected,
+          ),
         busy
             ? const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 14),

@@ -42,9 +42,11 @@ const int _macLength = 16;
 final AesGcm _algorithm = AesGcm.with256bits();
 
 // Функции верхнего уровня: их можно передать в compute().
-Future<Uint8List> _encryptJob((Uint8List, List<int>) args) => _encrypt(args.$1, args.$2);
+Future<Uint8List> _encryptJob((Uint8List, List<int>) args) =>
+    _encrypt(args.$1, args.$2);
 
-Future<Uint8List> _decryptJob((Uint8List, List<int>) args) => _decrypt(args.$1, args.$2);
+Future<Uint8List> _decryptJob((Uint8List, List<int>) args) =>
+    _decrypt(args.$1, args.$2);
 
 Future<Uint8List> _encrypt(Uint8List key, List<int> plaintext) async {
   final box = await _algorithm.encrypt(plaintext, secretKey: SecretKey(key));
@@ -61,7 +63,9 @@ Future<Uint8List> _decrypt(Uint8List key, List<int> ciphertext) async {
     macLength: _macLength,
   );
   try {
-    return Uint8List.fromList(await _algorithm.decrypt(box, secretKey: SecretKey(key)));
+    return Uint8List.fromList(
+      await _algorithm.decrypt(box, secretKey: SecretKey(key)),
+    );
   } on SecretBoxAuthenticationError {
     throw const DecryptionException();
   }

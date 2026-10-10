@@ -6,15 +6,20 @@ import 'package:transmitter/core/auth/pkce.dart';
 void main() {
   group('Pkce', () {
     test('challenge совпадает с примером из RFC 7636', () {
-      final pkce = Pkce.fromVerifier('dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk');
+      final pkce = Pkce.fromVerifier(
+        'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk',
+      );
       expect(pkce.challenge, 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM');
     });
 
-    test('сгенерированный verifier — 64 допустимых символа, каждый раз новый', () {
-      final a = Pkce.generate();
-      expect(a.verifier, matches(RegExp(r'^[A-Za-z0-9\-._~]{64}$')));
-      expect(a.verifier, isNot(Pkce.generate().verifier));
-    });
+    test(
+      'сгенерированный verifier — 64 допустимых символа, каждый раз новый',
+      () {
+        final a = Pkce.generate();
+        expect(a.verifier, matches(RegExp(r'^[A-Za-z0-9\-._~]{64}$')));
+        expect(a.verifier, isNot(Pkce.generate().verifier));
+      },
+    );
   });
 
   group('OAuthCredentials', () {
@@ -36,7 +41,8 @@ void main() {
     var refreshCalls = 0;
     OAuthCredentials? saved;
 
-    OAuthTokenManager manager({required Duration validFor}) => OAuthTokenManager(
+    OAuthTokenManager manager({required Duration validFor}) =>
+        OAuthTokenManager(
           initial: OAuthCredentials(
             accessToken: 'old',
             refreshToken: 'refresh',
@@ -62,18 +68,28 @@ void main() {
     });
 
     test('действующий токен отдаётся без обновления', () async {
-      expect(await manager(validFor: const Duration(hours: 1)).accessToken(), 'old');
+      expect(
+        await manager(validFor: const Duration(hours: 1)).accessToken(),
+        'old',
+      );
       expect(refreshCalls, 0);
     });
 
     test('истекающий токен обновляется и сохраняется', () async {
-      expect(await manager(validFor: const Duration(seconds: 30)).accessToken(), 'new1');
+      expect(
+        await manager(validFor: const Duration(seconds: 30)).accessToken(),
+        'new1',
+      );
       expect(saved?.accessToken, 'new1');
     });
 
     test('параллельные запросы обновляют токен один раз', () async {
       final m = manager(validFor: Duration.zero);
-      final tokens = await Future.wait([m.accessToken(), m.accessToken(), m.refresh()]);
+      final tokens = await Future.wait([
+        m.accessToken(),
+        m.accessToken(),
+        m.refresh(),
+      ]);
       expect(tokens, ['new1', 'new1', 'new1']);
       expect(refreshCalls, 1);
     });

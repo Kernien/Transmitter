@@ -14,9 +14,11 @@ class Pkce {
       Pkce.fromVerifier(randomUrlSafeString(64, random));
 
   factory Pkce.fromVerifier(String verifier) => Pkce._(
-        verifier,
-        base64Url.encode(sha256.convert(ascii.encode(verifier)).bytes).replaceAll('=', ''),
-      );
+    verifier,
+    base64Url
+        .encode(sha256.convert(ascii.encode(verifier)).bytes)
+        .replaceAll('=', ''),
+  );
 
   static const String method = 'S256';
 
@@ -31,6 +33,9 @@ const String _unreserved =
 String randomUrlSafeString(int length, [Random? random]) {
   final rnd = random ?? Random.secure();
   return String.fromCharCodes(
-    List.generate(length, (_) => _unreserved.codeUnitAt(rnd.nextInt(_unreserved.length))),
+    List.generate(
+      length,
+      (_) => _unreserved.codeUnitAt(rnd.nextInt(_unreserved.length)),
+    ),
   );
 }

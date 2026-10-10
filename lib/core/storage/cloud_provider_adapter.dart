@@ -35,7 +35,7 @@ abstract interface class CloudProviderAdapter {
 /// интерфейсе как «скоро».
 class CloudProviderRegistry {
   CloudProviderRegistry(Iterable<CloudProviderAdapter> adapters)
-      : _adapters = {for (final a in adapters) a.id: a};
+    : _adapters = {for (final a in adapters) a.id: a};
 
   final Map<CloudProviderId, CloudProviderAdapter> _adapters;
 

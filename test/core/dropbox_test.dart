@@ -19,7 +19,8 @@ class FakeAuthBrowser implements AuthBrowser {
   Uri? openedUrl;
 
   @override
-  Uri redirectUriFor(String providerCode) => Uri.parse('http://localhost:1/$providerCode');
+  Uri redirectUriFor(String providerCode) =>
+      Uri.parse('http://localhost:1/$providerCode');
 
   @override
   Future<Uri> authenticate(Uri authorizeUrl, Uri redirectUri) async {
@@ -29,23 +30,25 @@ class FakeAuthBrowser implements AuthBrowser {
 }
 
 http.Response jsonResponse(Object body, [int status = 200]) => http.Response(
-      jsonEncode(body),
-      status,
-      headers: {'content-type': 'application/json'},
-    );
+  jsonEncode(body),
+  status,
+  headers: {'content-type': 'application/json'},
+);
 
 void main() {
   group('DropboxAuthenticator', () {
     final now = DateTime.utc(2026, 1, 1);
 
     test('вход: PKCE-параметры, обмен кода на токены', () async {
-      final browser = FakeAuthBrowser((url) => {
-            'code': 'the-code',
-            'state': url.queryParameters['state']!,
-          });
+      final browser = FakeAuthBrowser(
+        (url) => {'code': 'the-code', 'state': url.queryParameters['state']!},
+      );
       late Map<String, String> tokenRequest;
       final client = MockClient((request) async {
-        expect(request.url.toString(), 'https://api.dropboxapi.com/oauth2/token');
+        expect(
+          request.url.toString(),
+          'https://api.dropboxapi.com/oauth2/token',
+        );
         tokenRequest = request.bodyFields;
         return jsonResponse({
           'access_token': 'acc',
@@ -115,7 +118,9 @@ void main() {
       final auth = DropboxAuthenticator(
         appKey: 'key',
         browser: FakeAuthBrowser((_) => {}),
-        client: MockClient((_) async => jsonResponse({'error': 'invalid_grant'}, 400)),
+        client: MockClient(
+          (_) async => jsonResponse({'error': 'invalid_grant'}, 400),
+        ),
       );
       expect(auth.refresh('ref'), throwsA(isA<StorageAuthException>()));
     });
@@ -127,26 +132,26 @@ void main() {
     late int refreshes;
 
     DropboxStorage storage() => DropboxStorage(
-          client: MockClient((r) {
-            requests.add(r);
-            return handler(r);
-          }),
-          tokens: OAuthTokenManager(
-            initial: OAuthCredentials(
-              accessToken: 'tok',
-              refreshToken: 'ref',
-              expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
-            ),
-            refresher: (r) async {
-              refreshes++;
-              return OAuthCredentials(
-                accessToken: 'tok2',
-                refreshToken: r,
-                expiresAt: DateTime.now().toUtc().add(const Duration(hours: 4)),
-              );
-            },
-          ),
-        );
+      client: MockClient((r) {
+        requests.add(r);
+        return handler(r);
+      }),
+      tokens: OAuthTokenManager(
+        initial: OAuthCredentials(
+          accessToken: 'tok',
+          refreshToken: 'ref',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+        refresher: (r) async {
+          refreshes++;
+          return OAuthCredentials(
+            accessToken: 'tok2',
+            refreshToken: r,
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 4)),
+          );
+        },
+      ),
+    );
 
     setUp(() {
       requests = [];
@@ -180,18 +185,29 @@ void main() {
       expect(requests.first.headers['Authorization'], 'Bearer tok');
     });
 
-    test('RPC-запросы отправляют Content-Type ровно application/json', () async {
-      // Dropbox отвечает 400 на «application/json; charset=utf-8».
-      handler = (_) async => jsonResponse({'entries': [], 'cursor': 'c', 'has_more': false});
-      await storage().listFiles('');
-      expect(requests.single.headers['Content-Type'], 'application/json');
-    });
+    test(
+      'RPC-запросы отправляют Content-Type ровно application/json',
+      () async {
+        // Dropbox отвечает 400 на «application/json; charset=utf-8».
+        handler = (_) async =>
+            jsonResponse({'entries': [], 'cursor': 'c', 'has_more': false});
+        await storage().listFiles('');
+        expect(requests.single.headers['Content-Type'], 'application/json');
+      },
+    );
 
     test('текст ошибки 400 попадает в сообщение', () async {
-      handler = (_) async => http.Response('Error in call to API function: bad input', 400);
+      handler = (_) async =>
+          http.Response('Error in call to API function: bad input', 400);
       expect(
         storage().listFiles(''),
-        throwsA(isA<StorageException>().having((e) => e.message, 'message', contains('bad input'))),
+        throwsA(
+          isA<StorageException>().having(
+            (e) => e.message,
+            'message',
+            contains('bad input'),
+          ),
+        ),
       );
     });
 
@@ -204,7 +220,8 @@ void main() {
     });
 
     test('listFiles несуществующей папки — пустой список', () async {
-      handler = (_) async => jsonResponse({'error_summary': 'path/not_found/..'}, 409);
+      handler = (_) async =>
+          jsonResponse({'error_summary': 'path/not_found/..'}, 409);
       expect(await storage().listFiles('nope'), isEmpty);
     });
 
@@ -213,8 +230,11 @@ void main() {
       await storage().upload('v1/files/x.bin', Uint8List.fromList([1, 2, 3]));
       final r = requests.single;
       expect(r.url.toString(), 'https://content.dropboxapi.com/2/files/upload');
-      expect(jsonDecode(r.headers['Dropbox-API-Arg']!),
-          {'path': '/v1/files/x.bin', 'mode': 'overwrite', 'mute': true});
+      expect(jsonDecode(r.headers['Dropbox-API-Arg']!), {
+        'path': '/v1/files/x.bin',
+        'mode': 'overwrite',
+        'mute': true,
+      });
       expect(r.headers['Content-Type'], 'application/octet-stream');
       expect(r.bodyBytes, [1, 2, 3]);
     });
@@ -231,18 +251,24 @@ void main() {
       handler = (r) async => http.Response.bytes([9, 8, 7], 200);
       expect(await storage().download('a/b'), [9, 8, 7]);
 
-      handler = (_) async => jsonResponse({'error_summary': 'path/not_found/'}, 409);
-      expect(storage().download('a/c'), throwsA(isA<StorageNotFoundException>()));
+      handler = (_) async =>
+          jsonResponse({'error_summary': 'path/not_found/'}, 409);
+      expect(
+        storage().download('a/c'),
+        throwsA(isA<StorageNotFoundException>()),
+      );
     });
 
     test('ensureFolder игнорирует «уже существует»', () async {
-      handler = (_) async => jsonResponse({'error_summary': 'path/conflict/folder/'}, 409);
+      handler = (_) async =>
+          jsonResponse({'error_summary': 'path/conflict/folder/'}, 409);
       await storage().ensureFolder('v1/posts');
       expect(jsonDecode(requests.single.body)['path'], '/v1/posts');
     });
 
     test('delete игнорирует отсутствующий файл', () async {
-      handler = (_) async => jsonResponse({'error_summary': 'path_lookup/not_found/'}, 409);
+      handler = (_) async =>
+          jsonResponse({'error_summary': 'path_lookup/not_found/'}, 409);
       await storage().delete('v1/posts/x');
     });
 
@@ -252,13 +278,19 @@ void main() {
           : jsonResponse({'entries': [], 'cursor': 'c', 'has_more': false});
       expect(await storage().listFiles(''), isEmpty);
       expect(refreshes, 1);
-      expect(requests.map((r) => r.headers['Authorization']), ['Bearer tok', 'Bearer tok2']);
+      expect(requests.map((r) => r.headers['Authorization']), [
+        'Bearer tok',
+        'Bearer tok2',
+      ]);
     });
 
     test('нехватка места — StorageQuotaException', () async {
       handler = (_) async =>
           jsonResponse({'error_summary': 'path/insufficient_space/..'}, 409);
-      expect(storage().upload('a', Uint8List(1)), throwsA(isA<StorageQuotaException>()));
+      expect(
+        storage().upload('a', Uint8List(1)),
+        throwsA(isA<StorageQuotaException>()),
+      );
     });
   });
 }

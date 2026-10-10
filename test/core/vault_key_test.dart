@@ -9,14 +9,23 @@ void main() {
   const codec = VaultKeyCodec();
 
   test('сгенерированный ключ имеет 32 случайных байта', () {
-    final a = VaultKey.generate(provider: CloudProviderId.googleDrive, label: 'A');
-    final b = VaultKey.generate(provider: CloudProviderId.googleDrive, label: 'A');
+    final a = VaultKey.generate(
+      provider: CloudProviderId.googleDrive,
+      label: 'A',
+    );
+    final b = VaultKey.generate(
+      provider: CloudProviderId.googleDrive,
+      label: 'A',
+    );
     expect(a.secret, hasLength(32));
     expect(a.sameVaultAs(b), isFalse);
   });
 
   test('кодек: encode → decode возвращает тот же ключ', () {
-    final key = VaultKey.generate(provider: CloudProviderId.dropbox, label: 'Работа');
+    final key = VaultKey.generate(
+      provider: CloudProviderId.dropbox,
+      label: 'Работа',
+    );
     final code = codec.encode(key);
     expect(code, startsWith('TRM1.'));
     expect(code, isNot(contains('=')));
@@ -24,7 +33,10 @@ void main() {
   });
 
   test('кодек: пробелы вокруг строки игнорируются', () {
-    final key = VaultKey.generate(provider: CloudProviderId.googleDrive, label: '');
+    final key = VaultKey.generate(
+      provider: CloudProviderId.googleDrive,
+      label: '',
+    );
     expect(codec.decode('  ${codec.encode(key)}\n'), key);
   });
 

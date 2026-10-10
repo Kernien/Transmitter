@@ -14,7 +14,7 @@ enum CloudProviderId {
   final String title;
 
   static CloudProviderId fromCode(String code) => values.firstWhere(
-        (p) => p.code == code,
-        orElse: () => throw FormatException('Неизвестное облако: $code'),
-      );
+    (p) => p.code == code,
+    orElse: () => throw FormatException('Неизвестное облако: $code'),
+  );
 }

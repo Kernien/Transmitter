@@ -19,32 +19,53 @@ void main() {
 
     test('каждое шифрование даёт разный результат (случайный nonce)', () async {
       final plain = utf8.encode('одинаковый текст');
-      expect(await cipher.encrypt(plain), isNot(equals(await cipher.encrypt(plain))));
+      expect(
+        await cipher.encrypt(plain),
+        isNot(equals(await cipher.encrypt(plain))),
+      );
     });
 
     test('изменённые данные не расшифровываются', () async {
       final encrypted = await cipher.encrypt(utf8.encode('секрет'));
       encrypted[encrypted.length ~/ 2] ^= 0xFF;
-      expect(() => cipher.decrypt(encrypted), throwsA(isA<DecryptionException>()));
+      expect(
+        () => cipher.decrypt(encrypted),
+        throwsA(isA<DecryptionException>()),
+      );
     });
 
     test('чужой ключ не расшифровывает', () async {
       final encrypted = await cipher.encrypt(utf8.encode('секрет'));
       final other = AesGcmCipher(List<int>.filled(32, 7));
-      expect(() => other.decrypt(encrypted), throwsA(isA<DecryptionException>()));
+      expect(
+        () => other.decrypt(encrypted),
+        throwsA(isA<DecryptionException>()),
+      );
     });
 
-    test('большие данные (в отдельном потоке) шифруются и проверяются', () async {
-      final plain = List<int>.generate(AesGcmCipher.backgroundThreshold + 10, (i) => i % 256);
-      final encrypted = await cipher.encrypt(plain);
-      expect(await cipher.decrypt(encrypted), plain);
+    test(
+      'большие данные (в отдельном потоке) шифруются и проверяются',
+      () async {
+        final plain = List<int>.generate(
+          AesGcmCipher.backgroundThreshold + 10,
+          (i) => i % 256,
+        );
+        final encrypted = await cipher.encrypt(plain);
+        expect(await cipher.decrypt(encrypted), plain);
 
-      encrypted[100] ^= 0xFF;
-      expect(() => cipher.decrypt(encrypted), throwsA(isA<DecryptionException>()));
-    });
+        encrypted[100] ^= 0xFF;
+        expect(
+          () => cipher.decrypt(encrypted),
+          throwsA(isA<DecryptionException>()),
+        );
+      },
+    );
 
     test('слишком короткие данные дают DecryptionException', () {
-      expect(() => cipher.decrypt([1, 2, 3]), throwsA(isA<DecryptionException>()));
+      expect(
+        () => cipher.decrypt([1, 2, 3]),
+        throwsA(isA<DecryptionException>()),
+      );
     });
   });
 
@@ -53,12 +74,15 @@ void main() {
     final secretA = List<int>.filled(32, 1);
     final secretB = List<int>.filled(32, 2);
 
-    test('детерминирована: одинаковый секрет даёт одинаковые значения', () async {
-      final a1 = await derivation.derive(secretA);
-      final a2 = await derivation.derive(secretA);
-      expect(a1.vaultId, a2.vaultId);
-      expect(a1.encryptionKey, a2.encryptionKey);
-    });
+    test(
+      'детерминирована: одинаковый секрет даёт одинаковые значения',
+      () async {
+        final a1 = await derivation.derive(secretA);
+        final a2 = await derivation.derive(secretA);
+        expect(a1.vaultId, a2.vaultId);
+        expect(a1.encryptionKey, a2.encryptionKey);
+      },
+    );
 
     test('разные секреты дают разные базы', () async {
       final a = await derivation.derive(secretA);

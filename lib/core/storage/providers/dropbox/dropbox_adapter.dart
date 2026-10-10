@@ -14,8 +14,12 @@ class DropboxAdapter implements CloudProviderAdapter {
     required String appKey,
     required AuthBrowser browser,
     required http.Client client,
-  })  : _client = client,
-        _auth = DropboxAuthenticator(appKey: appKey, browser: browser, client: client);
+  }) : _client = client,
+       _auth = DropboxAuthenticator(
+         appKey: appKey,
+         browser: browser,
+         client: client,
+       );
 
   final http.Client _client;
   final DropboxAuthenticator _auth;
@@ -38,13 +42,12 @@ class DropboxAdapter implements CloudProviderAdapter {
   CloudStorage createStorage(
     String credentials, {
     required CredentialsChanged onCredentialsChanged,
-  }) =>
-      DropboxStorage(
-        client: _client,
-        tokens: OAuthTokenManager(
-          initial: OAuthCredentials.decode(credentials),
-          refresher: _auth.refresh,
-          onChanged: (c) => onCredentialsChanged(c.encode()),
-        ),
-      );
+  }) => DropboxStorage(
+    client: _client,
+    tokens: OAuthTokenManager(
+      initial: OAuthCredentials.decode(credentials),
+      refresher: _auth.refresh,
+      onChanged: (c) => onCredentialsChanged(c.encode()),
+    ),
+  );
 }

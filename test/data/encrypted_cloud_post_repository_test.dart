@@ -49,20 +49,30 @@ void main() {
     await a.sendText('1');
     await b.sendText('2');
     await a.sendText('3');
-    expect((await device('C').fetchPosts()).map((p) => p.text), ['1', '2', '3']);
+    expect((await device('C').fetchPosts()).map((p) => p.text), [
+      '1',
+      '2',
+      '3',
+    ]);
   });
 
   test('ссылка определяется автоматически', () async {
     final post = await device('A').sendText('  https://example.com/page?x=1  ');
     expect(post.kind, PostKind.link);
     expect(post.text, 'https://example.com/page?x=1');
-    expect((await device('A').sendText('см. https://example.com')).kind, PostKind.text);
+    expect(
+      (await device('A').sendText('см. https://example.com')).kind,
+      PostKind.text,
+    );
   });
 
   test('в облаке нет открытого текста', () async {
     await device('A').sendText('совершенно секретно');
     for (final bytes in cloud.files.values) {
-      expect(utf8.decode(bytes, allowMalformed: true), isNot(contains('секретно')));
+      expect(
+        utf8.decode(bytes, allowMalformed: true),
+        isNot(contains('секретно')),
+      );
     }
   });
 
@@ -86,11 +96,8 @@ void main() {
 
   test('файл передаётся и расшифровывается', () async {
     final bytes = Uint8List.fromList(List<int>.generate(5000, (i) => i % 256));
-    final sent = await device('A').sendFile(
-      fileName: 'photo.jpg',
-      bytes: bytes,
-      mimeType: 'image/jpeg',
-    );
+    final sent = await device('A')
+        .sendFile(fileName: 'photo.jpg', bytes: bytes, mimeType: 'image/jpeg');
     expect(sent.kind, PostKind.file);
 
     final receiver = device('B');

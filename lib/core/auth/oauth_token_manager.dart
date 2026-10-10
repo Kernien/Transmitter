@@ -2,7 +2,9 @@ import '../utils/clock.dart';
 import 'oauth_credentials.dart';
 
 typedef TokenRefresher = Future<OAuthCredentials> Function(String refreshToken);
-typedef CredentialsListener = Future<void> Function(OAuthCredentials credentials);
+typedef CredentialsListener = Future<void> Function(
+  OAuthCredentials credentials,
+);
 
 /// Выдаёт действующий access token и обновляет его по refresh token.
 ///

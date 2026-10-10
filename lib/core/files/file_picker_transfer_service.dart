@@ -25,15 +25,29 @@ class FilePickerTransferService implements FileTransferService {
   Future<PickedFile> readFile(XFile file, {required int maxSize}) async {
     final size = await file.length();
     if (size > maxSize) throw FileTooLargeException(size, maxSize);
-    return _toPicked(file.name, await file.readAsBytes(), maxSize, mimeType: file.mimeType);
+    return _toPicked(
+      file.name,
+      await file.readAsBytes(),
+      maxSize,
+      mimeType: file.mimeType,
+    );
   }
 
-  static PickedFile _toPicked(String name, Uint8List bytes, int maxSize, {String? mimeType}) {
-    if (bytes.length > maxSize) throw FileTooLargeException(bytes.length, maxSize);
+  static PickedFile _toPicked(
+    String name,
+    Uint8List bytes,
+    int maxSize, {
+    String? mimeType,
+  }) {
+    if (bytes.length > maxSize) {
+      throw FileTooLargeException(bytes.length, maxSize);
+    }
     return PickedFile(
       name: name,
       bytes: bytes,
-      mimeType: mimeType ?? lookupMimeType(name, headerBytes: bytes.take(32).toList()),
+      mimeType:
+          mimeType ??
+          lookupMimeType(name, headerBytes: bytes.take(32).toList()),
     );
   }
 
@@ -47,7 +61,8 @@ class FilePickerTransferService implements FileTransferService {
       // В вебе file_picker требует расширение в имени файла.
       fileName: fileName.contains('.') ? fileName : '$fileName.bin',
       bytes: bytes,
-      mimeType: mimeType ?? lookupMimeType(fileName) ?? 'application/octet-stream',
+      mimeType:
+          mimeType ?? lookupMimeType(fileName) ?? 'application/octet-stream',
       dialogTitle: 'Сохранить файл',
     );
     return saved != null;

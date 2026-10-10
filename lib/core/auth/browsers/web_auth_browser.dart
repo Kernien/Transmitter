@@ -28,9 +28,11 @@ class WebAuthBrowser implements AuthBrowser {
       'popup,width=600,height=760',
     );
     if (popup == null) {
-      return Future.error(const AuthException(
-        'Браузер заблокировал всплывающее окно. Разрешите всплывающие окна для этого сайта.',
-      ));
+      return Future.error(
+        const AuthException(
+          'Браузер заблокировал всплывающее окно. Разрешите всплывающие окна для этого сайта.',
+        ),
+      );
     }
 
     final result = Completer<Uri>();
@@ -56,10 +58,13 @@ class WebAuthBrowser implements AuthBrowser {
     web.window.addEventListener('storage', onStorage);
 
     return result.future
-        .timeout(authTimeout, onTimeout: () => throw const AuthCancelledException())
+        .timeout(
+          authTimeout,
+          onTimeout: () => throw const AuthCancelledException(),
+        )
         .whenComplete(() {
-      web.window.removeEventListener('message', onMessage);
-      web.window.removeEventListener('storage', onStorage);
-    });
+          web.window.removeEventListener('message', onMessage);
+          web.window.removeEventListener('storage', onStorage);
+        });
   }
 }

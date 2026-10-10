@@ -31,7 +31,8 @@ class CloudConnectionService extends ChangeNotifier {
 
   bool isConnected(CloudProviderId id) => _credentials.containsKey(id);
 
-  CloudProviderAdapter adapterFor(CloudProviderId id) => _registry.adapterFor(id);
+  CloudProviderAdapter adapterFor(CloudProviderId id) =>
+      _registry.adapterFor(id);
 
   /// Проводит вход, проверяет доступ пробным запросом и сохраняет данные.
   ///
@@ -55,8 +56,12 @@ class CloudConnectionService extends ChangeNotifier {
 
   CloudStorage storageFor(CloudProviderId id) {
     final credentials = _credentials[id];
-    if (credentials == null) throw const StorageAuthException('Облако не подключено');
-    return _registry.adapterFor(id).createStorage(
+    if (credentials == null) {
+      throw const StorageAuthException('Облако не подключено');
+    }
+    return _registry
+        .adapterFor(id)
+        .createStorage(
           credentials,
           onCredentialsChanged: (updated) => _save(id, updated),
         );
