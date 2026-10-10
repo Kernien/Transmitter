@@ -114,7 +114,7 @@ class EncryptedCloudPostRepository implements PostRepository {
     String caption = '',
   }) async {
     if (bytes.length > PostRepository.maxFileSize) {
-      throw FileTooLargeException(bytes.length);
+      throw FileTooLargeException(bytes.length, PostRepository.maxFileSize);
     }
     final attachment = Attachment(
       id: _newId(),

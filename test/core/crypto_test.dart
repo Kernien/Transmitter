@@ -34,6 +34,15 @@ void main() {
       expect(() => other.decrypt(encrypted), throwsA(isA<DecryptionException>()));
     });
 
+    test('большие данные (в отдельном потоке) шифруются и проверяются', () async {
+      final plain = List<int>.generate(AesGcmCipher.backgroundThreshold + 10, (i) => i % 256);
+      final encrypted = await cipher.encrypt(plain);
+      expect(await cipher.decrypt(encrypted), plain);
+
+      encrypted[100] ^= 0xFF;
+      expect(() => cipher.decrypt(encrypted), throwsA(isA<DecryptionException>()));
+    });
+
     test('слишком короткие данные дают DecryptionException', () {
       expect(() => cipher.decrypt([1, 2, 3]), throwsA(isA<DecryptionException>()));
     });

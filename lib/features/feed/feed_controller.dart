@@ -2,16 +2,22 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../core/files/file_transfer_service.dart';
 import '../../core/storage/cloud_storage.dart';
 import '../../data/post_repository.dart';
 import '../../domain/post.dart';
 
 /// Состояние ленты одной базы: загрузка, периодический опрос облака,
-/// отправка и удаление постов.
+/// отправка, удаление постов и сохранение файлов.
 class FeedController extends ChangeNotifier {
-  FeedController(this._repository, {required this._pollInterval});
+  FeedController(
+    this._repository, {
+    required this._files,
+    required this._pollInterval,
+  });
 
   final PostRepository _repository;
+  final FileTransferService _files;
   final Duration _pollInterval;
   Timer? _timer;
   bool _refreshing = false;
@@ -20,13 +26,16 @@ class FeedController extends ChangeNotifier {
   List<Post> _posts = const [];
   bool _initialLoad = true;
   bool _sending = false;
+  final Set<String> _saving = {};
   String? _error;
 
   List<Post> get posts => _posts;
   bool get isInitialLoad => _initialLoad;
   bool get isSending => _sending;
   String? get error => _error;
-  PostRepository get repository => _repository;
+
+  /// Идёт ли сейчас скачивание файла из этого поста.
+  bool isSaving(Post post) => _saving.contains(post.id);
 
   void start() {
     refresh();
@@ -52,16 +61,51 @@ class FeedController extends ChangeNotifier {
   Future<bool> sendText(String text) =>
       _runSend(() => _repository.sendText(text));
 
-  Future<bool> sendFile({
-    required String fileName,
-    required Uint8List bytes,
-    String? mimeType,
-  }) =>
-      _runSend(() => _repository.sendFile(
-            fileName: fileName,
-            bytes: bytes,
-            mimeType: mimeType,
-          ));
+  /// Предлагает выбрать файл и отправляет его с подписью [caption].
+  /// Возвращает `true`, если файл отправлен (`false` — отмена или ошибка).
+  Future<bool> attachFile({String caption = ''}) async {
+    if (_sending) return false;
+    final PickedFile? picked;
+    try {
+      picked = await _files.pickFile(maxSize: PostRepository.maxFileSize);
+    } catch (e) {
+      _error = _describe(e);
+      _notify();
+      return false;
+    }
+    if (picked == null) return false;
+    return _runSend(() => _repository.sendFile(
+          fileName: picked!.name,
+          bytes: picked.bytes,
+          mimeType: picked.mimeType,
+          caption: caption,
+        ));
+  }
+
+  /// Скачивает и расшифровывает файл поста, затем предлагает его сохранить.
+  /// Возвращает `true`, если файл сохранён.
+  Future<bool> saveAttachment(Post post) async {
+    final attachment = post.attachment;
+    if (attachment == null || _saving.contains(post.id)) return false;
+    _saving.add(post.id);
+    _notify();
+    try {
+      final bytes = await _repository.downloadAttachment(attachment);
+      final saved = await _files.saveFile(
+        fileName: attachment.fileName,
+        bytes: bytes,
+        mimeType: attachment.mimeType,
+      );
+      _error = null;
+      return saved;
+    } catch (e) {
+      _error = _describe(e);
+      return false;
+    } finally {
+      _saving.remove(post.id);
+      _notify();
+    }
+  }
 
   Future<void> delete(Post post) async {
     try {
@@ -93,6 +137,7 @@ class FeedController extends ChangeNotifier {
   }
 
   static String _describe(Object error) => switch (error) {
+        StorageNotFoundException _ => 'Файл уже удалён из облака',
         StorageException e => e.message,
         FileTooLargeException e => e.toString(),
         _ => 'Ошибка: $error',

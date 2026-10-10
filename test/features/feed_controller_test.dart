@@ -1,11 +1,43 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:transmitter/core/crypto/aes_gcm_cipher.dart';
+import 'package:transmitter/core/files/file_transfer_service.dart';
 import 'package:transmitter/core/storage/in_memory_cloud_storage.dart';
 import 'package:transmitter/data/encrypted_cloud_post_repository.dart';
+import 'package:transmitter/data/post_repository.dart';
 import 'package:transmitter/features/feed/feed_controller.dart';
+
+/// Имитация диалогов выбора и сохранения файла.
+class FakeFileTransferService implements FileTransferService {
+  PickedFile? nextPick;
+  Object? pickError;
+  bool saveAccepted = true;
+  final List<(String, Uint8List)> saved = [];
+  int? lastMaxSize;
+
+  @override
+  Future<PickedFile?> pickFile({required int maxSize}) async {
+    lastMaxSize = maxSize;
+    if (pickError != null) throw pickError!;
+    return nextPick;
+  }
+
+  @override
+  Future<bool> saveFile({
+    required String fileName,
+    required Uint8List bytes,
+    String? mimeType,
+  }) async {
+    if (!saveAccepted) return false;
+    saved.add((fileName, bytes));
+    return true;
+  }
+}
 
 void main() {
   late InMemoryCloudStorage cloud;
+  late FakeFileTransferService files;
 
   FeedController controllerFor(String device) => FeedController(
         EncryptedCloudPostRepository(
@@ -14,10 +46,14 @@ void main() {
           cipher: AesGcmCipher(List<int>.filled(32, 3)),
           deviceName: device,
         ),
+        files: files,
         pollInterval: const Duration(hours: 1),
       );
 
-  setUp(() => cloud = InMemoryCloudStorage());
+  setUp(() {
+    cloud = InMemoryCloudStorage();
+    files = FakeFileTransferService();
+  });
 
   test('отправка добавляет пост сразу, без ожидания опроса', () async {
     final feed = controllerFor('A');
@@ -43,5 +79,66 @@ void main() {
     expect(await feed.sendText('   '), isFalse);
     expect(feed.error, isNotNull);
     feed.dispose();
+  });
+
+  group('файлы', () {
+    final bytes = Uint8List.fromList(List<int>.generate(1000, (i) => i % 251));
+
+    test('прикреплённый файл уходит с подписью и сохраняется на другом устройстве', () async {
+      final sender = controllerFor('A');
+      files.nextPick = PickedFile(name: 'отчёт.pdf', bytes: bytes, mimeType: 'application/pdf');
+      expect(await sender.attachFile(caption: 'посмотри'), isTrue);
+      expect(files.lastMaxSize, PostRepository.maxFileSize);
+
+      final receiver = controllerFor('B');
+      await receiver.refresh();
+      final post = receiver.posts.single;
+      expect(post.attachment!.fileName, 'отчёт.pdf');
+      expect(post.text, 'посмотри');
+
+      expect(await receiver.saveAttachment(post), isTrue);
+      expect(files.saved.single.$1, 'отчёт.pdf');
+      expect(files.saved.single.$2, bytes);
+      expect(receiver.isSaving(post), isFalse);
+      sender.dispose();
+      receiver.dispose();
+    });
+
+    test('отмена выбора файла ничего не отправляет и не показывает ошибку', () async {
+      final feed = controllerFor('A');
+      files.nextPick = null;
+      expect(await feed.attachFile(), isFalse);
+      expect(feed.posts, isEmpty);
+      expect(feed.error, isNull);
+      feed.dispose();
+    });
+
+    test('слишком большой файл — понятная ошибка', () async {
+      final feed = controllerFor('A');
+      files.pickError = FileTooLargeException(30 << 20, PostRepository.maxFileSize);
+      expect(await feed.attachFile(), isFalse);
+      expect(feed.error, 'Файл больше 25 МБ');
+      feed.dispose();
+    });
+
+    test('отмена сохранения возвращает false без ошибки', () async {
+      final feed = controllerFor('A');
+      files.nextPick = PickedFile(name: 'a.txt', bytes: bytes);
+      await feed.attachFile();
+      files.saveAccepted = false;
+      expect(await feed.saveAttachment(feed.posts.single), isFalse);
+      expect(feed.error, isNull);
+      feed.dispose();
+    });
+
+    test('файл, удалённый из облака, — понятная ошибка', () async {
+      final feed = controllerFor('A');
+      files.nextPick = PickedFile(name: 'a.txt', bytes: bytes);
+      await feed.attachFile();
+      cloud.files.removeWhere((path, _) => path.contains('/files/'));
+      expect(await feed.saveAttachment(feed.posts.single), isFalse);
+      expect(feed.error, 'Файл уже удалён из облака');
+      feed.dispose();
+    });
   });
 }

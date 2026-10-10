@@ -26,9 +26,14 @@ class _ComposeBarState extends State<ComposeBar> {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 4, 8, 8),
+        padding: const EdgeInsets.fromLTRB(4, 4, 8, 8),
         child: Row(
           children: [
+            IconButton(
+              tooltip: 'Прикрепить файл (до 25 МБ)',
+              onPressed: sending ? null : _attach,
+              icon: const Icon(Icons.attach_file),
+            ),
             Expanded(
               child: TextField(
                 controller: _text,
@@ -64,6 +69,12 @@ class _ComposeBarState extends State<ComposeBar> {
     final text = _text.text;
     if (text.trim().isEmpty) return;
     final ok = await context.read<FeedController>().sendText(text);
+    if (ok) _text.clear();
+  }
+
+  /// Текст из поля ввода становится подписью к файлу.
+  Future<void> _attach() async {
+    final ok = await context.read<FeedController>().attachFile(caption: _text.text);
     if (ok) _text.clear();
   }
 }

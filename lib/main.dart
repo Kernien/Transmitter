@@ -5,6 +5,7 @@ import 'app/app.dart';
 import 'app/app_config.dart';
 import 'app/vault_session_factory.dart';
 import 'core/auth/platform_auth_browser.dart';
+import 'core/files/file_picker_transfer_service.dart';
 import 'core/persistence/key_value_store.dart';
 import 'core/storage/cloud_connection_service.dart';
 import 'core/storage/cloud_provider_adapter.dart';
@@ -42,5 +43,6 @@ Future<void> main() async {
       connections: connections,
       deviceName: currentDeviceName(),
     ),
+    files: const FilePickerTransferService(),
   ));
 }

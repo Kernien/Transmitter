@@ -1,6 +1,9 @@
 import 'dart:typed_data';
 
+import '../core/files/file_transfer_service.dart';
 import '../domain/post.dart';
+
+export '../core/files/file_transfer_service.dart' show FileTooLargeException;
 
 /// Работа с постами одной базы. UI зависит только от этого интерфейса.
 abstract interface class PostRepository {
@@ -26,14 +29,4 @@ abstract interface class PostRepository {
   Future<Uint8List> downloadAttachment(Attachment attachment);
 
   Future<void> deletePost(Post post);
-}
-
-class FileTooLargeException implements Exception {
-  const FileTooLargeException(this.size);
-
-  final int size;
-
-  @override
-  String toString() => 'Файл больше '
-      '${PostRepository.maxFileSize ~/ (1024 * 1024)} МБ';
 }

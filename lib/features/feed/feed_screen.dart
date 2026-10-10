@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../app/app_config.dart';
 import '../../app/vault_session_factory.dart';
+import '../../core/files/file_transfer_service.dart';
 import '../../core/vault/vault_key.dart';
 import '../../data/post_repository.dart';
 import 'feed_controller.dart';
@@ -39,8 +40,9 @@ class _FeedScreenState extends State<FeedScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           return ChangeNotifierProvider(
-            create: (_) => FeedController(
+            create: (context) => FeedController(
               repository,
+              files: context.read<FileTransferService>(),
               pollInterval: AppConfig.pollInterval,
             )..start(),
             child: const _FeedBody(),

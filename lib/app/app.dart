@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/files/file_transfer_service.dart';
 import '../core/storage/cloud_connection_service.dart';
 import '../features/vaults/vaults_controller.dart';
 import '../features/vaults/vaults_screen.dart';
@@ -12,11 +13,13 @@ class TransmitterApp extends StatelessWidget {
     required this.connections,
     required this.vaults,
     required this.sessions,
+    required this.files,
   });
 
   final CloudConnectionService connections;
   final VaultsController vaults;
   final VaultSessionFactory sessions;
+  final FileTransferService files;
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +28,7 @@ class TransmitterApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: connections),
         ChangeNotifierProvider.value(value: vaults),
         Provider.value(value: sessions),
+        Provider<FileTransferService>.value(value: files),
       ],
       child: MaterialApp(
         title: 'Transmitter',
