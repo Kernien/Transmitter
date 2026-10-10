@@ -75,12 +75,17 @@ flutter test        # все тесты: должны проходить пер�
 flutter analyze     # статический анализ
 ```
 
-Ключи облаков задаются в `config/dev.json` и передаются при запуске:
+Ключи облаков: публичные — в `config/dev.json` (в git), секретные — в
+`config/secrets.json` (не в git; если его нет, создайте файл с `{}`).
+Передаются при запуске:
 
 ```powershell
-flutter run -d windows --dart-define-from-file=config/dev.json
-flutter run            --dart-define-from-file=config/dev.json   # Android-устройство
+flutter run -d windows --dart-define-from-file=config/dev.json --dart-define-from-file=config/secrets.json
+flutter run            --dart-define-from-file=config/dev.json --dart-define-from-file=config/secrets.json   # Android
 ```
+
+В веб-сборку `secrets.json` **не передаётся**: всё, что в неё попадает,
+видно в опубликованном JavaScript.
 
 Веб-версия для разработки раздаётся на http://localhost:47820 (этот адрес
 прописан в Dropbox):
@@ -113,6 +118,44 @@ dart run tool/serve_web.dart
 
 Пока приложение в статусе Development, войти в него могут до 500 аккаунтов
 Dropbox. Для личного использования этого достаточно.
+
+### Подключение Google Drive
+
+Доступ `drive.file`: приложение видит только созданные им файлы — папку
+**Transmitter** в «Моём диске». Нужен обычный Google-аккаунт, карта не нужна.
+
+1. https://console.cloud.google.com → создайте проект (например, «Transmitter»).
+2. **APIs & Services → Library** → найдите **Google Drive API** → **Enable**.
+3. **Google Auth Platform** (OAuth consent screen) → **Get started**:
+   имя приложения «Transmitter», почта поддержки, тип аудитории **External**,
+   контактная почта → создать.
+4. **Data Access → Add or remove scopes** → отметьте
+   `.../auth/drive.file` → **Update** → **Save**.
+5. **Audience → Publish app** (статус **In production**). В тестовом режиме
+   Google сбрасывает вход каждые 7 дней. Проверка Google для `drive.file`
+   не нужна; при входе будет предупреждение «приложение не проверено» —
+   **Дополнительно → Перейти на страницу Transmitter**.
+6. **Clients → Create client → Desktop app** (имя «Transmitter Desktop») —
+   для Windows и Android. Скопируйте:
+   - Client ID → `config/dev.json` → `GOOGLE_DESKTOP_CLIENT_ID`;
+   - Client secret → `config/secrets.json` → `GOOGLE_DESKTOP_CLIENT_SECRET`.
+7. **Clients → Create client → Web application** (имя «Transmitter Web»):
+   - Authorized JavaScript origins: `https://kernien.github.io`,
+     `http://localhost:47820`;
+   - Authorized redirect URIs:
+     `https://kernien.github.io/transmitter-web/auth.html`,
+     `http://localhost:47820/auth.html`.
+
+   Client ID → `config/dev.json` → `GOOGLE_WEB_CLIENT_ID`.
+
+Особенности входа:
+
+- **Windows и Android** — вход в браузере, ответ принимает локальный сервер на
+  `http://127.0.0.1:47819/` (своя схема адреса на Android Google больше не
+  разрешает). На телефоне после входа — кнопка «Вернуться в Transmitter».
+  Повторно входить не нужно (refresh token).
+- **Веб** — Google выдаёт приложениям без сервера только временный доступ
+  (около часа), потом нужно войти снова.
 
 ## Выпуск релиза
 
@@ -149,6 +192,7 @@ Dropbox. Для личного использования этого доста�
 | Адаптация под широкие экраны | ✅ |
 | «Поделиться» в Transmitter и из него (Android) | ✅ |
 | Dropbox (вход OAuth с автообновлением токена) | ✅ |
+| Google Drive (drive.file; на устройствах — вход с refresh token, в вебе — временный) | ✅ в main, выйдет в 0.3.0 |
 | Лимит размера файла выбирается при создании ключа (10–100 МБ, хранится в ключе) | ✅ (0.2.0) |
 | Имена устройств (подсказка при первом запуске, «· рабочий» в рабочем профиле, смена кнопкой на главном экране) | ✅ (0.2.0) |
 
@@ -156,9 +200,12 @@ Dropbox. Для личного использования этого доста�
 
 Порядок согласован; новые пункты добавляются по договорённости.
 
+При следующем релизе обновить описание (README на всех языках): облака — Dropbox и Google Drive; в веб-версии вход в Google Drive действует около часа; ссылка на политику конфиденциальности (privacy.html).
 
 
-1. **Облака:** Google Drive, OneDrive. MEGA — последним из облаков: у него
+
+1. **Облака:** Google Drive ✅. OneDrive отложен: Microsoft требует
+   подписку Azure, в которой отказано. MEGA — последним из облаков: у него
    нет публичного OAuth API, нужен нативный SDK.
 2. **Улучшения:** удобная установка на Windows.
 3. **Версия для iPhone.** Код Flutter почти весь общий; понадобятся

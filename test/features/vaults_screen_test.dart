@@ -21,9 +21,12 @@ void main() {
       MultiProvider(
         providers: [
           ChangeNotifierProvider(
-            create: (_) => CloudConnectionService(CloudProviderRegistry(const []), store),
+            create: (_) =>
+                CloudConnectionService(CloudProviderRegistry(const []), store),
           ),
-          ChangeNotifierProvider(create: (_) => VaultsController(VaultKeyStore(store))),
+          ChangeNotifierProvider(
+            create: (_) => VaultsController(VaultKeyStore(store)),
+          ),
           ChangeNotifierProvider.value(value: device),
         ],
         child: const MaterialApp(home: VaultsScreen()),

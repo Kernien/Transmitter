@@ -16,6 +16,7 @@ import 'core/share/outgoing_share.dart';
 import 'core/storage/cloud_connection_service.dart';
 import 'core/storage/cloud_provider_adapter.dart';
 import 'core/storage/providers/dropbox/dropbox_adapter.dart';
+import 'core/storage/providers/google_drive/google_drive_adapter.dart';
 import 'core/vault/vault_key.dart';
 import 'core/vault/vault_key_store.dart';
 import 'features/vaults/vaults_controller.dart';
@@ -34,6 +35,15 @@ Future<void> main() async {
     DropboxAdapter(
       appKey: AppConfig.dropboxAppKey,
       browser: authBrowser,
+      client: httpClient,
+    ),
+    GoogleDriveAdapter(
+      clientId: kIsWeb
+          ? AppConfig.googleWebClientId
+          : AppConfig.googleDesktopClientId,
+      clientSecret: kIsWeb ? '' : AppConfig.googleDesktopClientSecret,
+      browserFlow: kIsWeb,
+      browser: createLoopbackAuthBrowser(),
       client: httpClient,
     ),
   ]);

@@ -6,20 +6,30 @@
       "request": "launch",
       "type": "dart",
       "deviceId": "windows",
-      "args": ["--dart-define-from-file=config/dev.json"]
+      "args": [
+        "--dart-define-from-file=config/dev.json",
+        "--dart-define-from-file=config/secrets.json"
+      ]
     },
     {
-      "name": "Web (Chrome)",
+      "name": "Web (localhost:47820, открыть в любом браузере)",
       "request": "launch",
       "type": "dart",
-      "deviceId": "chrome",
-      "args": ["--dart-define-from-file=config/dev.json", "--web-port=47820"]
+      "deviceId": "web-server",
+      "args": [
+        "--dart-define-from-file=config/dev.json",
+        "--web-port=47820",
+        "--web-hostname=localhost"
+      ]
     },
     {
       "name": "Android",
       "request": "launch",
       "type": "dart",
-      "args": ["--dart-define-from-file=config/dev.json"]
+      "args": [
+        "--dart-define-from-file=config/dev.json",
+        "--dart-define-from-file=config/secrets.json"
+      ]
     }
   ]
 }

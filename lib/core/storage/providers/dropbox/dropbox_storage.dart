@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
+import '../../../auth/bearer_request.dart';
 import '../../../auth/oauth_token_manager.dart';
 import '../../cloud_storage.dart';
 
@@ -125,14 +126,9 @@ class DropboxStorage implements CloudStorage {
     ),
   );
 
-  /// Выполняет запрос; при ответе 401 один раз обновляет токен и повторяет.
   Future<http.Response> _authorized(
     Future<http.Response> Function(String token) request,
-  ) async {
-    final response = await request(await _tokens.accessToken());
-    if (response.statusCode != 401) return response;
-    return request(await _tokens.refresh());
-  }
+  ) => sendWithBearer(_tokens, request);
 
   /// Путь в формате Dropbox: корень — пустая строка, остальное с ведущим `/`.
   static String _remote(String path) {

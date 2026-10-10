@@ -7,6 +7,9 @@ import '../auth_browser.dart';
 
 AuthBrowser createPlatformAuthBrowser() => WebAuthBrowser();
 
+/// В браузере локального сервера нет — всегда всплывающее окно.
+AuthBrowser createLoopbackAuthBrowser() => WebAuthBrowser();
+
 /// Вход в веб-версии: страница входа открывается во всплывающем окне, облако
 /// возвращает его на `auth.html`, а та передаёт адрес обратно приложению.
 ///

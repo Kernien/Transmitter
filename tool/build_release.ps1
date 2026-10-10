@@ -14,14 +14,16 @@ $version = (Select-String -Path pubspec.yaml -Pattern '^version:\s*([0-9.]+)').M
 if (-not (Test-Path android/key.properties)) {
     throw 'Нет android/key.properties: релиз нельзя подписать (см. docs/DEVELOPMENT.md)'
 }
-$define = '--dart-define-from-file=config/dev.json'
+# Секреты (config/secrets.json) не в git; если файла нет — создаём пустой.
+if (-not (Test-Path config/secrets.json)) { Set-Content config/secrets.json '{}' -Encoding ascii }
+$define = @('--dart-define-from-file=config/dev.json', '--dart-define-from-file=config/secrets.json')
 
 Invoke-Step 'Тесты' { flutter test }
-Invoke-Step 'Android' { flutter build apk --release --split-per-abi $define }
+Invoke-Step 'Android' { flutter build apk --release --split-per-abi @define }
 # Сборка Windows с нуля: при повторной сборке Flutter может оставить старый
 # урезанный шрифт иконок, и новые значки не отображаются.
 if (Test-Path 'build/windows') { Remove-Item -Recurse -Force 'build/windows' }
-Invoke-Step 'Windows' { flutter build windows --release $define }
+Invoke-Step 'Windows' { flutter build windows --release @define }
 
 $dist = 'build/dist'
 if (Test-Path $dist) { Remove-Item -Recurse -Force $dist }
