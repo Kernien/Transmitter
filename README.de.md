@@ -190,7 +190,7 @@ der Verlauf geöffnet ist.
 ## Wie es weitergeht
 
 - Google Drive und OneDrive, danach MEGA;
-- Benachrichtigungen über neue Einträge und ein Installationsprogramm für Windows;
+- ein Installationsprogramm für Windows;
 - eine Version für das iPhone;
 - Fotos, Audio und Videos direkt in der App ansehen.
 

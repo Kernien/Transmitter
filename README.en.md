@@ -178,7 +178,7 @@ open.
 ## What's next
 
 - Google Drive and OneDrive, then MEGA;
-- notifications about new items and a Windows installer;
+- a Windows installer;
 - an iPhone version;
 - viewing photos, audio and video right in the app.
 

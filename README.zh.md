@@ -122,7 +122,7 @@
 ## 后续计划
 
 - Google Drive 和 OneDrive，然后是 MEGA；
-- 新内容通知和 Windows 安装程序；
+- Windows 安装程序；
 - iPhone 版本；
 - 在应用内直接查看照片、播放音频和视频。
 
