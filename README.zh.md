@@ -128,4 +128,10 @@
 
 ---
 
+## 许可证
+
+Transmitter 是基于 [GNU GPL v3.0](LICENSE) 许可证的自由软件。你可以使用、研究、修改和分发它；修改后的版本也必须以 GPL-3.0 开源。源代码：https://github.com/Kernien/Transmitter
+
+---
+
 <sub>开发者：架构、构建和发布说明见 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)（俄语）。</sub>

@@ -184,5 +184,11 @@ open.
 
 ---
 
+## License
+
+Transmitter is free software licensed under the [GNU GPL v3.0](LICENSE). You may use, study, modify and share it; modified versions must also remain open under the GPL-3.0. Source code: https://github.com/Kernien/Transmitter
+
+---
+
 <sub>For developers: architecture, building and releasing — see
 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) (in Russian).</sub>

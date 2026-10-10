@@ -25,6 +25,7 @@ git -C $deploy checkout --quiet -B main
 Get-ChildItem $deploy -Force | Where-Object Name -ne '.git' | Remove-Item -Recurse -Force
 Copy-Item -Recurse 'build/web/*' $deploy
 New-Item -ItemType File "$deploy/.nojekyll" | Out-Null  # GitHub Pages: отдавать файлы как есть
+Copy-Item LICENSE "$deploy/LICENSE"  # собранная программа распространяется под GPL-3.0
 # Описание на всех языках; ссылки на документацию разработчика ведут в
 # основной репозиторий, потому что в публичный она не копируется.
 $deployFull = (Resolve-Path $deploy).Path  # методы .NET не знают текущую папку PowerShell
