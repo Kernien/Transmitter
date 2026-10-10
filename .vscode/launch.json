@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Windows",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "windows",
+      "args": ["--dart-define-from-file=config/dev.json"]
+    },
+    {
+      "name": "Web (Chrome)",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "chrome",
+      "args": ["--dart-define-from-file=config/dev.json", "--web-port=47820"]
+    },
+    {
+      "name": "Android",
+      "request": "launch",
+      "type": "dart",
+      "args": ["--dart-define-from-file=config/dev.json"]
+    }
+  ]
+}

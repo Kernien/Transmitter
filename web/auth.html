@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<!-- Страница возврата после входа в облако (веб-версия).
+     Передаёт свой адрес (с code и state) окну приложения и закрывается. -->
+<meta charset="utf-8">
+<title>Transmitter</title>
+<body style="font-family:sans-serif;text-align:center;padding-top:15vh">
+<h2>Вход выполнен</h2>
+<p>Если окно не закрылось само, закройте его и вернитесь в Transmitter.</p>
+<script>
+  (function () {
+    var key = 'transmitter-oauth';
+    var href = window.location.href;
+    if (window.opener) {
+      var message = {};
+      message[key] = href;
+      window.opener.postMessage(message, window.location.origin);
+    }
+    // Запасной канал, если облако разорвало связь окна с приложением.
+    localStorage.setItem(key, href);
+    window.close();
+  })();
+</script>
+</body>
