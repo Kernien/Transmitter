@@ -16,7 +16,7 @@ right on the device: the cloud only ever sees meaningless bytes.
 | 🖥️ **Windows** | app, drag-and-drop files into the window |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — nothing to install |
 
-Version **0.1.0** — the first release.
+Version **0.2.0**.
 
 > **Interface language.** The app's interface is currently in Russian only.
 > In this guide, button names are given in English with the label you will
@@ -41,7 +41,7 @@ browser.
 ## Features
 
 - **Links.** Detected automatically and opened with a single tap.
-- **Files up to 25 MB** — photos, documents, archives. Use the 📎 button,
+- **Files up to 100 MB** — photos, documents, archives. The limit (10, 25, 50 or 100 MB) is chosen for each vault when it is created. Use the 📎 button,
   drag files into the window (Windows and browser) or “Share” from any app on
   Android.
 - **“Share” both ways (Android).** From your browser, gallery or any app
@@ -52,6 +52,7 @@ browser.
   archive, share or delete.
 - **Delete everywhere.** A deleted item disappears from all devices, along with
   its file in the cloud.
+- **Device names.** Every item shows where it came from: “Redmi 10”, “Redmi 10 · рабочий” (work), “Laptop”.
 - **No sign-up.** No Transmitter accounts: devices are linked with a key — a
   QR code or a text string.
 
@@ -74,9 +75,9 @@ browser.
 ### Android
 
 1. Download the APK from [**Releases**](https://github.com/Kernien/Transmitter/releases):
-   - `Transmitter-0.1.0-android-arm64.apk` — for most phones from recent
+   - `Transmitter-0.2.0-android-arm64.apk` — for most phones from recent
      years;
-   - `Transmitter-0.1.0-android-armv7.apk` — for older or budget models, if
+   - `Transmitter-0.2.0-android-armv7.apk` — for older or budget models, if
      the first one doesn't install.
 2. Open the file on your phone. Android will ask to allow installs from this
    source (your browser or file manager) — allow it.
@@ -87,7 +88,7 @@ Dropbox in the work profile also needs a browser there — clone one as well.
 
 ### Windows
 
-1. Download `Transmitter-0.1.0-windows-x64.zip` from [**Releases**](https://github.com/Kernien/Transmitter/releases).
+1. Download `Transmitter-0.2.0-windows-x64.zip` from [**Releases**](https://github.com/Kernien/Transmitter/releases).
 2. Unpack it to a convenient folder (e.g. `C:\Program Files\Transmitter` or
    `Documents\Transmitter`) and run `transmitter.exe`.
 3. On first launch Windows may say “Windows protected your PC” — the app has
@@ -105,7 +106,7 @@ are remembered in that browser.
 ### 1. First device: create a vault
 
 1. Tap **New key** («Новый ключ»), give it a name (e.g. “Personal ↔ Work”)
-   and choose the **Dropbox** cloud → **Create** («Создать»).
+   and choose the **Dropbox** cloud and the **maximum file size** («Максимальный размер файла»; it can't be changed later) → **Create** («Создать»).
 2. The key's QR code appears — you can close it; it's always available from
    the ⋮ menu.
 3. Tap the new vault → **Sign in to Dropbox** («Войти в Dropbox»). Sign in and
@@ -152,6 +153,7 @@ open.
 ### 5. Manage
 
 - **Several vaults:** create another key — it gets its own feed.
+- **Device name:** the 🪪 icon to the left of ☁ on the main screen («Имя устройства»). On first launch Transmitter suggests a name itself.
 - **Clouds:** the ☁ icon on the main screen — sign in to or out of a cloud on
   this device.
 - **Remove a vault from a device:** ⋮ next to the vault →
@@ -166,7 +168,7 @@ open.
 |---|---|
 | The browser doesn't open the Dropbox sign-in window | Allow pop-ups for the site; in Brave, turn off Shields for this address |
 | Dropbox sign-in won't open in the work profile | Clone a browser into the work profile with Shelter |
-| “File larger than 25 MB” | A limit of version 0.1.0: send smaller files or a split archive |
+| “File larger than N MB” | That is the vault's limit chosen when it was created. For bigger files create a vault with a higher limit (up to 100 MB) or send a split archive |
 | An item didn't show up on another device | Check your connection and that the same vault is open; the feed refreshes every 5 seconds. In Shelter, make sure Transmitter isn't frozen in the work profile |
 | “Sign in to the cloud again” | ☁ on the main screen → **Sign out** («Выйти») → **Sign in** («Войти») |
 | Xiaomi won't install the APK | Allow installs from unknown sources for the app you open the file with |
@@ -176,7 +178,7 @@ open.
 ## What's next
 
 - Google Drive and OneDrive, then MEGA;
-- device names and notifications about new items;
+- notifications about new items and a Windows installer;
 - an iPhone version;
 - viewing photos, audio and video right in the app.
 

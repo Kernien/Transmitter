@@ -16,7 +16,7 @@ direkt auf dem Gerät verschlüsselt: Die Cloud sieht nur bedeutungslose Bytes.
 | 🖥️ **Windows** | App, Dateien per Drag & Drop ins Fenster |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — keine Installation nötig |
 
-Version **0.1.0** — die erste Veröffentlichung.
+Version **0.2.0**.
 
 > **Sprache der Oberfläche.** Die App ist derzeit nur auf Russisch. In dieser
 > Anleitung stehen die Schaltflächen auf Deutsch, dahinter in Klammern die
@@ -43,7 +43,7 @@ Computer und Browser.
 ## Funktionen
 
 - **Links.** Werden automatisch erkannt und mit einem Tippen geöffnet.
-- **Dateien bis 25 MB** — Fotos, Dokumente, Archive. Über die 📎-Schaltfläche,
+- **Dateien bis 100 MB** — Fotos, Dokumente, Archive. Die Grenze (10, 25, 50 oder 100 MB) wird für jeden Tresor beim Anlegen festgelegt. Über die 📎-Schaltfläche,
   per Drag & Drop ins Fenster (Windows und Browser) oder mit „Teilen“ aus jeder
   App unter Android.
 - **„Teilen“ in beide Richtungen (Android).** Aus Browser, Galerie oder jeder
@@ -55,6 +55,7 @@ Computer und Browser.
   ZIP-Archiv herunterladen, teilen oder löschen.
 - **Überall löschen.** Ein gelöschter Eintrag verschwindet auf allen Geräten,
   samt Datei in der Cloud.
+- **Gerätenamen.** Bei jedem Eintrag sieht man, woher er kommt: „Redmi 10“, „Redmi 10 · рабочий“ (Arbeit), „Laptop“.
 - **Keine Registrierung.** Keine Transmitter-Konten: Geräte werden über einen
   Schlüssel verbunden — per QR-Code oder als Zeichenfolge.
 
@@ -78,9 +79,9 @@ Computer und Browser.
 ### Android
 
 1. Lade die APK unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter:
-   - `Transmitter-0.1.0-android-arm64.apk` — für die meisten Handys der
+   - `Transmitter-0.2.0-android-arm64.apk` — für die meisten Handys der
      letzten Jahre;
-   - `Transmitter-0.1.0-android-armv7.apk` — für ältere oder günstige
+   - `Transmitter-0.2.0-android-armv7.apk` — für ältere oder günstige
      Modelle, falls sich die erste nicht installieren lässt.
 2. Öffne die Datei auf dem Handy. Android fragt, ob Installationen aus dieser
    Quelle (Browser oder Dateimanager) erlaubt sind — erlaube es.
@@ -92,7 +93,7 @@ klone ihn ebenfalls.
 
 ### Windows
 
-1. Lade `Transmitter-0.1.0-windows-x64.zip` unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter.
+1. Lade `Transmitter-0.2.0-windows-x64.zip` unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter.
 2. Entpacke es in einen passenden Ordner (z. B. `C:\Program Files\Transmitter`
    oder `Dokumente\Transmitter`) und starte `transmitter.exe`.
 3. Beim ersten Start meldet Windows eventuell „Der Computer wurde durch
@@ -112,7 +113,7 @@ Cloud-Anmeldung werden in diesem Browser gespeichert.
 ### 1. Erstes Gerät: Tresor anlegen
 
 1. Tippe auf **Neuer Schlüssel** («Новый ключ»), gib einen Namen ein (z. B.
-   „Privat ↔ Arbeit“) und wähle die Cloud **Dropbox** → **Erstellen**
+   „Privat ↔ Arbeit“) und wähle die Cloud **Dropbox** und die **maximale Dateigröße** («Максимальный размер файла»; später nicht änderbar) → **Erstellen**
    («Создать»).
 2. Der QR-Code des Schlüssels erscheint — du kannst ihn schließen, er ist
    jederzeit über das ⋮-Menü erreichbar.
@@ -164,6 +165,7 @@ der Verlauf geöffnet ist.
 
 - **Mehrere Tresore:** Lege einen weiteren Schlüssel an — er bekommt einen
   eigenen Verlauf.
+- **Gerätename:** das 🪪-Symbol links neben ☁ auf dem Startbildschirm («Имя устройства»). Beim ersten Start schlägt Transmitter selbst einen Namen vor.
 - **Clouds:** das ☁-Symbol auf dem Startbildschirm — auf diesem Gerät bei
   einer Cloud an- oder abmelden.
 - **Tresor vom Gerät entfernen:** ⋮ neben dem Tresor → **Vom Gerät
@@ -178,7 +180,7 @@ der Verlauf geöffnet ist.
 |---|---|
 | Der Browser öffnet das Dropbox-Anmeldefenster nicht | Pop-ups für die Seite erlauben; in Brave die Shields für diese Adresse ausschalten |
 | Im Arbeitsprofil öffnet sich die Dropbox-Anmeldung nicht | Mit Shelter einen Browser ins Arbeitsprofil klonen |
-| „Datei größer als 25 MB“ | Grenze der Version 0.1.0: kleinere Dateien oder ein geteiltes Archiv senden |
+| „Datei größer als N MB“ | Das ist die beim Anlegen gewählte Grenze des Tresors. Für größere Dateien einen Tresor mit höherer Grenze (bis 100 MB) anlegen oder ein geteiltes Archiv senden |
 | Ein Eintrag erscheint nicht auf einem anderen Gerät | Internetverbindung prüfen und ob derselbe Tresor geöffnet ist; der Verlauf aktualisiert sich alle 5 Sekunden. In Shelter prüfen, dass Transmitter im Arbeitsprofil nicht eingefroren ist |
 | „Erneut bei der Cloud anmelden“ | ☁ auf dem Startbildschirm → **Abmelden** («Выйти») → **Anmelden** («Войти») |
 | Xiaomi lässt die APK nicht installieren | Installation aus unbekannten Quellen für die App erlauben, mit der du die Datei öffnest |
@@ -188,7 +190,7 @@ der Verlauf geöffnet ist.
 ## Wie es weitergeht
 
 - Google Drive und OneDrive, danach MEGA;
-- Gerätenamen und Benachrichtigungen über neue Einträge;
+- Benachrichtigungen über neue Einträge und ein Installationsprogramm für Windows;
 - eine Version für das iPhone;
 - Fotos, Audio und Videos direkt in der App ansehen.
 
