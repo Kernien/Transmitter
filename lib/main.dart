@@ -6,6 +6,8 @@ import 'app/app.dart';
 import 'app/app_config.dart';
 import 'app/vault_session_factory.dart';
 import 'core/auth/platform_auth_browser.dart';
+import 'core/device/device_identity.dart';
+import 'core/device/platform_device_name_suggester.dart';
 import 'core/files/file_picker_transfer_service.dart';
 import 'core/persistence/key_value_store.dart';
 import 'core/share/android_incoming_share_source.dart';
@@ -14,7 +16,6 @@ import 'core/share/outgoing_share.dart';
 import 'core/storage/cloud_connection_service.dart';
 import 'core/storage/cloud_provider_adapter.dart';
 import 'core/storage/providers/dropbox/dropbox_adapter.dart';
-import 'core/utils/device_name.dart';
 import 'core/vault/vault_key.dart';
 import 'core/vault/vault_key_store.dart';
 import 'features/vaults/vaults_controller.dart';
@@ -39,15 +40,20 @@ Future<void> main() async {
 
   final connections = CloudConnectionService(registry, secureStore);
   final vaults = VaultsController(const VaultKeyStore(secureStore));
-  await Future.wait([connections.load(), vaults.load()]);
+  final device = DeviceIdentity(
+    secureStore,
+    createPlatformDeviceNameSuggester(),
+  );
+  await Future.wait([connections.load(), vaults.load(), device.load()]);
 
   runApp(
     TransmitterApp(
       connections: connections,
       vaults: vaults,
+      device: device,
       sessions: VaultSessionFactory(
         connections: connections,
-        deviceName: currentDeviceName(),
+        deviceName: () => device.name,
       ),
       files: const FilePickerTransferService(),
       incomingShares: isAndroid

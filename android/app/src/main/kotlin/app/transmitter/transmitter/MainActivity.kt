@@ -9,7 +9,9 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        shareReceiver = ShareReceiver(this, flutterEngine.dartExecutor.binaryMessenger).also {
+        val messenger = flutterEngine.dartExecutor.binaryMessenger
+        DeviceInfoChannel(this, messenger)
+        shareReceiver = ShareReceiver(this, messenger).also {
             it.handle(intent)
         }
     }

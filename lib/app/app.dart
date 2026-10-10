@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/device/device_identity.dart';
 import '../core/files/file_transfer_service.dart';
 import '../core/share/incoming_share.dart';
 import '../core/share/outgoing_share.dart';
 import '../core/storage/cloud_connection_service.dart';
+import '../features/device/device_name_prompt.dart';
 import '../features/share_target/incoming_share_listener.dart';
 import '../features/vaults/vaults_controller.dart';
 import '../features/vaults/vaults_screen.dart';
@@ -15,6 +17,7 @@ class TransmitterApp extends StatelessWidget {
     super.key,
     required this.connections,
     required this.vaults,
+    required this.device,
     required this.sessions,
     required this.files,
     required this.incomingShares,
@@ -23,6 +26,7 @@ class TransmitterApp extends StatelessWidget {
 
   final CloudConnectionService connections;
   final VaultsController vaults;
+  final DeviceIdentity device;
   final VaultSessionFactory sessions;
   final FileTransferService files;
   final IncomingShareSource incomingShares;
@@ -34,6 +38,7 @@ class TransmitterApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider.value(value: connections),
         ChangeNotifierProvider.value(value: vaults),
+        ChangeNotifierProvider.value(value: device),
         Provider.value(value: sessions),
         Provider<FileTransferService>.value(value: files),
         Provider<IncomingShareSource>.value(value: incomingShares),
@@ -48,7 +53,9 @@ class TransmitterApp extends StatelessWidget {
           brightness: Brightness.dark,
           useMaterial3: true,
         ),
-        home: const IncomingShareListener(child: VaultsScreen()),
+        home: const IncomingShareListener(
+          child: DeviceNamePrompt(child: VaultsScreen()),
+        ),
       ),
     );
   }

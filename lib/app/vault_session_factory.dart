@@ -15,7 +15,9 @@ class VaultSessionFactory {
   });
 
   final CloudConnectionService _connections;
-  final String _deviceName;
+
+  /// Имя устройства берётся в момент открытия базы: его можно поменять.
+  final String Function() _deviceName;
   final VaultKeyDerivation _derivation;
 
   Future<PostRepository> open(VaultKey key) async {
@@ -24,7 +26,7 @@ class VaultSessionFactory {
       storage: _connections.storageFor(key.provider),
       vaultId: secrets.vaultId,
       cipher: AesGcmCipher(secrets.encryptionKey),
-      deviceName: _deviceName,
+      deviceName: _deviceName(),
       maxFileSize: key.maxFileSize,
     );
   }

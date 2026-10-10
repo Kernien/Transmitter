@@ -18,6 +18,9 @@ $define = '--dart-define-from-file=config/dev.json'
 
 Invoke-Step 'Тесты' { flutter test }
 Invoke-Step 'Android' { flutter build apk --release --split-per-abi $define }
+# Сборка Windows с нуля: при повторной сборке Flutter может оставить старый
+# урезанный шрифт иконок, и новые значки не отображаются.
+if (Test-Path 'build/windows') { Remove-Item -Recurse -Force 'build/windows' }
 Invoke-Step 'Windows' { flutter build windows --release $define }
 
 $dist = 'build/dist'

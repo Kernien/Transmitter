@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/widgets/content_width.dart';
+import '../../core/device/device_identity.dart';
 import '../../core/storage/cloud_connection_service.dart';
 import '../../core/utils/format_size.dart';
 import '../../core/vault/vault_key.dart';
 import '../cloud_connect/clouds_screen.dart';
 import '../cloud_connect/connect_cloud_screen.dart';
+import '../device/device_name_dialog.dart';
 import '../feed/feed_screen.dart';
 import 'create_vault_dialog.dart';
 import 'import_vault_screen.dart';
@@ -25,6 +27,11 @@ class VaultsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Transmitter'),
         actions: [
+          IconButton(
+            tooltip: 'Имя устройства: ${context.watch<DeviceIdentity>().name}',
+            icon: const Icon(Icons.badge_outlined),
+            onPressed: () => showDeviceNameDialog(context),
+          ),
           IconButton(
             tooltip: 'Облака',
             icon: const Icon(Icons.cloud_outlined),
