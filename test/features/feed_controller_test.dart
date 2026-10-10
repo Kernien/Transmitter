@@ -24,6 +24,13 @@ class FakeFileTransferService implements FileTransferService {
   }
 
   @override
+  Future<PickedFile> readFile(XFile file, {required int maxSize}) async {
+    final size = await file.length();
+    if (size > maxSize) throw FileTooLargeException(size, maxSize);
+    return PickedFile(name: file.name, bytes: await file.readAsBytes());
+  }
+
+  @override
   Future<bool> saveFile({
     required String fileName,
     required Uint8List bytes,
@@ -81,6 +88,24 @@ void main() {
     feed.dispose();
   });
 
+  test('очистка ленты удаляет всё на всех устройствах', () async {
+    final a = controllerFor('A');
+    await a.sendText('1');
+    files.nextPick = PickedFile(name: 'f.bin', bytes: Uint8List(10));
+    await a.attachFile();
+    expect(cloud.files, hasLength(3)); // два поста и файл
+
+    expect(await a.clearAll(), 2);
+    expect(a.posts, isEmpty);
+    expect(cloud.files, isEmpty);
+
+    final b = controllerFor('B');
+    await b.refresh();
+    expect(b.posts, isEmpty);
+    a.dispose();
+    b.dispose();
+  });
+
   group('файлы', () {
     final bytes = Uint8List.fromList(List<int>.generate(1000, (i) => i % 251));
 
@@ -128,6 +153,20 @@ void main() {
       files.saveAccepted = false;
       expect(await feed.saveAttachment(feed.posts.single), isFalse);
       expect(feed.error, isNull);
+      feed.dispose();
+    });
+
+    test('перетащенные файлы: нормальные уходят, слишком большой — ошибка с именем', () async {
+      final feed = controllerFor('A');
+      final sent = await feed.sendDroppedFiles([
+        // На компьютере XFile берёт имя из пути, как у перетащенного файла.
+        XFile.fromData(bytes, path: 'one.txt'),
+        XFile.fromData(Uint8List(PostRepository.maxFileSize + 1), path: 'huge.iso'),
+        XFile.fromData(bytes, path: 'two.txt'),
+      ]);
+      expect(sent, 2);
+      expect(feed.posts.map((p) => p.attachment!.fileName), ['one.txt', 'two.txt']);
+      expect(feed.error, 'huge.iso: Файл больше 25 МБ');
       feed.dispose();
     });
 

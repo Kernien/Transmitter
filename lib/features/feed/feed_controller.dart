@@ -74,12 +74,54 @@ class FeedController extends ChangeNotifier {
       return false;
     }
     if (picked == null) return false;
-    return _runSend(() => _repository.sendFile(
-          fileName: picked!.name,
-          bytes: picked.bytes,
-          mimeType: picked.mimeType,
-          caption: caption,
-        ));
+    return _sendPicked(picked, caption: caption);
+  }
+
+  /// Отправляет файлы, перетащенные в окно, по очереди.
+  /// Возвращает, сколько файлов отправлено; ошибки попадают в [error].
+  Future<int> sendDroppedFiles(List<XFile> files) async {
+    var sent = 0;
+    String? lastError;
+    for (final file in files) {
+      try {
+        final picked = await _files.readFile(file, maxSize: PostRepository.maxFileSize);
+        if (await _sendPicked(picked)) {
+          sent++;
+        } else {
+          lastError = _error;
+        }
+      } catch (e) {
+        lastError = '${file.name}: ${_describe(e)}';
+      }
+    }
+    _error = lastError;
+    _notify();
+    return sent;
+  }
+
+  Future<bool> _sendPicked(PickedFile picked, {String caption = ''}) =>
+      _runSend(() => _repository.sendFile(
+            fileName: picked.name,
+            bytes: picked.bytes,
+            mimeType: picked.mimeType,
+            caption: caption,
+          ));
+
+  /// Удаляет все посты базы на всех устройствах. Возвращает число удалённых.
+  Future<int> clearAll() async {
+    var deleted = 0;
+    _error = null;
+    for (final post in List.of(_posts)) {
+      try {
+        await _repository.deletePost(post);
+        _posts = _posts.where((p) => p.id != post.id).toList();
+        deleted++;
+      } catch (e) {
+        _error = _describe(e);
+      }
+      _notify();
+    }
+    return deleted;
   }
 
   /// Скачивает и расшифровывает файл поста, затем предлагает его сохранить.

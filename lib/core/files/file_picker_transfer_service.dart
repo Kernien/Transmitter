@@ -18,13 +18,22 @@ class FilePickerTransferService implements FileTransferService {
     if (knownSize != null && knownSize > maxSize) {
       throw FileTooLargeException(knownSize, maxSize);
     }
-    final bytes = await file.readAsBytes();
-    if (bytes.length > maxSize) throw FileTooLargeException(bytes.length, maxSize);
+    return _toPicked(file.name, await file.readAsBytes(), maxSize);
+  }
 
+  @override
+  Future<PickedFile> readFile(XFile file, {required int maxSize}) async {
+    final size = await file.length();
+    if (size > maxSize) throw FileTooLargeException(size, maxSize);
+    return _toPicked(file.name, await file.readAsBytes(), maxSize, mimeType: file.mimeType);
+  }
+
+  static PickedFile _toPicked(String name, Uint8List bytes, int maxSize, {String? mimeType}) {
+    if (bytes.length > maxSize) throw FileTooLargeException(bytes.length, maxSize);
     return PickedFile(
-      name: file.name,
+      name: name,
       bytes: bytes,
-      mimeType: lookupMimeType(file.name, headerBytes: bytes.take(32).toList()),
+      mimeType: mimeType ?? lookupMimeType(name, headerBytes: bytes.take(32).toList()),
     );
   }
 

@@ -1,5 +1,9 @@
 import 'dart:typed_data';
 
+import 'package:cross_file/cross_file.dart';
+
+export 'package:cross_file/cross_file.dart' show XFile;
+
 class FileTooLargeException implements Exception {
   const FileTooLargeException(this.size, this.maxSize);
 
@@ -25,6 +29,10 @@ abstract interface class FileTransferService {
   /// Бросает `FileTooLargeException`, если файл больше [maxSize]; в этом
   /// случае файл не читается в память.
   Future<PickedFile?> pickFile({required int maxSize});
+
+  /// Читает уже выбранный файл (например, перетащенный в окно) с той же
+  /// проверкой размера, что и [pickFile].
+  Future<PickedFile> readFile(XFile file, {required int maxSize});
 
   /// Сохраняет файл: диалог «Сохранить как» на компьютере и телефоне,
   /// обычное скачивание в браузере. `false`, если пользователь отменил.
