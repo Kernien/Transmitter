@@ -1,11 +1,11 @@
 {
-    "name": "transmitter",
-    "short_name": "transmitter",
+    "name": "Transmitter",
+    "short_name": "Transmitter",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "Encrypted cross-device transfer",
+    "description": "Сообщения, ссылки и файлы между своими устройствами со сквозным шифрованием",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

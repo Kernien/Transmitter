@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "app.transmitter" "\0"
-            VALUE "FileDescription", "transmitter" "\0"
+            VALUE "CompanyName", "Kernien" "\0"
+            VALUE "FileDescription", "Transmitter" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "transmitter" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 app.transmitter. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Kernien" "\0"
             VALUE "OriginalFilename", "transmitter.exe" "\0"
-            VALUE "ProductName", "transmitter" "\0"
+            VALUE "ProductName", "Transmitter" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
