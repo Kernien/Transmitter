@@ -73,8 +73,15 @@ flutter analyze     # статический анализ
 
 ```powershell
 flutter run -d windows --dart-define-from-file=config/dev.json
-flutter run -d chrome  --dart-define-from-file=config/dev.json --web-port=47820
 flutter run            --dart-define-from-file=config/dev.json   # Android-устройство
+```
+
+Веб-версия собирается и раздаётся на http://localhost:47820 (этот адрес
+прописан в Dropbox), открывать в любом браузере:
+
+```powershell
+flutter build web --dart-define-from-file=config/dev.json
+dart run tool/serve_web.dart
 ```
 
 В VS Code те же варианты есть в меню запуска (`.vscode/launch.json`).
