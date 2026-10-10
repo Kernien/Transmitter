@@ -1,5 +1,5 @@
 name: transmitter
-description: "Transmitter — сообщения, ссылки и файлы между своими устройствами со сквозным шифрованием."
+description: "Transmitter — ссылки и небольшие файлы между своими устройствами со сквозным шифрованием."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
