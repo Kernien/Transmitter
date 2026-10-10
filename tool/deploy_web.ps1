@@ -25,7 +25,14 @@ git -C $deploy checkout --quiet -B main
 Get-ChildItem $deploy -Force | Where-Object Name -ne '.git' | Remove-Item -Recurse -Force
 Copy-Item -Recurse 'build/web/*' $deploy
 New-Item -ItemType File "$deploy/.nojekyll" | Out-Null  # GitHub Pages: отдавать файлы как есть
-Copy-Item README.md "$deploy/README.md"
+# Описание на всех языках; ссылки на документацию разработчика ведут в
+# основной репозиторий, потому что в публичный она не копируется.
+$deployFull = (Resolve-Path $deploy).Path  # методы .NET не знают текущую папку PowerShell
+foreach ($readme in Get-ChildItem 'README*.md') {
+    $text = [IO.File]::ReadAllText($readme.FullName, [Text.Encoding]::UTF8)
+    $text = $text.Replace('](docs/DEVELOPMENT.md)', '](https://github.com/Kernien/Transmitter/blob/main/docs/DEVELOPMENT.md)')
+    [IO.File]::WriteAllText((Join-Path $deployFull $readme.Name), $text, (New-Object Text.UTF8Encoding($false)))
+}
 
 git -C $deploy add -A
 git -C $deploy commit --quiet -m "Веб-версия $version"
