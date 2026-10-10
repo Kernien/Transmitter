@@ -44,7 +44,7 @@ class ShareTargetScreen extends StatelessWidget {
                         ),
                         subtitle: Text(
                           c.isUsable(key)
-                              ? key.provider.title
+                              ? '${key.provider.title} · файлы до ${formatSizeLimit(key.maxFileSize)}'
                               : '${key.provider.title} · сначала войдите в облако',
                         ),
                       ),
@@ -94,6 +94,7 @@ class _Preview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final c = context.watch<ShareTargetController>();
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -113,17 +114,17 @@ class _Preview extends StatelessWidget {
                 contentPadding: EdgeInsets.zero,
                 dense: true,
                 leading: Icon(
-                  file.isTooLarge
+                  c.isSkipped(file)
                       ? Icons.block
                       : Icons.insert_drive_file_outlined,
-                  color: file.isTooLarge ? theme.colorScheme.error : null,
+                  color: c.isSkipped(file) ? theme.colorScheme.error : null,
                 ),
                 title: Text(file.name),
                 subtitle: Text(
-                  file.isTooLarge
-                      ? 'Больше 25 МБ — не будет отправлен'
+                  c.isSkipped(file)
+                      ? 'Больше ${formatSizeLimit(c.maxFileSize)} — не будет отправлен'
                       : formatFileSize(file.size),
-                  style: file.isTooLarge
+                  style: c.isSkipped(file)
                       ? TextStyle(color: theme.colorScheme.error)
                       : null,
                 ),

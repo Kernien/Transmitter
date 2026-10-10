@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../app/widgets/content_width.dart';
 import '../../core/storage/cloud_connection_service.dart';
+import '../../core/utils/format_size.dart';
 import '../../core/vault/vault_key.dart';
 import '../cloud_connect/clouds_screen.dart';
 import '../cloud_connect/connect_cloud_screen.dart';
@@ -110,7 +111,7 @@ class _VaultTile extends StatelessWidget {
       title: Text(vault.label.isEmpty ? 'Без названия' : vault.label),
       subtitle: Text(
         connected
-            ? vault.provider.title
+            ? '${vault.provider.title} · файлы до ${formatSizeLimit(vault.maxFileSize)}'
             : '${vault.provider.title} · не подключено',
       ),
       onTap: () => openVault(context, vault),

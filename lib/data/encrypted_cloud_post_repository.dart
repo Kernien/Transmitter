@@ -7,6 +7,7 @@ import '../core/crypto/cipher.dart';
 import '../core/storage/cloud_storage.dart';
 import '../core/utils/clock.dart';
 import '../core/utils/link_detector.dart';
+import '../core/vault/vault_key.dart';
 import '../domain/post.dart';
 import 'post_repository.dart';
 
@@ -28,6 +29,7 @@ class EncryptedCloudPostRepository implements PostRepository {
     required String vaultId,
     required this._cipher,
     required this._deviceName,
+    this.maxFileSize = VaultKey.defaultMaxFileSize,
     Clock? clock,
     IdGenerator? idGenerator,
     this._linkDetector = const LinkDetector(),
@@ -37,6 +39,9 @@ class EncryptedCloudPostRepository implements PostRepository {
        _filesDir = '$vaultId/files';
 
   static const String _postExtension = '.post';
+
+  @override
+  final int maxFileSize;
 
   final CloudStorage _storage;
   final Cipher _cipher;
@@ -118,8 +123,8 @@ class EncryptedCloudPostRepository implements PostRepository {
     String? mimeType,
     String caption = '',
   }) async {
-    if (bytes.length > PostRepository.maxFileSize) {
-      throw FileTooLargeException(bytes.length, PostRepository.maxFileSize);
+    if (bytes.length > maxFileSize) {
+      throw FileTooLargeException(bytes.length, maxFileSize);
     }
     final attachment = Attachment(
       id: _newId(),

@@ -7,6 +7,7 @@ import '../../app/vault_session_factory.dart';
 import '../../app/widgets/content_width.dart';
 import '../../core/files/file_transfer_service.dart';
 import '../../core/share/outgoing_share.dart';
+import '../../core/utils/format_size.dart';
 import '../../core/vault/vault_key.dart';
 import '../../data/post_repository.dart';
 import 'feed_controller.dart';
@@ -252,7 +253,7 @@ class _FileDropZoneState extends State<_FileDropZone> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    'Отпустите, чтобы отправить (до 25 МБ на файл)',
+                    'Отпустите, чтобы отправить (до ${formatSizeLimit(context.read<FeedController>().maxFileSize)} на файл)',
                     style: theme.textTheme.titleMedium,
                   ),
                 ),

@@ -102,10 +102,16 @@ class ShareReceiver(private val activity: Activity, messenger: BinaryMessenger) 
         if (size > limit) {
             return mapOf("name" to fileName, "mimeType" to mimeType, "size" to size, "bytes" to null)
         }
-        // Размер известен не всегда — читаем с ограничением.
         val bytes = activity.contentResolver.openInputStream(uri)?.use { input ->
-            val data = input.readNBytesCompat(limit + 1)
-            if (data.size > limit) null else data
+            if (size >= 0) {
+                // Размер известен: читаем сразу в массив нужной длины, без
+                // промежуточного буфера (важно для файлов до 100 МБ).
+                readExactly(input, size.toInt())
+            } else {
+                // Размер неизвестен — читаем с ограничением.
+                val data = input.readNBytesCompat(limit + 1)
+                if (data.size > limit) null else data
+            }
         }
         return mapOf(
             "name" to fileName,
@@ -124,6 +130,18 @@ class ShareReceiver(private val activity: Activity, messenger: BinaryMessenger) 
     private fun streamListExtra(intent: Intent): List<Uri> =
         (if (Build.VERSION.SDK_INT >= 33) intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM, Uri::class.java)
         else intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM)) ?: emptyList()
+
+    /** Ровно [size] байт; `null`, если поток оказался длиннее (размер был неверным). */
+    private fun readExactly(input: java.io.InputStream, size: Int): ByteArray? {
+        val data = ByteArray(size)
+        var offset = 0
+        while (offset < size) {
+            val read = input.read(data, offset, size - offset)
+            if (read < 0) return data.copyOf(offset)
+            offset += read
+        }
+        return if (input.read() < 0) data else null
+    }
 
     private fun java.io.InputStream.readNBytesCompat(max: Long): ByteArray {
         val out = java.io.ByteArrayOutputStream()

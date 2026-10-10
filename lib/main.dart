@@ -15,8 +15,8 @@ import 'core/storage/cloud_connection_service.dart';
 import 'core/storage/cloud_provider_adapter.dart';
 import 'core/storage/providers/dropbox/dropbox_adapter.dart';
 import 'core/utils/device_name.dart';
+import 'core/vault/vault_key.dart';
 import 'core/vault/vault_key_store.dart';
-import 'data/post_repository.dart';
 import 'features/vaults/vaults_controller.dart';
 
 /// Точка сборки зависимостей. Конкретные реализации создаются только здесь,
@@ -51,7 +51,9 @@ Future<void> main() async {
       ),
       files: const FilePickerTransferService(),
       incomingShares: isAndroid
-          ? AndroidIncomingShareSource(maxFileSize: PostRepository.maxFileSize)
+          ? AndroidIncomingShareSource(
+              maxFileSize: VaultKey.absoluteMaxFileSize,
+            )
           : const NoIncomingShares(),
       // Системное меню «Поделиться» есть на телефонах; на компьютере и в вебе
       // те же задачи решают «Копировать» и «Сохранить».

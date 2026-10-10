@@ -39,12 +39,17 @@ class ShareTargetController extends ChangeNotifier {
 
   bool isUsable(VaultKey key) => _isUsable(key);
 
+  /// Лимит размера файла выбранной базы.
+  int get maxFileSize => _selected?.maxFileSize ?? VaultKey.defaultMaxFileSize;
+
+  /// Пропускается ли файл: он больше лимита выбранной базы.
+  bool isSkipped(SharedFile file) => file.exceeds(maxFileSize);
+
   /// Файлы, которые будут отправлены (слишком большие пропускаются).
   List<SharedFile> get _sendableFiles =>
-      content.files.where((f) => !f.isTooLarge).toList();
+      content.files.where((f) => !isSkipped(f)).toList();
 
-  List<SharedFile> get skippedFiles =>
-      content.files.where((f) => f.isTooLarge).toList();
+  List<SharedFile> get skippedFiles => content.files.where(isSkipped).toList();
 
   /// Текст уходит отдельным постом, только если нет файлов; иначе он
   /// становится подписью к первому файлу.

@@ -4,8 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:transmitter/core/crypto/aes_gcm_cipher.dart';
 import 'package:transmitter/core/files/file_transfer_service.dart';
 import 'package:transmitter/core/storage/in_memory_cloud_storage.dart';
+import 'package:transmitter/core/vault/vault_key.dart';
 import 'package:transmitter/data/encrypted_cloud_post_repository.dart';
-import 'package:transmitter/data/post_repository.dart';
 import 'package:transmitter/features/feed/feed_controller.dart';
 
 import '../support/fake_file_transfer_service.dart';
@@ -90,7 +90,7 @@ void main() {
           mimeType: 'application/pdf',
         );
         expect(await sender.attachFile(caption: 'посмотри'), isTrue);
-        expect(files.lastMaxSize, PostRepository.maxFileSize);
+        expect(files.lastMaxSize, VaultKey.defaultMaxFileSize);
 
         final receiver = controllerFor('B');
         await receiver.refresh();
@@ -123,7 +123,7 @@ void main() {
       final feed = controllerFor('A');
       files.pickError = FileTooLargeException(
         30 << 20,
-        PostRepository.maxFileSize,
+        VaultKey.defaultMaxFileSize,
       );
       expect(await feed.attachFile(), isFalse);
       expect(feed.error, 'Файл больше 25 МБ');
@@ -146,7 +146,7 @@ void main() {
         // На компьютере XFile берёт имя из пути, как у перетащенного файла.
         XFile.fromData(bytes, path: 'one.txt'),
         XFile.fromData(
-          Uint8List(PostRepository.maxFileSize + 1),
+          Uint8List(VaultKey.defaultMaxFileSize + 1),
           path: 'huge.iso',
         ),
         XFile.fromData(bytes, path: 'two.txt'),

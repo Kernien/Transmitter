@@ -7,8 +7,8 @@ export '../core/files/file_transfer_service.dart' show FileTooLargeException;
 
 /// Работа с постами одной базы. UI зависит только от этого интерфейса.
 abstract interface class PostRepository {
-  /// Максимальный размер прикреплённого файла.
-  static const int maxFileSize = 25 * 1024 * 1024;
+  /// Максимальный размер прикреплённого файла в этой базе (задаётся в ключе).
+  int get maxFileSize;
 
   /// Все посты базы, от старых к новым. Повторные вызовы скачивают только
   /// новые посты.

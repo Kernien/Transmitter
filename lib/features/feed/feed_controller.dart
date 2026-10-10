@@ -108,6 +108,9 @@ class FeedController extends ChangeNotifier {
 
   bool get canShare => _share.isAvailable;
 
+  /// Лимит размера файла в этой базе.
+  int get maxFileSize => _repository.maxFileSize;
+
   /// Открывает системное меню «Поделиться» для одного поста.
   Future<void> sharePost(Post post) async {
     if (_saving.contains(post.id)) return;
@@ -200,7 +203,7 @@ class FeedController extends ChangeNotifier {
     if (_sending) return false;
     final PickedFile? picked;
     try {
-      picked = await _files.pickFile(maxSize: PostRepository.maxFileSize);
+      picked = await _files.pickFile(maxSize: _repository.maxFileSize);
     } catch (e) {
       _error = _describe(e);
       _notify();
@@ -219,7 +222,7 @@ class FeedController extends ChangeNotifier {
       try {
         final picked = await _files.readFile(
           file,
-          maxSize: PostRepository.maxFileSize,
+          maxSize: _repository.maxFileSize,
         );
         if (await _sendPicked(picked)) {
           sent++;

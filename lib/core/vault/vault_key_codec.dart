@@ -39,6 +39,7 @@ class VaultKeyCodec {
     's': base64Url.encode(key.secret),
     'p': key.provider.code,
     'n': key.label,
+    'm': key.maxFileSize,
   };
 
   VaultKey fromJson(Map<String, dynamic> json) {
@@ -47,6 +48,9 @@ class VaultKeyCodec {
         secret: base64Url.decode(base64Url.normalize(json['s'] as String)),
         provider: CloudProviderId.fromCode(json['p'] as String),
         label: (json['n'] as String?) ?? '',
+        // В ключах до версии 0.2 лимита нет — действует прежний, 25 МБ.
+        maxFileSize:
+            (json['m'] as num?)?.toInt() ?? VaultKey.defaultMaxFileSize,
       );
     } on FormatException {
       rethrow;

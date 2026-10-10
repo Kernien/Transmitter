@@ -12,3 +12,6 @@ String formatFileSize(int bytes) {
       : value.toStringAsFixed(1).replaceAll('.', ',');
   return '$text ${units[unit]}';
 }
+
+/// Лимит размера в целых мегабайтах: «25 МБ».
+String formatSizeLimit(int bytes) => '${bytes ~/ (1024 * 1024)} МБ';

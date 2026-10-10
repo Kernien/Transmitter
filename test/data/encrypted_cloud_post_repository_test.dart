@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:transmitter/core/crypto/aes_gcm_cipher.dart';
 import 'package:transmitter/core/storage/in_memory_cloud_storage.dart';
+import 'package:transmitter/core/vault/vault_key.dart';
 import 'package:transmitter/data/encrypted_cloud_post_repository.dart';
 import 'package:transmitter/data/post_repository.dart';
 import 'package:transmitter/domain/post.dart';
@@ -116,12 +117,43 @@ void main() {
   });
 
   test('файл больше 25 МБ отклоняется', () {
-    final big = Uint8List(PostRepository.maxFileSize + 1);
+    final big = Uint8List(VaultKey.defaultMaxFileSize + 1);
     expect(
       () => device('A').sendFile(fileName: 'big.bin', bytes: big),
       throwsA(isA<FileTooLargeException>()),
     );
   });
+
+  test(
+    'лимит базы берётся из ключа: 10 МБ пропускает 10 МБ, но не больше',
+    () async {
+      final small = EncryptedCloudPostRepository(
+        storage: cloud,
+        vaultId: vaultId,
+        cipher: AesGcmCipher(key),
+        deviceName: 'A',
+        maxFileSize: 10 * 1024 * 1024,
+      );
+      expect(small.maxFileSize, 10 * 1024 * 1024);
+      await small.sendFile(
+        fileName: 'ok.bin',
+        bytes: Uint8List(10 * 1024 * 1024),
+      );
+      expect(
+        () => small.sendFile(
+          fileName: 'big.bin',
+          bytes: Uint8List(10 * 1024 * 1024 + 1),
+        ),
+        throwsA(
+          isA<FileTooLargeException>().having(
+            (e) => e.toString(),
+            'текст',
+            'Файл больше 10 МБ',
+          ),
+        ),
+      );
+    },
+  );
 
   test('пустая база возвращает пустой список', () async {
     expect(await device('A').fetchPosts(), isEmpty);

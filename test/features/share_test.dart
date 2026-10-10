@@ -65,7 +65,7 @@ void main() {
       expect(content.subject, 'Пример');
       expect(content.files.first.bytes, [1, 2, 3]);
       expect(content.files.first.mimeType, 'image/jpeg');
-      expect(content.files.last.isTooLarge, isTrue);
+      expect(content.files.last.exceeds(VaultKey.absoluteMaxFileSize), isTrue);
     });
 
     test('пустые данные', () {
@@ -100,6 +100,38 @@ void main() {
         expect(c.selected, dropbox);
       },
     );
+
+    test('пропуск файлов зависит от лимита выбранной базы', () {
+      const mb = 1024 * 1024;
+      final small = VaultKey.generate(
+        provider: CloudProviderId.dropbox,
+        label: 'Маленькие',
+        maxFileSize: 10 * mb,
+      );
+      final big = VaultKey.generate(
+        provider: CloudProviderId.dropbox,
+        label: 'Большие',
+        maxFileSize: 100 * mb,
+      );
+      final c = ShareTargetController(
+        content: SharedContent(
+          files: [
+            SharedFile(name: 'video.mp4', size: 40 * mb, bytes: Uint8List(1)),
+          ],
+        ),
+        vaults: [small, big],
+        isUsable: (_) => true,
+        openVault: (_) async => repo('Android'),
+      );
+
+      expect(c.selected, small);
+      expect(c.skippedFiles.single.name, 'video.mp4');
+      expect(c.canSend, isFalse);
+
+      c.select(big);
+      expect(c.skippedFiles, isEmpty);
+      expect(c.canSend, isTrue);
+    });
 
     test('ссылка уходит отдельным постом-ссылкой', () async {
       final c = controller(

@@ -25,6 +25,7 @@ class VaultSessionFactory {
       vaultId: secrets.vaultId,
       cipher: AesGcmCipher(secrets.encryptionKey),
       deviceName: _deviceName,
+      maxFileSize: key.maxFileSize,
     );
   }
 }

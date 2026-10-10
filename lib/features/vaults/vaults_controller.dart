@@ -25,8 +25,13 @@ class VaultsController extends ChangeNotifier {
   Future<VaultKey> create({
     required String label,
     required CloudProviderId provider,
+    int maxFileSize = VaultKey.defaultMaxFileSize,
   }) async {
-    final key = VaultKey.generate(provider: provider, label: label.trim());
+    final key = VaultKey.generate(
+      provider: provider,
+      label: label.trim(),
+      maxFileSize: maxFileSize,
+    );
     await _save([..._vaults, key]);
     return key;
   }

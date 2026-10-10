@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:transmitter/core/persistence/key_value_store.dart';
 import 'package:transmitter/core/storage/cloud_provider_id.dart';
@@ -44,6 +46,50 @@ void main() {
     expect(() => codec.decode('hello'), throwsFormatException);
     expect(() => codec.decode('TRM1.!!!'), throwsFormatException);
     expect(() => codec.decode('TRM1.e30'), throwsFormatException); // "{}"
+  });
+
+  group('лимит размера файла', () {
+    String encodeJson(Map<String, dynamic> json) =>
+        'TRM1.${base64Url.encode(utf8.encode(jsonEncode(json))).replaceAll('=', '')}';
+
+    test('по умолчанию 25 МБ; выбранный лимит передаётся вместе с ключом', () {
+      expect(
+        VaultKey.generate(
+          provider: CloudProviderId.dropbox,
+          label: '',
+        ).maxFileSize,
+        VaultKey.defaultMaxFileSize,
+      );
+      final key = VaultKey.generate(
+        provider: CloudProviderId.dropbox,
+        label: 'Большие',
+        maxFileSize: 100 * 1024 * 1024,
+      );
+      final decoded = codec.decode(codec.encode(key));
+      expect(decoded.maxFileSize, 100 * 1024 * 1024);
+      expect(decoded, key);
+    });
+
+    test('старый ключ без лимита читается с лимитом 25 МБ', () {
+      final key = VaultKey.generate(
+        provider: CloudProviderId.dropbox,
+        label: 'Старый',
+      );
+      final decoded = codec.decode(encodeJson(codec.toJson(key)..remove('m')));
+      expect(decoded.maxFileSize, VaultKey.defaultMaxFileSize);
+      expect(decoded.sameVaultAs(key), isTrue);
+    });
+
+    test('лимит вне 1–100 МБ в ключе — ключ повреждён', () {
+      final key = VaultKey.generate(
+        provider: CloudProviderId.dropbox,
+        label: '',
+      );
+      for (final bad in [0, 500 * 1024 * 1024]) {
+        final code = encodeJson(codec.toJson(key)..['m'] = bad);
+        expect(() => codec.decode(code), throwsFormatException);
+      }
+    });
   });
 
   test('хранилище ключей сохраняет и загружает список', () async {

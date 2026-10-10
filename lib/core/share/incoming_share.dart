@@ -12,11 +12,12 @@ class SharedFile {
   final String name;
   final int size;
 
-  /// `null`, если файл больше допустимого размера и не был прочитан.
+  /// `null`, если файл больше предельного размера и не был прочитан.
   final Uint8List? bytes;
   final String? mimeType;
 
-  bool get isTooLarge => bytes == null;
+  /// Не помещается в лимит базы [limit] (или вообще не был прочитан).
+  bool exceeds(int limit) => bytes == null || size > limit;
 }
 
 /// То, чем поделились: текст или ссылка и/или файлы.

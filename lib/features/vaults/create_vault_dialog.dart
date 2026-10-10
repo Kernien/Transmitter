@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../core/storage/cloud_connection_service.dart';
 import '../../core/storage/cloud_provider_id.dart';
+import '../../core/utils/format_size.dart';
+import '../../core/vault/vault_key.dart';
 import 'vaults_controller.dart';
 
 /// Создание нового ключа: название и облако, где будет лежать база.
@@ -16,6 +18,7 @@ class CreateVaultDialog extends StatefulWidget {
 class _CreateVaultDialogState extends State<CreateVaultDialog> {
   final _label = TextEditingController();
   CloudProviderId? _provider;
+  int _maxFileSize = VaultKey.defaultMaxFileSize;
 
   @override
   void initState() {
@@ -63,6 +66,25 @@ class _CreateVaultDialogState extends State<CreateVaultDialog> {
             ],
             onChanged: (p) => setState(() => _provider = p),
           ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<int>(
+            initialValue: _maxFileSize,
+            decoration: const InputDecoration(
+              labelText: 'Максимальный размер файла',
+              helperText:
+                  'Действует на всех устройствах с этим ключом.\n'
+                  'Изменить его потом нельзя.',
+              helperMaxLines: 2,
+            ),
+            items: [
+              for (final size in VaultKey.maxFileSizeOptions)
+                DropdownMenuItem(
+                  value: size,
+                  child: Text(formatSizeLimit(size)),
+                ),
+            ],
+            onChanged: (size) => setState(() => _maxFileSize = size!),
+          ),
         ],
       ),
       actions: [
@@ -82,6 +104,7 @@ class _CreateVaultDialogState extends State<CreateVaultDialog> {
     final key = await context.read<VaultsController>().create(
       label: _label.text,
       provider: _provider!,
+      maxFileSize: _maxFileSize,
     );
     if (mounted) Navigator.pop(context, key);
   }
