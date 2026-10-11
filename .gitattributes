@@ -1,0 +1,3 @@
+# Скрипты для Linux должны оставаться с LF, иначе bash их не выполнит.
+*.sh text eol=lf
+*.desktop text eol=lf

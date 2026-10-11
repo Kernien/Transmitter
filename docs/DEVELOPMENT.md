@@ -100,6 +100,40 @@ dart run tool/serve_web.dart
 
 В VS Code те же варианты есть в меню запуска (`.vscode/launch.json`).
 
+### Сборка для Linux
+
+Linux-версию можно собрать только на Linux — на Windows для этого есть WSL2
+(Ubuntu 24.04, пользователь `dev`). Подготовка (один раз):
+
+```powershell
+wsl --install -d Ubuntu-24.04      # нужна перезагрузка
+```
+
+```bash
+sudo apt-get install -y git curl unzip xz-utils zip rsync clang cmake ninja-build \
+  pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsecret-1-dev \
+  libjsoncpp-dev file fuse libfuse2t64
+git clone --depth 1 -b <версия Flutter> https://github.com/flutter/flutter.git ~/flutter
+```
+
+Сборка AppImage и tar.gz в `build/dist` (тесты прогоняются и под Linux):
+
+```powershell
+wsl -d Ubuntu-24.04 --cd /mnt/d/MEGA/Code/Transmitter -- bash tool/build_linux.sh
+```
+
+Особенности Linux:
+
+- **Ключи и токены** — в `~/.local/share/app.transmitter.transmitter/secure_store.json`
+  (папка 700, файл 600), а не в «связке ключей»: Secret Service есть не
+  везде (например, в игровом режиме Steam Deck).
+- **Выбор файла** (file_picker) работает только через xdg-desktop-portal. Для
+  проверки в WSL: `sudo apt-get install xdg-desktop-portal xdg-desktop-portal-gtk`.
+- В WSL окна Linux показываются на рабочем столе Windows, но перетаскивание
+  файлов из Windows в них не работает — это ограничение WSL.
+- Иконка и ярлык — `linux/packaging/`; идентификатор приложения
+  `app.transmitter.transmitter` (как на Android).
+
 ### Подключение Dropbox
 
 1. Откройте https://www.dropbox.com/developers/apps → **Create app**:
@@ -178,7 +212,9 @@ Dropbox. Для личного использования этого доста�
    powershell -File tool/deploy_web.ps1
    ```
 
-4. Тег и GitHub Release с файлами из `build/dist`.
+4. Собрать Linux-версию (AppImage и tar.gz в тот же `build/dist`) — см.
+   «Сборка для Linux».
+5. Тег и GitHub Release с файлами из `build/dist`.
 
 **Ключ подписи Android** лежит в `%USERPROFILE%\.transmitter-signing\`
 (`upload-keystore.jks` и копия `key.properties` с паролем); рабочая копия
@@ -200,6 +236,7 @@ Dropbox. Для личного использования этого доста�
 | Google Drive (drive.file; на устройствах — вход с refresh token, в вебе — временный) | ✅ (0.3.0) |
 | Установщик Windows (Inno Setup: для текущего пользователя, меню «Пуск», удаление через «Параметры») | ✅ (0.4.0) |
 | Интерфейс на русском и английском, выбор языка в приложении | ✅ (0.4.0) |
+| Версия для Linux (AppImage, tar.gz) | проверена в WSL, ждёт Steam Deck |
 | Лимит размера файла выбирается при создании ключа (10–100 МБ, хранится в ключе) | ✅ (0.2.0) |
 | Имена устройств (подсказка при первом запуске, «· рабочий» в рабочем профиле, смена кнопкой на главном экране) | ✅ (0.2.0) |
 
@@ -216,18 +253,13 @@ Dropbox. Для личного использования этого доста�
    Новый язык — новый файл `app_<код>.arb`. Ошибки в core несут код
    (`core/errors/app_error.dart`), текст подставляет интерфейс. Кнопка выбора
    языка в приложении (системный / русский / English).
-4. **Версия для Linux.** Устройство для проверки — Steam Deck (SteamOS,
-   рабочий стол KDE Plasma). Что учесть:
-   - собирать Linux-версию можно только на Linux: WSL2 (Ubuntu) на этом
-     компьютере или сам Steam Deck;
-   - распространение — AppImage (запускается без установки, системные
-     файлы SteamOS не трогает) и/или Flatpak (через Discover);
-   - хранение ключей: flutter_secure_storage на Linux работает через
-     libsecret — на Steam Deck нужен Secret Service (KWallet), проверить;
-   - вход в облака — через локальный сервер (как на Windows);
-   - нет «Поделиться» из системы и сканера QR (ключ — вставкой строки);
-   - управление с геймпада/тачскрина в режиме рабочего стола — проверить
-     размеры элементов.
+4. **Версия для Linux** — собирается и проверена в WSL (Ubuntu 24.04):
+   AppImage и tar.gz (`tool/build_linux.sh`), ключи — в файле с правами 600,
+   вход в облака — через локальный сервер (как на Windows), выбор файла —
+   через xdg-desktop-portal. Осталось проверить на Steam Deck (SteamOS,
+   рабочий стол KDE Plasma): перетаскивание файлов, тачскрин и размеры
+   элементов, игровой режим. Нет «Поделиться» из системы и сканера QR
+   (ключ — вставкой строки). Flatpak — по желанию позже.
 5. **Версия для iPhone.** Код Flutter почти весь общий; понадобятся
    нативные части для iOS (приём «Поделиться» — Share Extension, схема
    возврата после входа в облако). Сборка под iOS возможна только на macOS с

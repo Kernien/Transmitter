@@ -11,7 +11,7 @@ import 'core/auth/platform_auth_browser.dart';
 import 'core/device/device_identity.dart';
 import 'core/device/platform_device_name_suggester.dart';
 import 'core/files/file_picker_transfer_service.dart';
-import 'core/persistence/key_value_store.dart';
+import 'core/persistence/platform_key_value_store.dart';
 import 'core/share/android_incoming_share_source.dart';
 import 'core/share/incoming_share.dart';
 import 'core/share/outgoing_share.dart';
@@ -28,7 +28,11 @@ import 'features/vaults/vaults_controller.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  const secureStore = FlutterSecureKeyValueStore();
+  // Ключи баз и токены облаков. Идентификатор — как у приложения на
+  // Android и Linux (папка данных на Linux).
+  final secureStore = createPlatformKeyValueStore(
+    appId: 'app.transmitter.transmitter',
+  );
   final httpClient = http.Client();
 
   // Язык интерфейса (системный или выбранный в приложении). Тексты вне
@@ -66,7 +70,7 @@ Future<void> main() async {
   ]);
 
   final connections = CloudConnectionService(registry, secureStore);
-  final vaults = VaultsController(const VaultKeyStore(secureStore));
+  final vaults = VaultsController(VaultKeyStore(secureStore));
   final device = DeviceIdentity(
     secureStore,
     createPlatformDeviceNameSuggester(
