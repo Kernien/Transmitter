@@ -7,21 +7,23 @@ Registrierung, ohne fremde Server, mit Ende-zu-Ende-Verschlüsselung.**
 
 Einen Link auf dem Handy kopieren — ein paar Sekunden später ist er auf dem
 Computer. Ein Dokument im Büro ins Fenster ziehen — es wartet schon auf dem
-Handy. Alles liegt in **deiner eigenen Cloud** (Dropbox oder Google Drive) und wird
-direkt auf dem Gerät verschlüsselt: Die Cloud sieht nur bedeutungslose Bytes.
+Handy. Alles liegt in **deiner eigenen Cloud** (Dropbox oder Google Drive) und
+wird direkt auf dem Gerät verschlüsselt: Die Cloud sieht nur bedeutungslose
+Bytes.
 
 | | |
 |---|---|
 | 📱 **Android** | App, inklusive System-Menü „Teilen“ |
-| 🖥️ **Windows** | App, Dateien per Drag & Drop ins Fenster |
+| 🖥️ **Windows** | App mit Installationsprogramm, Dateien per Drag & Drop ins Fenster |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — keine Installation nötig |
 
-Version **0.3.0**.
+Version **0.4.0**.
 
-> **Sprache der Oberfläche.** Die App ist derzeit nur auf Russisch. In dieser
-> Anleitung stehen die Schaltflächen auf Deutsch, dahinter in Klammern die
-> Beschriftung, die du in der App siehst, z. B. **Neuer Schlüssel**
-> («Новый ключ»).
+> **Sprache der Oberfläche.** Die App gibt es auf Englisch und Russisch; auf
+> einem deutschen System ist sie auf Englisch (umschalten mit der 🌐-Taste).
+> In dieser Anleitung stehen die Schaltflächen auf Deutsch, dahinter in
+> Klammern die englische Beschriftung aus der App, z. B. **Neuer Schlüssel**
+> („New key“).
 
 ## Wozu
 
@@ -43,9 +45,10 @@ Computer und Browser.
 ## Funktionen
 
 - **Links.** Werden automatisch erkannt und mit einem Tippen geöffnet.
-- **Dateien bis 100 MB** — Fotos, Dokumente, Archive. Die Grenze (10, 25, 50 oder 100 MB) wird für jeden Tresor beim Anlegen festgelegt. Über die 📎-Schaltfläche,
-  per Drag & Drop ins Fenster (Windows und Browser) oder mit „Teilen“ aus jeder
-  App unter Android.
+- **Dateien bis 100 MB** — Fotos, Dokumente, Archive. Die Grenze (10, 25, 50
+  oder 100 MB) wird für jeden Tresor beim Anlegen festgelegt. Über die
+  📎-Schaltfläche, per Drag & Drop ins Fenster (Windows und Browser) oder mit
+  „Teilen“ aus jeder App unter Android.
 - **„Teilen“ in beide Richtungen (Android).** Aus Browser, Galerie oder jeder
   anderen App direkt in Transmitter — und aus Transmitter in jede App.
 - **Mehrere Tresore.** Zum Beispiel einer für das Paar „privates ↔
@@ -55,7 +58,10 @@ Computer und Browser.
   ZIP-Archiv herunterladen, teilen oder löschen.
 - **Überall löschen.** Ein gelöschter Eintrag verschwindet auf allen Geräten,
   samt Datei in der Cloud.
-- **Gerätenamen.** Bei jedem Eintrag sieht man, woher er kommt: „Redmi 10“, „Redmi 10 · рабочий“ (Arbeit), „Laptop“.
+- **Gerätenamen.** Bei jedem Eintrag sieht man, woher er kommt: „Redmi 10“,
+  „Redmi 10 · work“, „Laptop“.
+- **Englisch und Russisch.** Die Sprache folgt dem System oder wird in der App
+  gewählt.
 - **Keine Registrierung.** Keine Transmitter-Konten: Geräte werden über einen
   Schlüssel verbunden — per QR-Code oder als Zeichenfolge.
 
@@ -81,9 +87,9 @@ Computer und Browser.
 ### Android
 
 1. Lade die APK unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter:
-   - `Transmitter-0.3.0-android-arm64.apk` — für die meisten Handys der
+   - `Transmitter-0.4.0-android-arm64.apk` — für die meisten Handys der
      letzten Jahre;
-   - `Transmitter-0.3.0-android-armv7.apk` — für ältere oder günstige
+   - `Transmitter-0.4.0-android-armv7.apk` — für ältere oder günstige
      Modelle, falls sich die erste nicht installieren lässt.
 2. Öffne die Datei auf dem Handy. Android fragt, ob Installationen aus dieser
    Quelle (Browser oder Dateimanager) erlaubt sind — erlaube es.
@@ -95,13 +101,18 @@ klone ihn ebenfalls.
 
 ### Windows
 
-1. Lade `Transmitter-0.3.0-windows-x64.zip` unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter.
-2. Entpacke es in einen passenden Ordner (z. B. `C:\Program Files\Transmitter`
-   oder `Dokumente\Transmitter`) und starte `transmitter.exe`.
-3. Beim ersten Start meldet Windows eventuell „Der Computer wurde durch
+1. Lade `Transmitter-0.4.0-windows-setup.exe` unter [**Releases**](https://github.com/Kernien/Transmitter/releases)
+   herunter und starte es. Die Installation gilt nur für deinen Benutzer —
+   ohne Administratorrechte — und legt Transmitter im Startmenü an.
+   Deinstallieren unter **Einstellungen → Apps**; Schlüssel und
+   Cloud-Anmeldungen bleiben erhalten.
+2. Beim ersten Start meldet Windows eventuell „Der Computer wurde durch
    Windows geschützt“ — die App hat kein kostenpflichtiges
    Signaturzertifikat. Klicke auf **Weitere Informationen → Trotzdem
    ausführen**.
+
+Lieber ohne Installation? `Transmitter-0.4.0-windows-x64.zip` ist eine
+portable Version: irgendwo entpacken und `transmitter.exe` starten.
 
 ### Browser
 
@@ -114,29 +125,30 @@ Cloud-Anmeldung werden in diesem Browser gespeichert.
 
 ### 1. Erstes Gerät: Tresor anlegen
 
-1. Tippe auf **Neuer Schlüssel** («Новый ключ»), gib einen Namen ein (z. B.
-   „Privat ↔ Arbeit“) und wähle die Cloud (**Dropbox** oder **Google Drive**) und die **maximale Dateigröße** («Максимальный размер файла»; später nicht änderbar) → **Erstellen**
-   («Создать»).
+1. Tippe auf **Neuer Schlüssel** („New key“), gib einen Namen ein (z. B.
+   „Privat ↔ Arbeit“) und wähle die Cloud (**Dropbox** oder **Google
+   Drive**) und die **maximale Dateigröße** („Maximum file size“; später nicht
+   änderbar) → **Erstellen** („Create“).
 2. Der QR-Code des Schlüssels erscheint — du kannst ihn schließen, er ist
    jederzeit über das ⋮-Menü erreichbar.
-3. Tippe auf den neuen Tresor → **Bei Dropbox anmelden** («Войти в Dropbox», bzw. Google Drive).
-   Melde dich an und erlaube den Zugriff — der Verlauf öffnet sich.
+3. Tippe auf den neuen Tresor → **Bei Dropbox anmelden** („Sign in to
+   Dropbox“, bzw. Google Drive). Melde dich an und erlaube den Zugriff — der
+   Verlauf öffnet sich.
 
 ### 2. Weitere Geräte: denselben Tresor verbinden
 
 1. Auf dem ersten Gerät: ⋮ neben dem Tresor → **Schlüssel / QR anzeigen**
-   («Показать ключ / QR»).
-2. Auf dem neuen Gerät: QR-Symbol oben → **QR-Code scannen**
-   («Сканировать QR-код») (Handy oder Browser mit Kamera) oder die
-   Schlüsselzeichenfolge `TRM1.…` einfügen, kopiert mit **Schlüssel kopieren**
-   («Скопировать ключ»).
+   („Show key / QR“).
+2. Auf dem neuen Gerät: QR-Symbol oben → **QR-Code scannen** („Scan QR code“)
+   (Handy oder Browser mit Kamera) oder die Schlüsselzeichenfolge `TRM1.…`
+   einfügen, kopiert mit **Schlüssel kopieren** („Copy key“).
 3. Melde dich beim **selben** Cloud-Konto an — und der Verlauf erscheint.
 
 **Besonderheiten von Google Drive.** Bei der Anmeldung warnt Google, dass die
 App nicht überprüft ist — wähle **Erweitert → Weiter zu Transmitter**. Auf dem
-Handy nach der Anmeldung **Zurück zu Transmitter** («Вернуться в Transmitter»)
-tippen. Im Browser gewährt Google den Zugriff etwa eine Stunde, danach erneut
-anmelden.
+Handy nach der Anmeldung **Zurück zu Transmitter** („Return to
+Transmitter“) tippen. Im Browser gewährt Google den Zugriff etwa eine Stunde,
+danach erneut anmelden.
 
 **Das andere Profil auf demselben Handy.** Einen QR-Code vom eigenen
 Bildschirm kann man nicht scannen — kopiere den Schlüssel deshalb als Text
@@ -157,27 +169,30 @@ der Verlauf geöffnet ist.
 
 ### 4. Mit Einträgen arbeiten
 
-- **⋮ neben einem Eintrag:** **Teilen** («Поделиться»), **Datei speichern**
-  («Сохранить файл»), **Text kopieren** («Копировать текст» — Link oder
-  Bildunterschrift), **Auf allen Geräten löschen**
-  («Удалить для всех устройств»).
+- **⋮ neben einem Eintrag:** **Teilen** („Share“), **Datei speichern** („Save
+  file“), **Text kopieren** („Copy text“ — Link oder Bildunterschrift), **Auf
+  allen Geräten löschen** („Delete on all devices“).
 - **Tippen** auf einen Link öffnet ihn, auf eine Datei speichert sie.
-- **Langes Drücken** (oder **Auswählen** — «Выбрать» — im ⋮-Menü) startet die
+- **Langes Drücken** (oder **Auswählen** — „Select“ — im ⋮-Menü) startet die
   Auswahl. Markiere mehrere Einträge und wähle oben: **herunterladen** (ein
-  ZIP-Archiv; Links und Bildunterschriften landen in `сообщения.txt`),
-  **teilen** oder **löschen**.
-- **⋮ in der Kopfzeile des Verlaufs → Verlauf leeren** («Очистить ленту»)
-  löscht alles in diesem Tresor auf allen Geräten.
+  ZIP-Archiv; Links und Bildunterschriften landen in `items.txt`), **teilen**
+  oder **löschen**.
+- **⋮ in der Kopfzeile des Verlaufs → Verlauf leeren** („Clear feed“) löscht
+  alles in diesem Tresor auf allen Geräten.
 
 ### 5. Verwalten
 
 - **Mehrere Tresore:** Lege einen weiteren Schlüssel an — er bekommt einen
   eigenen Verlauf.
-- **Gerätename:** das 🪪-Symbol links neben ☁ auf dem Startbildschirm («Имя устройства»). Beim ersten Start schlägt Transmitter selbst einen Namen vor.
+- **Sprache:** das 🌐-Symbol auf dem Startbildschirm — wie im System
+  („As in the system“), Русский oder English. Die Wahl gilt für jedes Gerät
+  einzeln.
+- **Gerätename:** das 🪪-Symbol auf dem Startbildschirm. Beim ersten Start
+  schlägt Transmitter selbst einen Namen vor.
 - **Clouds:** das ☁-Symbol auf dem Startbildschirm — auf diesem Gerät bei
   einer Cloud an- oder abmelden.
 - **Tresor vom Gerät entfernen:** ⋮ neben dem Tresor → **Vom Gerät
-  entfernen** («Удалить с устройства»). Die Daten in der Cloud und auf anderen
+  entfernen** („Remove from device“). Die Daten in der Cloud und auf anderen
   Geräten bleiben erhalten.
 
 ---
@@ -187,19 +202,19 @@ der Verlauf geöffnet ist.
 | Was passiert | Was tun |
 |---|---|
 | Der Browser öffnet das Cloud-Anmeldefenster nicht | Pop-ups für die Seite erlauben; in Brave die Shields für diese Adresse ausschalten |
-| Google Drive verlangt im Browser eine neue Anmeldung | Google begrenzt Web-Apps ohne Server auf etwa eine Stunde Zugriff. ☁ → Google Drive → **Anmelden** («Войти») |
+| Google Drive verlangt im Browser eine neue Anmeldung | Google begrenzt Web-Apps ohne Server auf etwa eine Stunde Zugriff. ☁ → Google Drive → **Anmelden** („Sign in“) |
 | Im Arbeitsprofil öffnet sich die Cloud-Anmeldung nicht | Mit Shelter einen Browser ins Arbeitsprofil klonen |
-| „Datei größer als N MB“ | Das ist die beim Anlegen gewählte Grenze des Tresors. Für größere Dateien einen Tresor mit höherer Grenze (bis 100 MB) anlegen oder ein geteiltes Archiv senden |
+| „File is larger than N MB“ | Das ist die beim Anlegen gewählte Grenze des Tresors. Für größere Dateien einen Tresor mit höherer Grenze (bis 100 MB) anlegen oder ein geteiltes Archiv senden |
 | Ein Eintrag erscheint nicht auf einem anderen Gerät | Internetverbindung prüfen und ob derselbe Tresor geöffnet ist; der Verlauf aktualisiert sich alle 5 Sekunden. In Shelter prüfen, dass Transmitter im Arbeitsprofil nicht eingefroren ist |
-| „Erneut bei der Cloud anmelden“ | ☁ auf dem Startbildschirm → **Abmelden** («Выйти») → **Anmelden** («Войти») |
+| „Sign in to the cloud again“ | ☁ auf dem Startbildschirm → **Abmelden** („Sign out“) → **Anmelden** („Sign in“) |
 | Xiaomi lässt die APK nicht installieren | Installation aus unbekannten Quellen für die App erlauben, mit der du die Datei öffnest |
 
 ---
 
 ## Wie es weitergeht
 
+- eine Version für Linux;
 - die Cloud MEGA;
-- ein Installationsprogramm für Windows;
 - eine Version für das iPhone;
 - Fotos, Audio und Videos direkt in der App ansehen.
 
