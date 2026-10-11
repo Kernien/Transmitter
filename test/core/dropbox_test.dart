@@ -203,8 +203,8 @@ void main() {
         storage().listFiles(''),
         throwsA(
           isA<StorageException>().having(
-            (e) => e.message,
-            'message',
+            (e) => e.args['details'],
+            'details',
             contains('bad input'),
           ),
         ),

@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import '../errors/app_error.dart';
+
 /// Файл в облачном хранилище.
 class RemoteFile {
   const RemoteFile({required this.name, required this.size});
@@ -31,24 +33,41 @@ abstract interface class CloudStorage {
   Future<void> delete(String path);
 }
 
-class StorageException implements Exception {
-  const StorageException(this.message);
+/// Ошибка облака. Текст для пользователя — по [code] (см. ErrorCode).
+class StorageException implements Exception, CodedError {
+  const StorageException(this.code, [this.args = const {}]);
 
-  final String message;
+  /// Ошибка запроса к облаку: [details] — HTTP-код и ответ сервера.
+  StorageException.request(String provider, String details)
+    : this(ErrorCode.cloudRequestFailed, {
+        'provider': provider,
+        'details': details,
+      });
 
   @override
-  String toString() => message;
+  final ErrorCode code;
+
+  @override
+  final Map<String, Object> args;
+
+  @override
+  String toString() => describeForLog(this);
 }
 
-/// Токен доступа к облаку недействителен или просрочен.
+/// Нужен новый вход в облако: токен недействителен, отозван или (в вебе)
+/// истёк временный доступ.
 class StorageAuthException extends StorageException {
-  const StorageAuthException([super.message = 'Нужно заново войти в облако']);
+  const StorageAuthException([
+    super.code = ErrorCode.cloudSignInAgain,
+    super.args,
+  ]);
 }
 
 class StorageNotFoundException extends StorageException {
-  const StorageNotFoundException(String path) : super('Файл не найден: $path');
+  StorageNotFoundException(String path)
+    : super(ErrorCode.cloudFileNotFound, {'path': path});
 }
 
 class StorageQuotaException extends StorageException {
-  const StorageQuotaException([super.message = 'В облаке закончилось место']);
+  const StorageQuotaException() : super(ErrorCode.cloudQuota);
 }

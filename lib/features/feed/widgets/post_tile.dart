@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../core/utils/format_size.dart';
+import '../../../app/l10n.dart';
 import '../../../domain/post.dart';
 import '../feed_controller.dart';
 
@@ -83,7 +83,7 @@ class PostTile extends StatelessWidget {
                         ),
                         if (!selecting)
                           PopupMenuButton<_PostAction>(
-                            tooltip: 'Действия',
+                            tooltip: context.l10n.actions,
                             icon: Icon(
                               Icons.more_vert,
                               size: 18,
@@ -140,6 +140,7 @@ class PostTile extends StatelessWidget {
   Future<void> _perform(BuildContext context, _PostAction action) async {
     final feed = context.read<FeedController>();
     final messenger = ScaffoldMessenger.of(context);
+    final l = context.l10n;
     switch (action) {
       case _PostAction.select:
         feed.toggleSelection(post);
@@ -149,7 +150,7 @@ class PostTile extends StatelessWidget {
         await _save(context, post);
       case _PostAction.copy:
         await Clipboard.setData(ClipboardData(text: post.text));
-        messenger.showSnackBar(const SnackBar(content: Text('Скопировано')));
+        messenger.showSnackBar(SnackBar(content: Text(l.copied)));
       case _PostAction.delete:
         if (await _confirmDelete(context)) await feed.delete(post);
     }
@@ -157,9 +158,10 @@ class PostTile extends StatelessWidget {
 
   static Future<void> _save(BuildContext context, Post post) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l = context.l10n;
     if (await context.read<FeedController>().saveAttachment(post)) {
       messenger.showSnackBar(
-        SnackBar(content: Text('Сохранено: ${post.attachment!.fileName}')),
+        SnackBar(content: Text(l.savedFile(post.attachment!.fileName))),
       );
     }
   }
@@ -169,17 +171,19 @@ class PostTile extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(
-          post.kind == PostKind.file ? 'Удалить файл?' : 'Удалить сообщение?',
+          post.kind == PostKind.file
+              ? context.l10n.deleteFileTitle
+              : context.l10n.deleteItemTitle,
         ),
-        content: const Text('Оно исчезнет из облака и со всех устройств.'),
+        content: Text(context.l10n.deleteItemText),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Отмена'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Удалить'),
+            child: Text(context.l10n.delete),
           ),
         ],
       ),
@@ -195,15 +199,13 @@ class _ActionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final (icon, text) = switch (action) {
-      _PostAction.select => (Icons.check_box_outlined, 'Выбрать'),
-      _PostAction.share => (Icons.share, 'Поделиться'),
-      _PostAction.save => (Icons.download, 'Сохранить файл'),
-      _PostAction.copy => (Icons.copy, 'Копировать текст'),
-      _PostAction.delete => (
-        Icons.delete_outline,
-        'Удалить для всех устройств',
-      ),
+      _PostAction.select => (Icons.check_box_outlined, l.actionSelect),
+      _PostAction.share => (Icons.share, l.share),
+      _PostAction.save => (Icons.download, l.actionSaveFile),
+      _PostAction.copy => (Icons.copy, l.actionCopyText),
+      _PostAction.delete => (Icons.delete_outline, l.actionDeleteEverywhere),
     };
     return Row(
       children: [Icon(icon, size: 20), const SizedBox(width: 12), Text(text)],
@@ -240,12 +242,12 @@ class _FileContent extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    attachment?.fileName ?? 'Файл',
+                    attachment?.fileName ?? context.l10n.fileFallback,
                     style: theme.textTheme.titleSmall,
                   ),
                   if (attachment != null)
                     Text(
-                      formatFileSize(attachment.size),
+                      context.l10n.fileSize(attachment.size),
                       style: theme.textTheme.bodySmall,
                     ),
                 ],
@@ -260,7 +262,7 @@ class _FileContent extends StatelessWidget {
                     ),
                   )
                 : IconButton(
-                    tooltip: 'Сохранить',
+                    tooltip: context.l10n.save,
                     icon: const Icon(Icons.download),
                     onPressed: () => PostTile._save(context, post),
                   ),

@@ -3,12 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
+import '../../app/l10n.dart';
 import '../../core/vault/vault_key.dart';
 import 'vaults_controller.dart';
 
 /// Показывает ключ в виде QR-кода и строки для копирования.
 Future<void> showShareVaultSheet(BuildContext context, VaultKey key) {
   final code = context.read<VaultsController>().exportCode(key);
+  final l = context.l10n;
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -19,7 +21,7 @@ Future<void> showShareVaultSheet(BuildContext context, VaultKey key) {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              key.label.isEmpty ? 'Ключ базы' : key.label,
+              key.label.isEmpty ? l.vaultKeyTitle : key.label,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
@@ -33,20 +35,18 @@ Future<void> showShareVaultSheet(BuildContext context, VaultKey key) {
             const SizedBox(height: 8),
             OutlinedButton.icon(
               icon: const Icon(Icons.copy),
-              label: const Text('Скопировать ключ'),
+              label: Text(l.copyKey),
               onPressed: () async {
                 await Clipboard.setData(ClipboardData(text: code));
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Ключ скопирован')),
-                  );
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text(l.keyCopied)));
                 }
               },
             ),
             const SizedBox(height: 16),
             Text(
-              'Любой, у кого есть этот ключ, может читать и отправлять посты в '
-              'базу. Передавайте его только на свои устройства.',
+              l.keyWarning,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall,
             ),

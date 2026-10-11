@@ -100,14 +100,14 @@ class EncryptedCloudPostRepository implements PostRepository {
   }
 
   void _markUnreadable(String fileName, Object error) {
-    debugPrint('Пропущен нечитаемый пост $fileName: $error');
+    debugPrint('Skipped unreadable post $fileName: $error');
     _unreadable.add(fileName);
   }
 
   @override
   Future<Post> sendText(String text) {
     final trimmed = text.trim();
-    if (trimmed.isEmpty) throw ArgumentError('Пустое сообщение');
+    if (trimmed.isEmpty) throw ArgumentError('Empty text');
     return _publish(
       _newPost(
         kind: _linkDetector.isLink(trimmed) ? PostKind.link : PostKind.text,

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/l10n.dart';
 import '../../app/vault_session_factory.dart';
 import '../../core/share/incoming_share.dart';
 import '../../core/storage/cloud_connection_service.dart';
@@ -29,7 +30,7 @@ class _IncomingShareListenerState extends State<IncomingShareListener> {
     super.initState();
     _subscription = context.read<IncomingShareSource>().shares.listen(
       _open,
-      onError: (Object e) => _showError('Не удалось получить данные: $e'),
+      onError: _showError,
     );
   }
 
@@ -44,6 +45,7 @@ class _IncomingShareListenerState extends State<IncomingShareListener> {
     final sessions = context.read<VaultSessionFactory>();
     final source = context.read<IncomingShareSource>();
     final messenger = ScaffoldMessenger.of(context);
+    final sentText = context.l10n.sent;
 
     final sent = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
@@ -61,15 +63,17 @@ class _IncomingShareListenerState extends State<IncomingShareListener> {
       ),
     );
     if (sent == true) {
-      messenger.showSnackBar(const SnackBar(content: Text('Отправлено')));
+      messenger.showSnackBar(SnackBar(content: Text(sentText)));
       await source.returnToSourceApp();
     }
   }
 
-  void _showError(String message) {
+  void _showError(Object error) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    final l = context.l10n;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l.shareReceiveFailed(l.describeError(error)))),
+    );
   }
 
   @override

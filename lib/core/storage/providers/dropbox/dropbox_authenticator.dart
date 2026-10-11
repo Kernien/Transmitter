@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../../auth/auth_browser.dart';
+import '../../../errors/app_error.dart';
 import '../../../auth/oauth_credentials.dart';
 import '../../../auth/pkce.dart';
 import '../../../utils/clock.dart';
@@ -19,6 +20,7 @@ class DropboxAuthenticator {
   });
 
   static const String providerCode = 'dropbox';
+  static const String _provider = 'Dropbox';
   static final Uri _authorizeUrl = Uri.https(
     'www.dropbox.com',
     '/oauth2/authorize',
@@ -53,17 +55,20 @@ class DropboxAuthenticator {
     final error = params['error'];
     if (error == 'access_denied') throw const AuthCancelledException();
     if (error != null) {
-      throw AuthException(
-        'Dropbox отклонил вход: ${params['error_description'] ?? error}',
-      );
+      throw AuthException(ErrorCode.authRejected, {
+        'provider': _provider,
+        'details': params['error_description'] ?? error,
+      });
     }
     if (params['state'] != state) {
-      throw const AuthException(
-        'Ответ Dropbox не прошёл проверку, попробуйте ещё раз',
-      );
+      throw const AuthException(ErrorCode.authStateMismatch, {
+        'provider': _provider,
+      });
     }
     final code = params['code'];
-    if (code == null) throw const AuthException('Dropbox не вернул код входа');
+    if (code == null) {
+      throw const AuthException(ErrorCode.authNoCode, {'provider': _provider});
+    }
 
     final response = await _client.post(
       _tokenUrl,
@@ -76,9 +81,10 @@ class DropboxAuthenticator {
       },
     );
     if (response.statusCode != 200) {
-      throw AuthException(
-        'Не удалось получить токен Dropbox (${response.statusCode})',
-      );
+      throw AuthException(ErrorCode.authTokenFailed, {
+        'provider': _provider,
+        'details': '${response.statusCode}',
+      });
     }
     return _parse(response.body);
   }
@@ -94,14 +100,15 @@ class DropboxAuthenticator {
       },
     );
     if (response.statusCode == 400 || response.statusCode == 401) {
-      throw const StorageAuthException(
-        'Доступ к Dropbox отозван, войдите заново',
-      );
+      throw const StorageAuthException(ErrorCode.cloudAccessRevoked, {
+        'provider': _provider,
+      });
     }
     if (response.statusCode != 200) {
-      throw StorageException(
-        'Не удалось обновить токен Dropbox (${response.statusCode})',
-      );
+      throw StorageException(ErrorCode.cloudTokenRefreshFailed, {
+        'provider': _provider,
+        'details': '${response.statusCode}',
+      });
     }
     // При обновлении Dropbox не присылает новый refresh token — оставляем старый.
     return _parse(response.body, fallbackRefreshToken: refreshToken);
@@ -112,7 +119,9 @@ class DropboxAuthenticator {
     final refreshToken =
         (json['refresh_token'] as String?) ?? fallbackRefreshToken;
     if (refreshToken == null) {
-      throw const AuthException('Dropbox не выдал долгосрочный доступ');
+      throw const AuthException(ErrorCode.authNoOfflineAccess, {
+        'provider': _provider,
+      });
     }
     return OAuthCredentials(
       accessToken: json['access_token'] as String,

@@ -12,7 +12,7 @@ import 'cipher.dart';
 class AesGcmCipher implements Cipher {
   AesGcmCipher(List<int> keyBytes) : _keyBytes = Uint8List.fromList(keyBytes) {
     if (keyBytes.length != keyLength) {
-      throw ArgumentError('Ключ AES-256 должен быть $keyLength байта');
+      throw ArgumentError('AES-256 key must be $keyLength bytes');
     }
   }
 
@@ -55,7 +55,7 @@ Future<Uint8List> _encrypt(Uint8List key, List<int> plaintext) async {
 
 Future<Uint8List> _decrypt(Uint8List key, List<int> ciphertext) async {
   if (ciphertext.length < _nonceLength + _macLength) {
-    throw const DecryptionException('Данные повреждены');
+    throw const DecryptionException('ciphertext too short');
   }
   final box = SecretBox.fromConcatenation(
     ciphertext,

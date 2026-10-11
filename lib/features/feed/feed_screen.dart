@@ -3,14 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/app_config.dart';
+import '../../app/l10n.dart';
 import '../../app/vault_session_factory.dart';
 import '../../app/widgets/content_width.dart';
 import '../../core/files/file_transfer_service.dart';
 import '../../core/share/outgoing_share.dart';
-import '../../core/utils/format_size.dart';
 import '../../core/vault/vault_key.dart';
 import '../../data/post_repository.dart';
 import 'feed_controller.dart';
+import 'selection_exporter.dart';
 import 'widgets/compose_bar.dart';
 import 'widgets/post_tile.dart';
 
@@ -29,8 +30,9 @@ class _FeedScreenState extends State<FeedScreen> {
       .read<VaultSessionFactory>()
       .open(widget.vaultKey);
 
-  String get _title =>
-      widget.vaultKey.label.isEmpty ? 'База' : widget.vaultKey.label;
+  String get _title => widget.vaultKey.label.isEmpty
+      ? context.l10n.vaultFallbackTitle
+      : widget.vaultKey.label;
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +45,11 @@ class _FeedScreenState extends State<FeedScreen> {
             appBar: AppBar(title: Text(_title)),
             body: Center(
               child: snapshot.hasError
-                  ? Text('Не удалось открыть базу: ${snapshot.error}')
+                  ? Text(
+                      context.l10n.openVaultFailed(
+                        context.l10n.describeError(snapshot.error!),
+                      ),
+                    )
                   : const CircularProgressIndicator(),
             ),
           );
@@ -54,6 +60,10 @@ class _FeedScreenState extends State<FeedScreen> {
             files: context.read<FileTransferService>(),
             share: context.read<ShareSender>(),
             pollInterval: AppConfig.pollInterval,
+            exportTexts: ExportTexts(
+              textFileName: context.l10n.exportTextFileName,
+              fileNote: context.l10n.exportFileNote,
+            ),
           )..start(),
           child: _FeedView(title: _title),
         );
@@ -90,12 +100,12 @@ class _FeedView extends StatelessWidget {
     actions: [
       PopupMenuButton<String>(
         onSelected: (_) => _confirmClear(context),
-        itemBuilder: (_) => const [
+        itemBuilder: (_) => [
           PopupMenuItem(
             value: 'clear',
             child: ListTile(
-              leading: Icon(Icons.delete_sweep_outlined),
-              title: Text('Очистить ленту'),
+              leading: const Icon(Icons.delete_sweep_outlined),
+              title: Text(context.l10n.clearFeed),
               contentPadding: EdgeInsets.zero,
             ),
           ),
@@ -105,25 +115,26 @@ class _FeedView extends StatelessWidget {
   );
 
   AppBar _selectionAppBar(BuildContext context) {
+    final l = context.l10n;
     final feed = context.watch<FeedController>();
     final busy = feed.isBulkBusy;
     return AppBar(
       backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
       leading: IconButton(
-        tooltip: 'Снять выделение',
+        tooltip: l.clearSelection,
         icon: const Icon(Icons.close),
         onPressed: feed.clearSelection,
       ),
-      title: Text('Выбрано: ${feed.selectedCount}'),
+      title: Text(l.selectedCount(feed.selectedCount)),
       actions: [
         IconButton(
-          tooltip: 'Выбрать все',
+          tooltip: l.selectAll,
           icon: const Icon(Icons.select_all),
           onPressed: busy ? null : feed.selectAll,
         ),
         if (feed.canShare)
           IconButton(
-            tooltip: 'Поделиться',
+            tooltip: l.share,
             icon: const Icon(Icons.share),
             onPressed: busy ? null : feed.shareSelected,
           ),
@@ -136,12 +147,12 @@ class _FeedView extends StatelessWidget {
                 ),
               )
             : IconButton(
-                tooltip: 'Скачать выбранное',
+                tooltip: l.downloadSelected,
                 icon: const Icon(Icons.download),
                 onPressed: () => _saveSelected(context),
               ),
         IconButton(
-          tooltip: 'Удалить выбранное',
+          tooltip: l.deleteSelected,
           icon: const Icon(Icons.delete_outline),
           onPressed: busy ? null : () => _confirmDeleteSelected(context),
         ),
@@ -151,18 +162,20 @@ class _FeedView extends StatelessWidget {
 
   Future<void> _saveSelected(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
+    final saved = context.l10n.saved;
     if (await context.read<FeedController>().saveSelected()) {
-      messenger.showSnackBar(const SnackBar(content: Text('Сохранено')));
+      messenger.showSnackBar(SnackBar(content: Text(saved)));
     }
   }
 
   Future<void> _confirmDeleteSelected(BuildContext context) async {
+    final l = context.l10n;
     final feed = context.read<FeedController>();
     final confirmed = await _confirm(
       context,
-      title: 'Удалить выбранное (${feed.selectedCount})?',
-      text: 'Сообщения и файлы будут удалены из облака на всех устройствах.',
-      action: 'Удалить',
+      title: l.deleteSelectedTitle(feed.selectedCount),
+      text: l.deleteSelectedText,
+      action: l.delete,
     );
     if (confirmed) await feed.deleteSelected();
   }
@@ -171,11 +184,9 @@ class _FeedView extends StatelessWidget {
     final feed = context.read<FeedController>();
     final confirmed = await _confirm(
       context,
-      title: 'Очистить ленту?',
-      text:
-          'Все сообщения и файлы этой базы будут удалены из облака '
-          'на всех устройствах. Отменить это нельзя.',
-      action: 'Удалить всё',
+      title: context.l10n.clearFeedTitle,
+      text: context.l10n.clearFeedText,
+      action: context.l10n.deleteAll,
     );
     if (confirmed) await feed.clearAll();
   }
@@ -194,7 +205,7 @@ class _FeedView extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Отмена'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
@@ -253,7 +264,11 @@ class _FileDropZoneState extends State<_FileDropZone> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    'Отпустите, чтобы отправить (до ${formatSizeLimit(context.read<FeedController>().maxFileSize)} на файл)',
+                    context.l10n.dropHint(
+                      context.l10n.sizeLimitOf(
+                        context.read<FeedController>().maxFileSize,
+                      ),
+                    ),
                     style: theme.textTheme.titleMedium,
                   ),
                 ),
@@ -277,11 +292,11 @@ class _FeedBody extends StatelessWidget {
       children: [
         if (feed.error != null)
           MaterialBanner(
-            content: Text(feed.error!),
+            content: Text(context.l10n.describeError(feed.error!)),
             actions: [
               TextButton(
                 onPressed: feed.refresh,
-                child: const Text('Повторить'),
+                child: Text(context.l10n.retry),
               ),
             ],
           ),
@@ -289,11 +304,11 @@ class _FeedBody extends StatelessWidget {
           child: feed.isInitialLoad
               ? const Center(child: CircularProgressIndicator())
               : posts.isEmpty
-              ? const Center(
+              ? Center(
                   child: Padding(
-                    padding: EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(24),
                     child: Text(
-                      'Пока пусто. Отправьте сообщение или перетащите сюда файл.',
+                      context.l10n.feedEmpty,
                       textAlign: TextAlign.center,
                     ),
                   ),

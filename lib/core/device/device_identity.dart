@@ -3,6 +3,10 @@ import 'package:flutter/foundation.dart';
 import '../persistence/key_value_store.dart';
 import '../utils/device_name.dart';
 
+/// Тексты подсказок по умолчанию (если язык интерфейса не передан).
+String englishWorkProfileLabel() => 'work';
+String englishBrowserName() => 'Browser';
+
 /// Предлагает имя для этого устройства (например, «Redmi 10 · рабочий»).
 abstract interface class DeviceNameSuggester {
   Future<String> suggest();
@@ -47,7 +51,7 @@ class DeviceIdentity extends ChangeNotifier {
   Future<void> rename(String name) async {
     final normalized = _normalize(name);
     if (normalized.isEmpty) {
-      throw ArgumentError('Имя устройства не может быть пустым');
+      throw ArgumentError('Device name must not be empty');
     }
     await _store.write(_storeKey, normalized);
     _name = normalized;

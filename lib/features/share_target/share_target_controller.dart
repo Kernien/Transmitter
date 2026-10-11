@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 
 import '../../core/share/incoming_share.dart';
-import '../../core/storage/cloud_storage.dart';
 import '../../core/vault/vault_key.dart';
 import '../../data/post_repository.dart';
 
@@ -27,11 +26,13 @@ class ShareTargetController extends ChangeNotifier {
   VaultKey? _selected;
   bool _sending = false;
   int _sent = 0;
-  String? _error;
+  Object? _error;
 
   VaultKey? get selected => _selected;
   bool get isSending => _sending;
-  String? get error => _error;
+
+  /// Ошибка отправки; текст на языке интерфейса — `describeError`.
+  Object? get error => _error;
 
   /// Сколько постов уже отправлено и сколько всего будет.
   int get sentCount => _sent;
@@ -90,11 +91,8 @@ class ShareTargetController extends ChangeNotifier {
         _progress();
       }
       return true;
-    } on StorageException catch (e) {
-      _error = e.message;
-      return false;
     } catch (e) {
-      _error = 'Ошибка: $e';
+      _error = e;
       return false;
     } finally {
       _sending = false;

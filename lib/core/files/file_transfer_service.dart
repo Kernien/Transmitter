@@ -2,16 +2,24 @@ import 'dart:typed_data';
 
 import 'package:cross_file/cross_file.dart';
 
+import '../errors/app_error.dart';
+
 export 'package:cross_file/cross_file.dart' show XFile;
 
-class FileTooLargeException implements Exception {
+class FileTooLargeException implements Exception, CodedError {
   const FileTooLargeException(this.size, this.maxSize);
 
   final int size;
   final int maxSize;
 
   @override
-  String toString() => 'Файл больше ${maxSize ~/ (1024 * 1024)} МБ';
+  ErrorCode get code => ErrorCode.fileTooLarge;
+
+  @override
+  Map<String, Object> get args => {'maxBytes': maxSize};
+
+  @override
+  String toString() => describeForLog(this);
 }
 
 /// Файл, выбранный пользователем для отправки.

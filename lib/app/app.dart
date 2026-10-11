@@ -10,6 +10,8 @@ import '../features/device/device_name_prompt.dart';
 import '../features/share_target/incoming_share_listener.dart';
 import '../features/vaults/vaults_controller.dart';
 import '../features/vaults/vaults_screen.dart';
+import '../l10n/app_localizations.dart';
+import 'language_controller.dart';
 import 'vault_session_factory.dart';
 
 class TransmitterApp extends StatelessWidget {
@@ -18,6 +20,7 @@ class TransmitterApp extends StatelessWidget {
     required this.connections,
     required this.vaults,
     required this.device,
+    required this.language,
     required this.sessions,
     required this.files,
     required this.incomingShares,
@@ -27,6 +30,7 @@ class TransmitterApp extends StatelessWidget {
   final CloudConnectionService connections;
   final VaultsController vaults;
   final DeviceIdentity device;
+  final LanguageController language;
   final VaultSessionFactory sessions;
   final FileTransferService files;
   final IncomingShareSource incomingShares;
@@ -39,22 +43,31 @@ class TransmitterApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: connections),
         ChangeNotifierProvider.value(value: vaults),
         ChangeNotifierProvider.value(value: device),
+        ChangeNotifierProvider.value(value: language),
         Provider.value(value: sessions),
         Provider<FileTransferService>.value(value: files),
         Provider<IncomingShareSource>.value(value: incomingShares),
         Provider<ShareSender>.value(value: shareSender),
       ],
-      child: MaterialApp(
-        title: 'Transmitter',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
-        darkTheme: ThemeData(
-          colorSchemeSeed: Colors.indigo,
-          brightness: Brightness.dark,
-          useMaterial3: true,
-        ),
-        home: const IncomingShareListener(
-          child: DeviceNamePrompt(child: VaultsScreen()),
+      child: Consumer<LanguageController>(
+        builder: (context, language, _) => MaterialApp(
+          title: 'Transmitter',
+          // Язык: выбранный в приложении или (null) как в системе — русский
+          // или английский, для остальных языков английский. Тексты —
+          // lib/l10n/*.arb.
+          locale: language.locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
+          darkTheme: ThemeData(
+            colorSchemeSeed: Colors.indigo,
+            brightness: Brightness.dark,
+            useMaterial3: true,
+          ),
+          home: const IncomingShareListener(
+            child: DeviceNamePrompt(child: VaultsScreen()),
+          ),
         ),
       ),
     );

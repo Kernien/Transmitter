@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../../../auth/auth_browser.dart';
 import '../../../auth/oauth_credentials.dart';
 import '../../../auth/pkce.dart';
+import '../../../errors/app_error.dart';
 import '../../../utils/clock.dart';
 import '../../cloud_storage.dart';
 
@@ -28,6 +29,8 @@ class GoogleDriveAuthenticator {
   });
 
   static const String providerCode = 'google';
+  static const String _provider = 'Google Drive';
+  static const Map<String, Object> _providerArgs = {'provider': _provider};
   static const String scope = 'https://www.googleapis.com/auth/drive.file';
   static final Uri _authorizeUrl = Uri.https(
     'accounts.google.com',
@@ -79,7 +82,7 @@ class GoogleDriveAuthenticator {
     );
     final code =
         params['code'] ??
-        (throw const AuthException('Google не вернул код входа'));
+        (throw const AuthException(ErrorCode.authNoCode, _providerArgs));
 
     final response = await _client.post(
       _tokenUrl,
@@ -93,9 +96,10 @@ class GoogleDriveAuthenticator {
       },
     );
     if (response.statusCode != 200) {
-      throw AuthException(
-        'Не удалось получить токен Google (${response.statusCode}): ${_error(response)}',
-      );
+      throw AuthException(ErrorCode.authTokenFailed, {
+        'provider': _provider,
+        'details': '${response.statusCode}: ${_error(response)}',
+      });
     }
     return _parse(response.body);
   }
@@ -119,7 +123,7 @@ class GoogleDriveAuthenticator {
     final params = _checked(Uri.splitQueryString(callback.fragment), state);
     final token =
         params['access_token'] ??
-        (throw const AuthException('Google не выдал доступ'));
+        (throw const AuthException(ErrorCode.authNoCode, _providerArgs));
     final expiresIn = int.tryParse(params['expires_in'] ?? '') ?? 3600;
     return OAuthCredentials(
       accessToken: token,
@@ -133,7 +137,8 @@ class GoogleDriveAuthenticator {
   Future<OAuthCredentials> refresh(String refreshToken) async {
     if (refreshToken.isEmpty) {
       throw const StorageAuthException(
-        'Вход в Google Drive в браузере действует около часа — войдите снова (☁ → Google Drive)',
+        ErrorCode.cloudWebSessionExpired,
+        _providerArgs,
       );
     }
     final response = await _client.post(
@@ -147,13 +152,15 @@ class GoogleDriveAuthenticator {
     );
     if (response.statusCode == 400 || response.statusCode == 401) {
       throw const StorageAuthException(
-        'Доступ к Google Drive отозван, войдите заново',
+        ErrorCode.cloudAccessRevoked,
+        _providerArgs,
       );
     }
     if (response.statusCode != 200) {
-      throw StorageException(
-        'Не удалось обновить токен Google (${response.statusCode})',
-      );
+      throw StorageException(ErrorCode.cloudTokenRefreshFailed, {
+        'provider': _provider,
+        'details': '${response.statusCode}',
+      });
     }
     // При обновлении Google не присылает новый refresh token — оставляем старый.
     return _parse(response.body, fallbackRefreshToken: refreshToken);
@@ -165,11 +172,14 @@ class GoogleDriveAuthenticator {
   ) {
     final error = params['error'];
     if (error == 'access_denied') throw const AuthCancelledException();
-    if (error != null) throw AuthException('Google отклонил вход: $error');
+    if (error != null) {
+      throw AuthException(ErrorCode.authRejected, {
+        'provider': _provider,
+        'details': error,
+      });
+    }
     if (params['state'] != state) {
-      throw const AuthException(
-        'Ответ Google не прошёл проверку, попробуйте ещё раз',
-      );
+      throw const AuthException(ErrorCode.authStateMismatch, _providerArgs);
     }
     return params;
   }
@@ -179,7 +189,7 @@ class GoogleDriveAuthenticator {
     final refreshToken =
         (json['refresh_token'] as String?) ?? fallbackRefreshToken;
     if (refreshToken == null || refreshToken.isEmpty) {
-      throw const AuthException('Google не выдал долгосрочный доступ');
+      throw const AuthException(ErrorCode.authNoOfflineAccess, _providerArgs);
     }
     return OAuthCredentials(
       accessToken: json['access_token'] as String,

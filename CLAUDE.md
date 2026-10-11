@@ -6,6 +6,9 @@ Flutter-приложение (Android, Windows, Web) для передачи п�
 и план — docs/DEVELOPMENT.md.
 
 - Общение и комментарии в коде на русском.
+- Тексты интерфейса — только в lib/l10n/app_en.arb и app_ru.arb (оба файла,
+  тест l10n_test проверяет совпадение ключей). В core нет пользовательских
+  текстов: ошибки несут ErrorCode, текст даёт `describeError` (app/l10n.dart).
 - Лицензия GPL-3.0 (LICENSE). Коммиты — с адресом 101323434+Kernien@users.noreply.github.com (уже в git config репозитория), личную почту в историю не добавлять.
 - Слои: `features → app → data → core/domain`. Импорт «вверх» запрещён.
 - Конкретные реализации создаются только в `lib/main.dart`; остальной код

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/utils/format_size.dart';
+import '../../../app/l10n.dart';
 import '../feed_controller.dart';
 
 /// Поле ввода и кнопка отправки внизу ленты.
@@ -31,8 +31,11 @@ class _ComposeBarState extends State<ComposeBar> {
         child: Row(
           children: [
             IconButton(
-              tooltip:
-                  'Прикрепить файл (до ${formatSizeLimit(context.read<FeedController>().maxFileSize)})',
+              tooltip: context.l10n.attachFileTooltip(
+                context.l10n.sizeLimitOf(
+                  context.read<FeedController>().maxFileSize,
+                ),
+              ),
               onPressed: sending ? null : _attach,
               icon: const Icon(Icons.attach_file),
             ),
@@ -43,16 +46,16 @@ class _ComposeBarState extends State<ComposeBar> {
                 maxLines: 5,
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => _send(),
-                decoration: const InputDecoration(
-                  hintText: 'Сообщение или ссылка',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  hintText: context.l10n.composeHint,
+                  border: const OutlineInputBorder(),
                   isDense: true,
                 ),
               ),
             ),
             const SizedBox(width: 8),
             IconButton.filled(
-              tooltip: 'Отправить',
+              tooltip: context.l10n.send,
               onPressed: sending ? null : _send,
               icon: sending
                   ? const SizedBox.square(

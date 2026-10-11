@@ -2,7 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/l10n.dart';
 import '../../app/widgets/content_width.dart';
+import '../../core/vault/vault_key_codec.dart';
 import 'qr_scanner_page.dart';
 import 'vaults_controller.dart';
 
@@ -16,7 +18,7 @@ class ImportVaultScreen extends StatefulWidget {
 
 class _ImportVaultScreenState extends State<ImportVaultScreen> {
   final _code = TextEditingController();
-  String? _error;
+  InvalidVaultKeyException? _error;
 
   static bool get _scannerAvailable =>
       kIsWeb || defaultTargetPlatform == TargetPlatform.android;
@@ -29,8 +31,9 @@ class _ImportVaultScreenState extends State<ImportVaultScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: const Text('Добавить ключ')),
+      appBar: AppBar(title: Text(l.addKey)),
       body: ContentWidth(
         maxWidth: 600,
         child: ListView(
@@ -39,11 +42,11 @@ class _ImportVaultScreenState extends State<ImportVaultScreen> {
             if (_scannerAvailable) ...[
               FilledButton.icon(
                 icon: const Icon(Icons.qr_code_scanner),
-                label: const Text('Сканировать QR-код'),
+                label: Text(l.scanQr),
                 onPressed: _scan,
               ),
               const SizedBox(height: 24),
-              const Text('или вставьте ключ:'),
+              Text(l.orPasteKey),
               const SizedBox(height: 8),
             ],
             TextField(
@@ -53,13 +56,13 @@ class _ImportVaultScreenState extends State<ImportVaultScreen> {
               decoration: InputDecoration(
                 border: const OutlineInputBorder(),
                 hintText: 'TRM1.…',
-                errorText: _error,
+                errorText: _error == null ? null : l.describeError(_error!),
               ),
             ),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: () => _submit(_code.text),
-              child: const Text('Добавить'),
+              child: Text(l.add),
             ),
           ],
         ),
@@ -77,8 +80,8 @@ class _ImportVaultScreenState extends State<ImportVaultScreen> {
     try {
       final key = await context.read<VaultsController>().importCode(code);
       if (mounted) Navigator.pop(context, key);
-    } on FormatException catch (e) {
-      setState(() => _error = e.message);
+    } on InvalidVaultKeyException catch (e) {
+      setState(() => _error = e);
     }
   }
 }

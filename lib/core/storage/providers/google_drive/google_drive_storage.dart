@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../auth/bearer_request.dart';
 import '../../../auth/oauth_token_manager.dart';
+import '../../../errors/app_error.dart';
 import '../../cloud_storage.dart';
 
 /// Google Drive через REST API v3 с правом `drive.file`: приложение видит
@@ -288,9 +289,9 @@ class GoogleDriveStorage implements CloudStorage {
     if (start.statusCode != 200) _fail(start);
     final location = start.headers['location'];
     if (location == null) {
-      throw const StorageException(
-        'Google Drive не вернул адрес для загрузки файла',
-      );
+      throw const StorageException(ErrorCode.cloudNoUploadUrl, {
+        'provider': 'Google Drive',
+      });
     }
     // Адрес сессии загрузки сам служит разрешением — токен не нужен.
     final response = await _client.put(
@@ -361,13 +362,16 @@ class GoogleDriveStorage implements CloudStorage {
       throw const StorageQuotaException();
     }
     if (reason.contains('rateLimit') || response.statusCode == 429) {
-      throw const StorageException(
-        'Google Drive временно ограничил запросы, попробуйте позже',
-      );
+      throw const StorageException(ErrorCode.cloudRateLimited, {
+        'provider': 'Google Drive',
+      });
     }
     if (message.length > 300) message = '${message.substring(0, 300)}…';
-    throw StorageException(
-      'Ошибка Google Drive (${response.statusCode})${message.isEmpty ? '' : ': $message'}',
+    throw StorageException.request(
+      'Google Drive',
+      message.isEmpty
+          ? '${response.statusCode}'
+          : '${response.statusCode}: $message',
     );
   }
 }

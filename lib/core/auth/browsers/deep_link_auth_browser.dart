@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../errors/app_error.dart';
 import '../auth_browser.dart';
 
 /// Вход на телефоне: страница входа открывается в браузере, а облако
@@ -35,7 +36,7 @@ class DeepLinkAuthBrowser implements AuthBrowser {
       authorizeUrl,
       mode: LaunchMode.externalApplication,
     );
-    if (!opened) throw const AuthException('Не удалось открыть браузер');
+    if (!opened) throw const AuthException(ErrorCode.browserOpenFailed);
     return callback;
   }
 }

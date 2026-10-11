@@ -31,11 +31,6 @@ class DropboxAdapter implements CloudProviderAdapter {
   bool get isConfigured => _auth.appKey.isNotEmpty;
 
   @override
-  String get configurationHint =>
-      'Не задан App key приложения Dropbox. Укажите его в config/dev.json '
-      '(см. README, раздел «Подключение Dropbox»).';
-
-  @override
   Future<String> signIn() => _auth.signIn().then((c) => c.encode());
 
   @override

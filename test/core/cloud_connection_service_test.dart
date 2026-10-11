@@ -18,9 +18,6 @@ class FakeAdapter implements CloudProviderAdapter {
   bool get isConfigured => true;
 
   @override
-  String get configurationHint => '';
-
-  @override
   Future<String> signIn() async => signInResult;
 
   @override

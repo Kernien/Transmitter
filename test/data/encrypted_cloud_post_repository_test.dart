@@ -146,9 +146,9 @@ void main() {
         ),
         throwsA(
           isA<FileTooLargeException>().having(
-            (e) => e.toString(),
-            'текст',
-            'Файл больше 10 МБ',
+            (e) => e.maxSize,
+            'лимит',
+            10 * 1024 * 1024,
           ),
         ),
       );

@@ -3,12 +3,17 @@ import 'dart:js_interop';
 
 import 'package:web/web.dart' as web;
 
+import '../../errors/app_error.dart';
 import '../auth_browser.dart';
 
-AuthBrowser createPlatformAuthBrowser() => WebAuthBrowser();
+AuthBrowser createPlatformAuthBrowser({
+  AuthPageTextsSource texts = englishAuthPageTexts,
+}) => WebAuthBrowser();
 
 /// В браузере локального сервера нет — всегда всплывающее окно.
-AuthBrowser createLoopbackAuthBrowser() => WebAuthBrowser();
+AuthBrowser createLoopbackAuthBrowser({
+  AuthPageTextsSource texts = englishAuthPageTexts,
+}) => WebAuthBrowser();
 
 /// Вход в веб-версии: страница входа открывается во всплывающем окне, облако
 /// возвращает его на `auth.html`, а та передаёт адрес обратно приложению.
@@ -31,11 +36,7 @@ class WebAuthBrowser implements AuthBrowser {
       'popup,width=600,height=760',
     );
     if (popup == null) {
-      return Future.error(
-        const AuthException(
-          'Браузер заблокировал всплывающее окно. Разрешите всплывающие окна для этого сайта.',
-        ),
-      );
+      return Future.error(const AuthException(ErrorCode.popupBlocked));
     }
 
     final result = Completer<Uri>();

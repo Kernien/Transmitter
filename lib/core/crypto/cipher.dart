@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import '../errors/app_error.dart';
+
 /// Симметричное шифрование с проверкой целостности (AEAD).
 ///
 /// Остальной код зависит только от этого интерфейса, поэтому алгоритм
@@ -11,11 +13,19 @@ abstract interface class Cipher {
   Future<Uint8List> decrypt(List<int> ciphertext);
 }
 
-class DecryptionException implements Exception {
-  const DecryptionException([this.message = 'Не удалось расшифровать данные']);
+/// Данные повреждены или зашифрованы другим ключом.
+class DecryptionException implements Exception, CodedError {
+  const DecryptionException([this.detail = '']);
 
-  final String message;
+  /// Техническая подробность для журналов.
+  final String detail;
 
   @override
-  String toString() => 'DecryptionException: $message';
+  ErrorCode get code => ErrorCode.decryptionFailed;
+
+  @override
+  Map<String, Object> get args => const {};
+
+  @override
+  String toString() => 'DecryptionException $detail'.trim();
 }

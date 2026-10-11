@@ -1,13 +1,21 @@
 <!DOCTYPE html>
 <!-- Страница возврата после входа в облако (веб-версия).
-     Передаёт свой адрес (с code и state) окну приложения и закрывается. -->
+     Передаёт свой адрес (с code и state) окну приложения и закрывается.
+     Язык текста — по языку браузера (русский или английский). -->
 <meta charset="utf-8">
 <title>Transmitter</title>
 <body style="font-family:sans-serif;text-align:center;padding-top:15vh">
-<h2>Вход выполнен</h2>
-<p>Если окно не закрылось само, закройте его и вернитесь в Transmitter.</p>
+<h2 id="title">Signed in</h2>
+<p id="hint">If this window didn't close by itself, close it and return to Transmitter.</p>
 <script>
   (function () {
+    if ((navigator.language || '').toLowerCase().indexOf('ru') === 0) {
+      document.documentElement.lang = 'ru';
+      document.getElementById('title').textContent = 'Вход выполнен';
+      document.getElementById('hint').textContent =
+        'Если окно не закрылось само, закройте его и вернитесь в Transmitter.';
+    }
+
     var key = 'transmitter-oauth';
     var href = window.location.href;
     if (window.opener) {

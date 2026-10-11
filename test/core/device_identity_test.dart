@@ -64,7 +64,11 @@ void main() {
 
   test('подсказка для рабочего профиля Android', () {
     expect(
-      AndroidDeviceNameSuggester.format(name: 'Redmi 10', workProfile: true),
+      AndroidDeviceNameSuggester.format(
+        name: 'Redmi 10',
+        workProfile: true,
+        workProfileLabel: 'рабочий',
+      ),
       'Redmi 10 · рабочий',
     );
     expect(

@@ -8,6 +8,7 @@ import 'package:transmitter/core/storage/cloud_provider_adapter.dart';
 import 'package:transmitter/core/vault/vault_key_store.dart';
 import 'package:transmitter/features/vaults/vaults_controller.dart';
 import 'package:transmitter/features/vaults/vaults_screen.dart';
+import 'package:transmitter/l10n/app_localizations.dart';
 
 import '../core/device_identity_test.dart' show FakeSuggester;
 
@@ -29,7 +30,12 @@ void main() {
           ),
           ChangeNotifierProvider.value(value: device),
         ],
-        child: const MaterialApp(home: VaultsScreen()),
+        child: const MaterialApp(
+          locale: Locale('ru'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: VaultsScreen(),
+        ),
       ),
     );
 

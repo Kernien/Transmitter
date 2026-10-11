@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../../app/l10n.dart';
+
 /// Сканирует QR-код камерой и возвращает его содержимое.
 class QrScannerPage extends StatefulWidget {
   const QrScannerPage({super.key});
@@ -15,7 +17,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Наведите камеру на QR-код')),
+      appBar: AppBar(title: Text(context.l10n.scanTitle)),
       body: MobileScanner(
         onDetect: (capture) {
           if (_done) return;

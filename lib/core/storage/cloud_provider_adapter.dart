@@ -15,9 +15,6 @@ abstract interface class CloudProviderAdapter {
   /// `false`, если в сборке не задан ключ приложения для этого облака.
   bool get isConfigured;
 
-  /// Подсказка, что делать, если [isConfigured] равно `false`.
-  String get configurationHint;
-
   /// Проводит вход пользователя и возвращает учётные данные в виде строки.
   /// Формат строки знает только сам адаптер.
   ///
@@ -44,7 +41,7 @@ class CloudProviderRegistry {
   CloudProviderAdapter adapterFor(CloudProviderId id) {
     final adapter = _adapters[id];
     if (adapter == null) {
-      throw UnsupportedError('${id.title} пока не поддерживается');
+      throw UnsupportedError('${id.title} is not supported');
     }
     return adapter;
   }

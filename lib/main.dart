@@ -4,7 +4,9 @@ import 'package:http/http.dart' as http;
 
 import 'app/app.dart';
 import 'app/app_config.dart';
+import 'app/language_controller.dart';
 import 'app/vault_session_factory.dart';
+import 'core/auth/auth_browser.dart';
 import 'core/auth/platform_auth_browser.dart';
 import 'core/device/device_identity.dart';
 import 'core/device/platform_device_name_suggester.dart';
@@ -28,7 +30,22 @@ Future<void> main() async {
 
   const secureStore = FlutterSecureKeyValueStore();
   final httpClient = http.Client();
-  final authBrowser = createPlatformAuthBrowser();
+
+  // Язык интерфейса (системный или выбранный в приложении). Тексты вне
+  // виджетов — страница входа в браузере, подсказки имени устройства,
+  // диалог сохранения — берутся из него в момент показа.
+  final language = LanguageController(secureStore);
+  await language.load();
+  AuthPageTexts authTexts() {
+    final l = language.current;
+    return AuthPageTexts(
+      title: l.authPageTitle,
+      closeHint: l.authPageClose,
+      returnLabel: l.authPageReturn,
+    );
+  }
+
+  final authBrowser = createPlatformAuthBrowser(texts: authTexts);
 
   // Сюда добавляются адаптеры облаков по мере их реализации.
   final registry = CloudProviderRegistry([
@@ -43,7 +60,7 @@ Future<void> main() async {
           : AppConfig.googleDesktopClientId,
       clientSecret: kIsWeb ? '' : AppConfig.googleDesktopClientSecret,
       browserFlow: kIsWeb,
-      browser: createLoopbackAuthBrowser(),
+      browser: createLoopbackAuthBrowser(texts: authTexts),
       client: httpClient,
     ),
   ]);
@@ -52,7 +69,10 @@ Future<void> main() async {
   final vaults = VaultsController(const VaultKeyStore(secureStore));
   final device = DeviceIdentity(
     secureStore,
-    createPlatformDeviceNameSuggester(),
+    createPlatformDeviceNameSuggester(
+      workProfileLabel: () => language.current.deviceWorkProfile,
+      browserName: () => language.current.deviceBrowserName,
+    ),
   );
   await Future.wait([connections.load(), vaults.load(), device.load()]);
 
@@ -65,7 +85,10 @@ Future<void> main() async {
         connections: connections,
         deviceName: () => device.name,
       ),
-      files: const FilePickerTransferService(),
+      language: language,
+      files: FilePickerTransferService(
+        saveDialogTitle: () => language.current.actionSaveFile,
+      ),
       incomingShares: isAndroid
           ? AndroidIncomingShareSource(
               maxFileSize: VaultKey.absoluteMaxFileSize,

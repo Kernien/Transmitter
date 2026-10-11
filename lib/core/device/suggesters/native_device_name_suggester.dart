@@ -5,16 +5,24 @@ import 'package:flutter/services.dart';
 import '../../utils/device_name.dart';
 import '../device_identity.dart';
 
-DeviceNameSuggester createPlatformDeviceNameSuggester() => Platform.isAndroid
-    ? const AndroidDeviceNameSuggester()
+DeviceNameSuggester createPlatformDeviceNameSuggester({
+  String Function() workProfileLabel = englishWorkProfileLabel,
+  String Function() browserName = englishBrowserName,
+}) => Platform.isAndroid
+    ? AndroidDeviceNameSuggester(workProfileLabel: workProfileLabel)
     : const DesktopDeviceNameSuggester();
 
-/// Имя телефона из «Настройки → О телефоне»; в рабочем профиле — с пометкой.
-/// Нативная часть — DeviceInfoChannel.kt.
+/// Имя телефона из «Настройки → О телефоне»; в рабочем профиле — с пометкой
+/// [workProfileLabel] («рабочий» / «work»). Нативная часть — DeviceInfoChannel.kt.
 class AndroidDeviceNameSuggester implements DeviceNameSuggester {
-  const AndroidDeviceNameSuggester();
+  const AndroidDeviceNameSuggester({
+    this.workProfileLabel = englishWorkProfileLabel,
+  });
 
   static const MethodChannel _channel = MethodChannel('app.transmitter/device');
+
+  /// Пометка рабочего профиля на текущем языке интерфейса.
+  final String Function() workProfileLabel;
 
   @override
   Future<String> suggest() async {
@@ -24,12 +32,16 @@ class AndroidDeviceNameSuggester implements DeviceNameSuggester {
     return format(
       name: info['name'] as String? ?? 'Android',
       workProfile: info['workProfile'] == true,
+      workProfileLabel: workProfileLabel(),
     );
   }
 
   /// Вынесено для тестов.
-  static String format({required String name, required bool workProfile}) =>
-      workProfile ? '$name · рабочий' : name;
+  static String format({
+    required String name,
+    required bool workProfile,
+    String workProfileLabel = 'work',
+  }) => workProfile ? '$name · $workProfileLabel' : name;
 }
 
 /// Имя компьютера в сети (например, «Windows · DESKTOP-1A2B3C»).

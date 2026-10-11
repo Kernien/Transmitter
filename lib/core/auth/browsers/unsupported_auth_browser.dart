@@ -1,6 +1,9 @@
 import '../auth_browser.dart';
 
-AuthBrowser createPlatformAuthBrowser() =>
-    throw UnsupportedError('Вход в облако не поддерживается на этой платформе');
+AuthBrowser createPlatformAuthBrowser({
+  AuthPageTextsSource texts = englishAuthPageTexts,
+}) => throw UnsupportedError('Cloud sign-in is not supported on this platform');
 
-AuthBrowser createLoopbackAuthBrowser() => createPlatformAuthBrowser();
+AuthBrowser createLoopbackAuthBrowser({
+  AuthPageTextsSource texts = englishAuthPageTexts,
+}) => createPlatformAuthBrowser();

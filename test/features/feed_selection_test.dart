@@ -92,7 +92,7 @@ void main() {
     expect(feed.isSelecting, isFalse);
   });
 
-  test('несколько постов — zip с файлами и сообщения.txt', () async {
+  test('несколько постов — zip с файлами и items.txt', () async {
     await feed.sendText('привет');
     await sendFile('a.txt', [1], caption: 'подпись');
     await sendFile('a.txt', [2]);
@@ -107,17 +107,17 @@ void main() {
     final byName = {for (final f in archive) f.name: f.content};
     expect(
       byName.keys,
-      containsAll(['a.txt', 'a (2).txt', SelectionExporter.messagesFileName]),
+      containsAll(['a.txt', 'a (2).txt', ExportTexts.english.textFileName]),
     );
     expect(byName['a.txt'], [1]);
     expect(byName['a (2).txt'], [2]);
 
-    final raw = byName[SelectionExporter.messagesFileName]!;
+    final raw = byName[ExportTexts.english.textFileName]!;
     // BOM для Блокнота (utf8.decode его отбрасывает, поэтому проверяем байты).
     expect(raw.take(3), [0xEF, 0xBB, 0xBF]);
     final text = utf8.decode(raw);
     expect(text.indexOf('привет'), lessThan(text.indexOf('подпись')));
-    expect(text, contains('файл a.txt'));
+    expect(text, contains('file a.txt'));
     expect(text, contains('https://example.com'));
     expect(text, contains('Windows'));
   });

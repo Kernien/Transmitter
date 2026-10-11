@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../auth/bearer_request.dart';
 import '../../../auth/oauth_token_manager.dart';
+import '../../../errors/app_error.dart';
 import '../../cloud_storage.dart';
 
 /// Dropbox через HTTP API v2. Приложение с доступом «App folder», поэтому
@@ -163,12 +164,15 @@ class DropboxStorage implements CloudStorage {
       throw const StorageQuotaException();
     }
     if (response.statusCode == 429) {
-      throw const StorageException(
-        'Dropbox временно ограничил запросы, попробуйте позже',
-      );
+      throw const StorageException(ErrorCode.cloudRateLimited, {
+        'provider': 'Dropbox',
+      });
     }
-    throw StorageException(
-      'Ошибка Dropbox (${response.statusCode})${summary.isEmpty ? '' : ': $summary'}',
+    throw StorageException.request(
+      'Dropbox',
+      summary.isEmpty
+          ? '${response.statusCode}'
+          : '${response.statusCode}: $summary',
     );
   }
 }

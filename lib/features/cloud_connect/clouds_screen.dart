@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/l10n.dart';
 import '../../app/widgets/content_width.dart';
 import '../../core/storage/cloud_connection_service.dart';
 import '../../core/storage/cloud_provider_id.dart';
@@ -12,9 +13,10 @@ class CloudsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final connections = context.watch<CloudConnectionService>();
     return Scaffold(
-      appBar: AppBar(title: const Text('Облака')),
+      appBar: AppBar(title: Text(l.clouds)),
       body: ContentWidth(
         maxWidth: 600,
         child: ListView(
@@ -23,13 +25,13 @@ class CloudsScreen extends StatelessWidget {
               ListTile(
                 leading: const Icon(Icons.cloud_outlined),
                 title: Text(provider.title),
-                subtitle: Text(_status(connections, provider)),
+                subtitle: Text(_status(l, connections, provider)),
                 trailing: !connections.isSupported(provider)
                     ? null
                     : connections.isConnected(provider)
                     ? TextButton(
                         onPressed: () => connections.disconnect(provider),
-                        child: const Text('Выйти'),
+                        child: Text(l.signOut),
                       )
                     : FilledButton.tonal(
                         onPressed: () => Navigator.of(context).push(
@@ -38,7 +40,7 @@ class CloudsScreen extends StatelessWidget {
                                 ConnectCloudScreen(provider: provider),
                           ),
                         ),
-                        child: const Text('Войти'),
+                        child: Text(l.signIn),
                       ),
               ),
           ],
@@ -47,8 +49,12 @@ class CloudsScreen extends StatelessWidget {
     );
   }
 
-  static String _status(CloudConnectionService c, CloudProviderId p) {
-    if (!c.isSupported(p)) return 'Скоро';
-    return c.isConnected(p) ? 'Подключено' : 'Не подключено';
+  static String _status(
+    AppLocalizations l,
+    CloudConnectionService c,
+    CloudProviderId p,
+  ) {
+    if (!c.isSupported(p)) return l.statusSoon;
+    return c.isConnected(p) ? l.statusConnected : l.statusNotConnected;
   }
 }

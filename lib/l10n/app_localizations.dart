@@ -1,0 +1,908 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/intl.dart' as intl;
+
+import 'app_localizations_en.dart';
+import 'app_localizations_ru.dart';
+
+// ignore_for_file: type=lint
+
+/// Callers can lookup localized strings with an instance of AppLocalizations
+/// returned by `AppLocalizations.of(context)`.
+///
+/// Applications need to include `AppLocalizations.delegate()` in their app's
+/// `localizationDelegates` list, and the locales they support in the app's
+/// `supportedLocales` list. For example:
+///
+/// ```dart
+/// import 'l10n/app_localizations.dart';
+///
+/// return MaterialApp(
+///   localizationsDelegates: AppLocalizations.localizationsDelegates,
+///   supportedLocales: AppLocalizations.supportedLocales,
+///   home: MyApplicationHome(),
+/// );
+/// ```
+///
+/// ## Update pubspec.yaml
+///
+/// Please make sure to update your pubspec.yaml to include the following
+/// packages:
+///
+/// ```yaml
+/// dependencies:
+///   # Internationalization support.
+///   flutter_localizations:
+///     sdk: flutter
+///   intl: any # Use the pinned version from flutter_localizations
+///
+///   # Rest of dependencies
+/// ```
+///
+/// ## iOS Applications
+///
+/// iOS applications define key application metadata, including supported
+/// locales, in an Info.plist file that is built into the application bundle.
+/// To configure the locales supported by your app, you’ll need to edit this
+/// file.
+///
+/// First, open your project’s ios/Runner.xcworkspace Xcode workspace file.
+/// Then, in the Project Navigator, open the Info.plist file under the Runner
+/// project’s Runner folder.
+///
+/// Next, select the Information Property List item, select Add Item from the
+/// Editor menu, then select Localizations from the pop-up menu.
+///
+/// Select and expand the newly-created Localizations item then, for each
+/// locale your application supports, add a new item and select the locale
+/// you wish to add from the pop-up menu in the Value field. This list should
+/// be consistent with the languages listed in the AppLocalizations.supportedLocales
+/// property.
+abstract class AppLocalizations {
+  AppLocalizations(String locale)
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+
+  final String localeName;
+
+  static AppLocalizations of(BuildContext context) {
+    return Localizations.of<AppLocalizations>(context, AppLocalizations)!;
+  }
+
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
+
+  /// A list of this localizations delegate along with the default localizations
+  /// delegates.
+  ///
+  /// Returns a list of localizations delegates containing this delegate along with
+  /// GlobalMaterialLocalizations.delegate, GlobalCupertinoLocalizations.delegate,
+  /// and GlobalWidgetsLocalizations.delegate.
+  ///
+  /// Additional delegates can be added by appending to this list in
+  /// MaterialApp. This list does not have to be used at all if a custom list
+  /// of delegates is preferred or required.
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
+
+  /// A list of this localizations delegate's supported locales.
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('en'),
+    Locale('ru'),
+  ];
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @later.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get later;
+
+  /// No description provided for @add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get add;
+
+  /// No description provided for @create.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get create;
+
+  /// No description provided for @untitled.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled'**
+  String get untitled;
+
+  /// No description provided for @copied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get copied;
+
+  /// No description provided for @saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get saved;
+
+  /// No description provided for @sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get sent;
+
+  /// No description provided for @savedFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved: {name}'**
+  String savedFile(String name);
+
+  /// No description provided for @sizeUnitB.
+  ///
+  /// In en, this message translates to:
+  /// **'B'**
+  String get sizeUnitB;
+
+  /// No description provided for @sizeUnitKb.
+  ///
+  /// In en, this message translates to:
+  /// **'KB'**
+  String get sizeUnitKb;
+
+  /// No description provided for @sizeUnitMb.
+  ///
+  /// In en, this message translates to:
+  /// **'MB'**
+  String get sizeUnitMb;
+
+  /// No description provided for @sizeUnitGb.
+  ///
+  /// In en, this message translates to:
+  /// **'GB'**
+  String get sizeUnitGb;
+
+  /// No description provided for @decimalSeparator.
+  ///
+  /// In en, this message translates to:
+  /// **'.'**
+  String get decimalSeparator;
+
+  /// No description provided for @sizeLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'{mb} MB'**
+  String sizeLimit(int mb);
+
+  /// No description provided for @deviceNameTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Device name: {name}'**
+  String deviceNameTooltip(String name);
+
+  /// No description provided for @clouds.
+  ///
+  /// In en, this message translates to:
+  /// **'Clouds'**
+  String get clouds;
+
+  /// No description provided for @addKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Add key'**
+  String get addKey;
+
+  /// No description provided for @newKey.
+  ///
+  /// In en, this message translates to:
+  /// **'New key'**
+  String get newKey;
+
+  /// No description provided for @providerNotSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'{provider} isn\'t supported yet'**
+  String providerNotSupported(String provider);
+
+  /// No description provided for @vaultSubtitleConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'{provider} · files up to {limit}'**
+  String vaultSubtitleConnected(String provider, String limit);
+
+  /// No description provided for @vaultSubtitleNotConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'{provider} · not connected'**
+  String vaultSubtitleNotConnected(String provider);
+
+  /// No description provided for @showKeyQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Show key / QR'**
+  String get showKeyQr;
+
+  /// No description provided for @rename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get rename;
+
+  /// No description provided for @removeFromDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from device'**
+  String get removeFromDevice;
+
+  /// No description provided for @nameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get nameTitle;
+
+  /// No description provided for @removeKeyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove key?'**
+  String get removeKeyTitle;
+
+  /// No description provided for @removeKeyText.
+  ///
+  /// In en, this message translates to:
+  /// **'The key will be removed from this device only. The data in the cloud stays. If you have no copy of the key, access to the vault will be lost.'**
+  String get removeKeyText;
+
+  /// No description provided for @vaultsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a new key or add a key from another device by scanning its QR code.'**
+  String get vaultsEmpty;
+
+  /// No description provided for @keyNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name, e.g. “Work”'**
+  String get keyNameLabel;
+
+  /// No description provided for @cloudLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud'**
+  String get cloudLabel;
+
+  /// No description provided for @cloudComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'{provider} (coming soon)'**
+  String cloudComingSoon(String provider);
+
+  /// No description provided for @maxFileSizeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum file size'**
+  String get maxFileSizeLabel;
+
+  /// No description provided for @maxFileSizeHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies to all devices with this key.\nIt can\'t be changed later.'**
+  String get maxFileSizeHelp;
+
+  /// No description provided for @scanQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan QR code'**
+  String get scanQr;
+
+  /// No description provided for @orPasteKey.
+  ///
+  /// In en, this message translates to:
+  /// **'or paste the key:'**
+  String get orPasteKey;
+
+  /// No description provided for @scanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Point the camera at the QR code'**
+  String get scanTitle;
+
+  /// No description provided for @vaultKeyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Vault key'**
+  String get vaultKeyTitle;
+
+  /// No description provided for @copyKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy key'**
+  String get copyKey;
+
+  /// No description provided for @keyCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Key copied'**
+  String get keyCopied;
+
+  /// No description provided for @keyWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone with this key can read and add items to the vault. Share it only with your own devices.'**
+  String get keyWarning;
+
+  /// No description provided for @signIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get signIn;
+
+  /// No description provided for @signOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get signOut;
+
+  /// No description provided for @statusSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon'**
+  String get statusSoon;
+
+  /// No description provided for @statusConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get statusConnected;
+
+  /// No description provided for @statusNotConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected'**
+  String get statusNotConnected;
+
+  /// No description provided for @connectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect {provider}'**
+  String connectTitle(String provider);
+
+  /// No description provided for @connectExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to {provider} on this device. The app only gets access to its own folder; your other files stay invisible to it. Everything is encrypted before it\'s sent.'**
+  String connectExplanation(String provider);
+
+  /// No description provided for @cloudNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'This build has no app key for {provider} (see docs/DEVELOPMENT.md).'**
+  String cloudNotConfigured(String provider);
+
+  /// No description provided for @finishSignInInBrowser.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish signing in in the browser window…'**
+  String get finishSignInInBrowser;
+
+  /// No description provided for @signInTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to {provider}'**
+  String signInTo(String provider);
+
+  /// No description provided for @connectFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t connect: {error}'**
+  String connectFailed(String error);
+
+  /// No description provided for @deviceNameFirstRunTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What should this device be called?'**
+  String get deviceNameFirstRunTitle;
+
+  /// No description provided for @deviceNameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Device name'**
+  String get deviceNameTitle;
+
+  /// No description provided for @deviceNameFirstRunText.
+  ///
+  /// In en, this message translates to:
+  /// **'Items from this device will be signed with this name, so your other devices show where they came from.'**
+  String get deviceNameFirstRunText;
+
+  /// No description provided for @deviceNameEditText.
+  ///
+  /// In en, this message translates to:
+  /// **'New items will be signed with the new name; old ones keep the previous one.'**
+  String get deviceNameEditText;
+
+  /// No description provided for @deviceNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For example, “Phone — work” or “Laptop”'**
+  String get deviceNameHint;
+
+  /// No description provided for @enterName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name'**
+  String get enterName;
+
+  /// No description provided for @vaultFallbackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Vault'**
+  String get vaultFallbackTitle;
+
+  /// No description provided for @openVaultFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open the vault: {error}'**
+  String openVaultFailed(String error);
+
+  /// No description provided for @clearFeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear feed'**
+  String get clearFeed;
+
+  /// No description provided for @clearSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear selection'**
+  String get clearSelection;
+
+  /// No description provided for @selectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected: {count}'**
+  String selectedCount(int count);
+
+  /// No description provided for @selectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get selectAll;
+
+  /// No description provided for @share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get share;
+
+  /// No description provided for @downloadSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Download selected'**
+  String get downloadSelected;
+
+  /// No description provided for @deleteSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete selected'**
+  String get deleteSelected;
+
+  /// No description provided for @deleteSelectedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete selected ({count})?'**
+  String deleteSelectedTitle(int count);
+
+  /// No description provided for @deleteSelectedText.
+  ///
+  /// In en, this message translates to:
+  /// **'Items and files will be deleted from the cloud on all devices.'**
+  String get deleteSelectedText;
+
+  /// No description provided for @clearFeedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear feed?'**
+  String get clearFeedTitle;
+
+  /// No description provided for @clearFeedText.
+  ///
+  /// In en, this message translates to:
+  /// **'All items and files of this vault will be deleted from the cloud on all devices. This can\'t be undone.'**
+  String get clearFeedText;
+
+  /// No description provided for @deleteAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all'**
+  String get deleteAll;
+
+  /// No description provided for @dropHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Release to send (up to {limit} per file)'**
+  String dropHint(String limit);
+
+  /// No description provided for @feedEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing here yet. Send a link or drop a file here.'**
+  String get feedEmpty;
+
+  /// No description provided for @attachFileTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach a file (up to {limit})'**
+  String attachFileTooltip(String limit);
+
+  /// No description provided for @composeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Link or text'**
+  String get composeHint;
+
+  /// No description provided for @send.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get send;
+
+  /// No description provided for @actions.
+  ///
+  /// In en, this message translates to:
+  /// **'Actions'**
+  String get actions;
+
+  /// No description provided for @deleteFileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete file?'**
+  String get deleteFileTitle;
+
+  /// No description provided for @deleteItemTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete item?'**
+  String get deleteItemTitle;
+
+  /// No description provided for @deleteItemText.
+  ///
+  /// In en, this message translates to:
+  /// **'It will disappear from the cloud and all devices.'**
+  String get deleteItemText;
+
+  /// No description provided for @actionSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get actionSelect;
+
+  /// No description provided for @actionSaveFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Save file'**
+  String get actionSaveFile;
+
+  /// No description provided for @actionCopyText.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy text'**
+  String get actionCopyText;
+
+  /// No description provided for @actionDeleteEverywhere.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete on all devices'**
+  String get actionDeleteEverywhere;
+
+  /// No description provided for @fileFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'File'**
+  String get fileFallback;
+
+  /// No description provided for @exportTextFileName.
+  ///
+  /// In en, this message translates to:
+  /// **'items.txt'**
+  String get exportTextFileName;
+
+  /// No description provided for @exportFileNote.
+  ///
+  /// In en, this message translates to:
+  /// **'file {name}'**
+  String exportFileNote(String name);
+
+  /// No description provided for @shareTargetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to Transmitter'**
+  String get shareTargetTitle;
+
+  /// No description provided for @sendTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to'**
+  String get sendTo;
+
+  /// No description provided for @noVaultsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a vault key in Transmitter first.'**
+  String get noVaultsYet;
+
+  /// No description provided for @vaultNeedsSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'{provider} · sign in to the cloud first'**
+  String vaultNeedsSignIn(String provider);
+
+  /// No description provided for @sendingProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending {current} of {total}…'**
+  String sendingProgress(int current, int total);
+
+  /// No description provided for @fileSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Larger than {limit} — won\'t be sent'**
+  String fileSkipped(String limit);
+
+  /// No description provided for @shareReceiveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t receive the data: {error}'**
+  String shareReceiveFailed(String error);
+
+  /// No description provided for @authPageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in'**
+  String get authPageTitle;
+
+  /// No description provided for @authPageClose.
+  ///
+  /// In en, this message translates to:
+  /// **'You can close this tab and return to Transmitter.'**
+  String get authPageClose;
+
+  /// No description provided for @authPageReturn.
+  ///
+  /// In en, this message translates to:
+  /// **'Return to Transmitter'**
+  String get authPageReturn;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @languageSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'As in the system'**
+  String get languageSystem;
+
+  /// No description provided for @deviceWorkProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'work'**
+  String get deviceWorkProfile;
+
+  /// No description provided for @deviceBrowserName.
+  ///
+  /// In en, this message translates to:
+  /// **'Browser'**
+  String get deviceBrowserName;
+
+  /// No description provided for @errAuthCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in cancelled'**
+  String get errAuthCancelled;
+
+  /// No description provided for @errBrowserOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open the browser'**
+  String get errBrowserOpenFailed;
+
+  /// No description provided for @errAuthPortBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Port {port} is used by another program'**
+  String errAuthPortBusy(String port);
+
+  /// No description provided for @errPopupBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'The browser blocked the pop-up window. Allow pop-ups for this site.'**
+  String get errPopupBlocked;
+
+  /// No description provided for @errAuthRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'{provider} rejected the sign-in: {details}'**
+  String errAuthRejected(String provider, String details);
+
+  /// No description provided for @errAuthStateMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The response from {provider} failed verification, please try again'**
+  String errAuthStateMismatch(String provider);
+
+  /// No description provided for @errAuthNoCode.
+  ///
+  /// In en, this message translates to:
+  /// **'{provider} didn\'t return a sign-in code'**
+  String errAuthNoCode(String provider);
+
+  /// No description provided for @errAuthTokenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t get a {provider} token ({details})'**
+  String errAuthTokenFailed(String provider, String details);
+
+  /// No description provided for @errAuthNoOfflineAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'{provider} didn\'t grant long-term access'**
+  String errAuthNoOfflineAccess(String provider);
+
+  /// No description provided for @errCloudNotConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'The cloud isn\'t connected'**
+  String get errCloudNotConnected;
+
+  /// No description provided for @errCloudSignInAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to the cloud again'**
+  String get errCloudSignInAgain;
+
+  /// No description provided for @errCloudAccessRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'Access to {provider} was revoked, sign in again'**
+  String errCloudAccessRevoked(String provider);
+
+  /// No description provided for @errCloudWebSessionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in to {provider} in the browser lasts about an hour — sign in again (☁ → {provider})'**
+  String errCloudWebSessionExpired(String provider);
+
+  /// No description provided for @errCloudTokenRefreshFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t refresh the {provider} token ({details})'**
+  String errCloudTokenRefreshFailed(String provider, String details);
+
+  /// No description provided for @errCloudRateLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'{provider} is temporarily limiting requests, try again later'**
+  String errCloudRateLimited(String provider);
+
+  /// No description provided for @errCloudQuota.
+  ///
+  /// In en, this message translates to:
+  /// **'The cloud is out of space'**
+  String get errCloudQuota;
+
+  /// No description provided for @errCloudFileNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'The file has already been deleted from the cloud'**
+  String get errCloudFileNotFound;
+
+  /// No description provided for @errCloudNoUploadUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'{provider} didn\'t return an upload address'**
+  String errCloudNoUploadUrl(String provider);
+
+  /// No description provided for @errCloudRequestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'{provider} error ({details})'**
+  String errCloudRequestFailed(String provider, String details);
+
+  /// No description provided for @errFileTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'File is larger than {limit}'**
+  String errFileTooLarge(String limit);
+
+  /// No description provided for @errDecryptionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t decrypt the data'**
+  String get errDecryptionFailed;
+
+  /// No description provided for @errKeyNotTransmitter.
+  ///
+  /// In en, this message translates to:
+  /// **'This isn\'t a Transmitter key'**
+  String get errKeyNotTransmitter;
+
+  /// No description provided for @errKeyCorrupted.
+  ///
+  /// In en, this message translates to:
+  /// **'The key is damaged'**
+  String get errKeyCorrupted;
+
+  /// No description provided for @errUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {error}'**
+  String errUnknown(String error);
+}
+
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
+  const _AppLocalizationsDelegate();
+
+  @override
+  Future<AppLocalizations> load(Locale locale) {
+    return SynchronousFuture<AppLocalizations>(lookupAppLocalizations(locale));
+  }
+
+  @override
+  bool isSupported(Locale locale) =>
+      <String>['en', 'ru'].contains(locale.languageCode);
+
+  @override
+  bool shouldReload(_AppLocalizationsDelegate old) => false;
+}
+
+AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when only language code is specified.
+  switch (locale.languageCode) {
+    case 'en':
+      return AppLocalizationsEn();
+    case 'ru':
+      return AppLocalizationsRu();
+  }
+
+  throw FlutterError(
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
+}

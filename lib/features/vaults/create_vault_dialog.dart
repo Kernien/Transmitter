@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/l10n.dart';
 import '../../core/storage/cloud_connection_service.dart';
 import '../../core/storage/cloud_provider_id.dart';
-import '../../core/utils/format_size.dart';
 import '../../core/vault/vault_key.dart';
 import 'vaults_controller.dart';
 
@@ -37,30 +37,31 @@ class _CreateVaultDialogState extends State<CreateVaultDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final connections = context.read<CloudConnectionService>();
     return AlertDialog(
-      title: const Text('Новый ключ'),
+      title: Text(l.newKey),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
             controller: _label,
             autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Название, например «Работа»',
-            ),
+            decoration: InputDecoration(labelText: l.keyNameLabel),
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<CloudProviderId>(
             initialValue: _provider,
-            decoration: const InputDecoration(labelText: 'Облако'),
+            decoration: InputDecoration(labelText: l.cloudLabel),
             items: [
               for (final p in CloudProviderId.values)
                 DropdownMenuItem(
                   value: p,
                   enabled: connections.isSupported(p),
                   child: Text(
-                    connections.isSupported(p) ? p.title : '${p.title} (скоро)',
+                    connections.isSupported(p)
+                        ? p.title
+                        : l.cloudComingSoon(p.title),
                   ),
                 ),
             ],
@@ -69,19 +70,14 @@ class _CreateVaultDialogState extends State<CreateVaultDialog> {
           const SizedBox(height: 16),
           DropdownButtonFormField<int>(
             initialValue: _maxFileSize,
-            decoration: const InputDecoration(
-              labelText: 'Максимальный размер файла',
-              helperText:
-                  'Действует на всех устройствах с этим ключом.\n'
-                  'Изменить его потом нельзя.',
+            decoration: InputDecoration(
+              labelText: l.maxFileSizeLabel,
+              helperText: l.maxFileSizeHelp,
               helperMaxLines: 2,
             ),
             items: [
               for (final size in VaultKey.maxFileSizeOptions)
-                DropdownMenuItem(
-                  value: size,
-                  child: Text(formatSizeLimit(size)),
-                ),
+                DropdownMenuItem(value: size, child: Text(l.sizeLimitOf(size))),
             ],
             onChanged: (size) => setState(() => _maxFileSize = size!),
           ),
@@ -90,11 +86,11 @@ class _CreateVaultDialogState extends State<CreateVaultDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Отмена'),
+          child: Text(l.cancel),
         ),
         FilledButton(
           onPressed: _provider == null ? null : _submit,
-          child: const Text('Создать'),
+          child: Text(l.create),
         ),
       ],
     );

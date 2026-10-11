@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../errors/app_error.dart';
 import '../persistence/key_value_store.dart';
 import 'cloud_provider_adapter.dart';
 import 'cloud_provider_id.dart';
@@ -57,7 +58,7 @@ class CloudConnectionService extends ChangeNotifier {
   CloudStorage storageFor(CloudProviderId id) {
     final credentials = _credentials[id];
     if (credentials == null) {
-      throw const StorageAuthException('Облако не подключено');
+      throw const StorageAuthException(ErrorCode.cloudNotConnected);
     }
     return _registry
         .adapterFor(id)

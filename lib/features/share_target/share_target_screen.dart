@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/l10n.dart';
 import '../../app/widgets/content_width.dart';
 import '../../core/share/incoming_share.dart';
-import '../../core/utils/format_size.dart';
 import 'share_target_controller.dart';
 
 /// «Отправить в Transmitter»: что пришло из другого приложения и куда отправить.
@@ -13,11 +13,12 @@ class ShareTargetScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final c = context.watch<ShareTargetController>();
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Отправить в Transmitter')),
+      appBar: AppBar(title: Text(l.shareTargetTitle)),
       body: ContentWidth(
         maxWidth: 600,
         child: ListView(
@@ -25,10 +26,10 @@ class ShareTargetScreen extends StatelessWidget {
           children: [
             _Preview(content: c.content),
             const SizedBox(height: 24),
-            Text('Куда отправить', style: theme.textTheme.titleMedium),
+            Text(l.sendTo, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             if (c.vaults.isEmpty)
-              const Text('Сначала создайте ключ базы в Transmitter.')
+              Text(l.noVaultsYet)
             else
               RadioGroup(
                 groupValue: c.selected,
@@ -39,13 +40,14 @@ class ShareTargetScreen extends StatelessWidget {
                       RadioListTile(
                         value: key,
                         enabled: c.isUsable(key) && !c.isSending,
-                        title: Text(
-                          key.label.isEmpty ? 'Без названия' : key.label,
-                        ),
+                        title: Text(key.label.isEmpty ? l.untitled : key.label),
                         subtitle: Text(
                           c.isUsable(key)
-                              ? '${key.provider.title} · файлы до ${formatSizeLimit(key.maxFileSize)}'
-                              : '${key.provider.title} · сначала войдите в облако',
+                              ? l.vaultSubtitleConnected(
+                                  key.provider.title,
+                                  l.sizeLimitOf(key.maxFileSize),
+                                )
+                              : l.vaultNeedsSignIn(key.provider.title),
                         ),
                       ),
                   ],
@@ -53,7 +55,10 @@ class ShareTargetScreen extends StatelessWidget {
               ),
             if (c.error != null) ...[
               const SizedBox(height: 16),
-              Text(c.error!, style: TextStyle(color: theme.colorScheme.error)),
+              Text(
+                l.describeError(c.error!),
+                style: TextStyle(color: theme.colorScheme.error),
+              ),
             ],
           ],
         ),
@@ -70,8 +75,8 @@ class ShareTargetScreen extends StatelessWidget {
                 : const Icon(Icons.send),
             label: Text(
               c.isSending
-                  ? 'Отправка ${c.sentCount + 1} из ${c.totalCount}…'
-                  : 'Отправить',
+                  ? l.sendingProgress(c.sentCount + 1, c.totalCount)
+                  : l.send,
             ),
             onPressed: c.canSend ? () => _send(context) : null,
           ),
@@ -95,6 +100,7 @@ class _Preview extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final c = context.watch<ShareTargetController>();
+    final l = context.l10n;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -122,8 +128,8 @@ class _Preview extends StatelessWidget {
                 title: Text(file.name),
                 subtitle: Text(
                   c.isSkipped(file)
-                      ? 'Больше ${formatSizeLimit(c.maxFileSize)} — не будет отправлен'
-                      : formatFileSize(file.size),
+                      ? l.fileSkipped(l.sizeLimitOf(c.maxFileSize))
+                      : l.fileSize(file.size),
                   style: c.isSkipped(file)
                       ? TextStyle(color: theme.colorScheme.error)
                       : null,

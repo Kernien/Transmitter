@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../core/errors/app_error.dart';
 import '../../core/files/file_transfer_service.dart';
 import '../../core/share/outgoing_share.dart';
-import '../../core/storage/cloud_storage.dart';
 import '../../core/utils/clock.dart';
 import '../../data/post_repository.dart';
 import '../../domain/post.dart';
@@ -19,7 +19,8 @@ class FeedController extends ChangeNotifier {
     required this._pollInterval,
     this._share = const DisabledShareSender(),
     this._clock = DateTime.now,
-  }) : _exporter = SelectionExporter(_repository);
+    ExportTexts exportTexts = ExportTexts.english,
+  }) : _exporter = SelectionExporter(_repository, exportTexts);
 
   final PostRepository _repository;
   final FileTransferService _files;
@@ -37,12 +38,14 @@ class FeedController extends ChangeNotifier {
   bool _bulkBusy = false;
   final Set<String> _saving = {};
   final Set<String> _selected = {};
-  String? _error;
+  Object? _error;
 
   List<Post> get posts => _posts;
   bool get isInitialLoad => _initialLoad;
   bool get isSending => _sending;
-  String? get error => _error;
+
+  /// Последняя ошибка; текст на языке интерфейса — `describeError`.
+  Object? get error => _error;
 
   /// Идёт ли сейчас скачивание файла из этого поста.
   bool isSaving(Post post) => _saving.contains(post.id);
@@ -120,7 +123,7 @@ class FeedController extends ChangeNotifier {
       await _shareMany([post]);
       _error = null;
     } catch (e) {
-      _error = _describe(e);
+      _error = e;
     } finally {
       _saving.remove(post.id);
       _notify();
@@ -162,7 +165,7 @@ class FeedController extends ChangeNotifier {
     try {
       return await action();
     } catch (e) {
-      _error = _describe(e);
+      _error = e;
       return false;
     } finally {
       _bulkBusy = false;
@@ -185,7 +188,7 @@ class FeedController extends ChangeNotifier {
       _selected.retainWhere(ids.contains);
       _error = null;
     } catch (e) {
-      _error = _describe(e);
+      _error = e;
     } finally {
       _refreshing = false;
       _initialLoad = false;
@@ -205,7 +208,7 @@ class FeedController extends ChangeNotifier {
     try {
       picked = await _files.pickFile(maxSize: _repository.maxFileSize);
     } catch (e) {
-      _error = _describe(e);
+      _error = e;
       _notify();
       return false;
     }
@@ -217,7 +220,7 @@ class FeedController extends ChangeNotifier {
   /// Возвращает, сколько файлов отправлено; ошибки попадают в [error].
   Future<int> sendDroppedFiles(List<XFile> files) async {
     var sent = 0;
-    String? lastError;
+    Object? lastError;
     for (final file in files) {
       try {
         final picked = await _files.readFile(
@@ -230,7 +233,7 @@ class FeedController extends ChangeNotifier {
           lastError = _error;
         }
       } catch (e) {
-        lastError = '${file.name}: ${_describe(e)}';
+        lastError = FileError(file.name, e);
       }
     }
     _error = lastError;
@@ -259,7 +262,7 @@ class FeedController extends ChangeNotifier {
         _posts = _posts.where((p) => p.id != post.id).toList();
         deleted++;
       } catch (e) {
-        _error = _describe(e);
+        _error = e;
       }
       _notify();
     }
@@ -283,7 +286,7 @@ class FeedController extends ChangeNotifier {
       _error = null;
       return saved;
     } catch (e) {
-      _error = _describe(e);
+      _error = e;
       return false;
     } finally {
       _saving.remove(post.id);
@@ -298,7 +301,7 @@ class FeedController extends ChangeNotifier {
       _selected.remove(post.id);
       _error = null;
     } catch (e) {
-      _error = _describe(e);
+      _error = e;
     }
     _notify();
   }
@@ -313,20 +316,13 @@ class FeedController extends ChangeNotifier {
       _error = null;
       return true;
     } catch (e) {
-      _error = _describe(e);
+      _error = e;
       return false;
     } finally {
       _sending = false;
       _notify();
     }
   }
-
-  static String _describe(Object error) => switch (error) {
-    StorageNotFoundException _ => 'Файл уже удалён из облака',
-    StorageException e => e.message,
-    FileTooLargeException e => e.toString(),
-    _ => 'Ошибка: $error',
-  };
 
   void _notify() {
     if (!_disposed) notifyListeners();

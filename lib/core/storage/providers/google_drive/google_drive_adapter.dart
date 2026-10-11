@@ -34,11 +34,6 @@ class GoogleDriveAdapter implements CloudProviderAdapter {
   bool get isConfigured => _auth.clientId.isNotEmpty;
 
   @override
-  String get configurationHint =>
-      'Не задан Client ID приложения Google. Укажите его в config/dev.json '
-      '(см. docs/DEVELOPMENT.md, раздел «Подключение Google Drive»).';
-
-  @override
   Future<String> signIn() => _auth.signIn().then((c) => c.encode());
 
   @override

@@ -21,13 +21,15 @@ class ExportedFile {
 /// Собирает выбранные посты в один файл для сохранения.
 ///
 /// Один файл без текстовых постов сохраняется как есть. Иначе получается
-/// zip: файлы + `сообщения.txt` с текстами и ссылками.
+/// zip: файлы + текстовый файл ([ExportTexts.textFileName]) с текстами и
+/// ссылками.
 class SelectionExporter {
-  const SelectionExporter(this._repository);
-
-  static const String messagesFileName = 'сообщения.txt';
+  const SelectionExporter(this._repository, [this.texts = ExportTexts.english]);
 
   final PostRepository _repository;
+
+  /// Имена и пометки внутри архива — на языке интерфейса.
+  final ExportTexts texts;
 
   /// Бросает исключения хранилища, если файл не удалось скачать.
   Future<ExportedFile> export(List<Post> posts, {required DateTime now}) async {
@@ -54,7 +56,7 @@ class SelectionExporter {
     ];
     final messages = ordered.where((p) => p.text.isNotEmpty).toList();
     if (messages.isNotEmpty) {
-      entries.add(BundleEntry(messagesFileName, _messagesText(messages)));
+      entries.add(BundleEntry(texts.textFileName, _messagesText(messages)));
     }
 
     return ExportedFile(
@@ -66,12 +68,12 @@ class SelectionExporter {
 
   /// Тексты, ссылки и подписи к файлам в хронологическом порядке.
   /// BOM нужен, чтобы Блокнот Windows правильно открыл кириллицу.
-  static Uint8List _messagesText(List<Post> posts) {
+  Uint8List _messagesText(List<Post> posts) {
     final buffer = StringBuffer(String.fromCharCode(0xFEFF));
     for (final post in posts) {
       final file = post.attachment == null
           ? ''
-          : ' · файл ${post.attachment!.fileName}';
+          : ' · ${texts.fileNote(post.attachment!.fileName)}';
       buffer
         ..write(
           '[${_stamp(post.createdAt.toLocal(), human: true)}] ${post.senderDevice}$file\r\n',
@@ -89,4 +91,22 @@ class SelectionExporter {
         ? '$date ${two(t.hour)}:${two(t.minute)}'
         : '${date}_${two(t.hour)}-${two(t.minute)}';
   }
+}
+
+/// Тексты внутри архива выгрузки. Передаются с экрана на языке интерфейса.
+class ExportTexts {
+  const ExportTexts({required this.textFileName, required this.fileNote});
+
+  static const english = ExportTexts(
+    textFileName: 'items.txt',
+    fileNote: _englishFileNote,
+  );
+
+  /// Имя текстового файла с записями в архиве («items.txt» / «записи.txt»).
+  final String textFileName;
+
+  /// Пометка о файле у подписи: «file photo.jpg» / «файл photo.jpg».
+  final String Function(String fileName) fileNote;
+
+  static String _englishFileNote(String name) => 'file $name';
 }

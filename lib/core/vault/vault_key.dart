@@ -17,10 +17,10 @@ class VaultKey {
     this.maxFileSize = defaultMaxFileSize,
   }) : secret = Uint8List.fromList(secret) {
     if (secret.length != secretLength) {
-      throw ArgumentError('Секрет должен быть $secretLength байта');
+      throw ArgumentError('Secret must be $secretLength bytes');
     }
     if (maxFileSize < _mb || maxFileSize > absoluteMaxFileSize) {
-      throw ArgumentError('Недопустимый лимит размера файла: $maxFileSize');
+      throw ArgumentError('Invalid file size limit: $maxFileSize');
     }
   }
 

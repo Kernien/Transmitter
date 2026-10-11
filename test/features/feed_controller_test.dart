@@ -2,7 +2,9 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:transmitter/core/crypto/aes_gcm_cipher.dart';
+import 'package:transmitter/core/errors/app_error.dart';
 import 'package:transmitter/core/files/file_transfer_service.dart';
+import 'package:transmitter/core/storage/cloud_storage.dart';
 import 'package:transmitter/core/storage/in_memory_cloud_storage.dart';
 import 'package:transmitter/core/vault/vault_key.dart';
 import 'package:transmitter/data/encrypted_cloud_post_repository.dart';
@@ -126,7 +128,7 @@ void main() {
         VaultKey.defaultMaxFileSize,
       );
       expect(await feed.attachFile(), isFalse);
-      expect(feed.error, 'Файл больше 25 МБ');
+      expect(feed.error, isA<FileTooLargeException>());
       feed.dispose();
     });
 
@@ -156,7 +158,12 @@ void main() {
         'one.txt',
         'two.txt',
       ]);
-      expect(feed.error, 'huge.iso: Файл больше 25 МБ');
+      expect(
+        feed.error,
+        isA<FileError>()
+            .having((e) => e.fileName, 'файл', 'huge.iso')
+            .having((e) => e.cause, 'причина', isA<FileTooLargeException>()),
+      );
       feed.dispose();
     });
 
@@ -166,7 +173,7 @@ void main() {
       await feed.attachFile();
       cloud.files.removeWhere((path, _) => path.contains('/files/'));
       expect(await feed.saveAttachment(feed.posts.single), isFalse);
-      expect(feed.error, 'Файл уже удалён из облака');
+      expect(feed.error, isA<StorageNotFoundException>());
       feed.dispose();
     });
   });

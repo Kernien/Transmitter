@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/l10n.dart';
 import '../../core/device/device_identity.dart';
 
 /// Диалог имени устройства. Возвращает `true`, если имя сохранено.
@@ -33,7 +34,7 @@ class _DeviceNameDialog extends StatefulWidget {
 
 class _DeviceNameDialogState extends State<_DeviceNameDialog> {
   final _name = TextEditingController();
-  String? _error;
+  bool _emptyName = false;
 
   @override
   void initState() {
@@ -62,19 +63,17 @@ class _DeviceNameDialogState extends State<_DeviceNameDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     return AlertDialog(
       title: Text(
-        widget.firstRun ? 'Как назвать это устройство?' : 'Имя устройства',
+        widget.firstRun ? l.deviceNameFirstRunTitle : l.deviceNameTitle,
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            widget.firstRun
-                ? 'Этим именем будут подписаны записи с этого устройства — так '
-                      'на других устройствах будет понятно, откуда они пришли.'
-                : 'Новые записи будут подписаны новым именем; старые сохранят прежнее.',
+            widget.firstRun ? l.deviceNameFirstRunText : l.deviceNameEditText,
           ),
           const SizedBox(height: 16),
           TextField(
@@ -82,8 +81,8 @@ class _DeviceNameDialogState extends State<_DeviceNameDialog> {
             autofocus: true,
             maxLength: DeviceIdentity.maxLength,
             decoration: InputDecoration(
-              labelText: 'Например, «Redmi — рабочий» или «Ноутбук»',
-              errorText: _error,
+              labelText: l.deviceNameHint,
+              errorText: _emptyName ? l.enterName : null,
             ),
             onSubmitted: (_) => _save(),
           ),
@@ -92,9 +91,9 @@ class _DeviceNameDialogState extends State<_DeviceNameDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: Text(widget.firstRun ? 'Позже' : 'Отмена'),
+          child: Text(widget.firstRun ? l.later : l.cancel),
         ),
-        FilledButton(onPressed: _save, child: const Text('Сохранить')),
+        FilledButton(onPressed: _save, child: Text(l.save)),
       ],
     );
   }
@@ -104,7 +103,7 @@ class _DeviceNameDialogState extends State<_DeviceNameDialog> {
       await context.read<DeviceIdentity>().rename(_name.text);
       if (mounted) Navigator.pop(context, true);
     } on ArgumentError {
-      setState(() => _error = 'Введите имя');
+      setState(() => _emptyName = true);
     }
   }
 }

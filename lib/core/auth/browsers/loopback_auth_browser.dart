@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../errors/app_error.dart';
 import '../auth_browser.dart';
 
 /// Вход через системный браузер, ответ облака принимает временный
@@ -13,13 +14,16 @@ import '../auth_browser.dart';
 /// которые не разрешают возврат в приложение по своей схеме адреса (Google):
 /// тогда на странице «Вход выполнен» есть кнопка возврата [returnUri].
 class LoopbackAuthBrowser implements AuthBrowser {
-  LoopbackAuthBrowser({this.returnUri});
+  LoopbackAuthBrowser({this.returnUri, this.texts = englishAuthPageTexts});
 
   /// Фиксированный порт: облака требуют заранее прописать адрес возврата.
   static const int port = 47819;
 
   /// Ссылка, открывающая приложение после входа (на телефоне).
   final Uri? returnUri;
+
+  /// Тексты страницы «Вход выполнен» на текущем языке интерфейса.
+  final AuthPageTextsSource texts;
 
   @override
   Uri redirectUriFor(String providerCode) =>
@@ -52,7 +56,7 @@ class LoopbackAuthBrowser implements AuthBrowser {
         authorizeUrl,
         mode: LaunchMode.externalApplication,
       );
-      if (!opened) throw const AuthException('Не удалось открыть браузер');
+      if (!opened) throw const AuthException(ErrorCode.browserOpenFailed);
       return await result.future.timeout(
         authTimeout,
         onTimeout: () => throw const AuthCancelledException(),
@@ -65,17 +69,19 @@ class LoopbackAuthBrowser implements AuthBrowser {
   }
 
   String _successPage() {
+    final texts = this.texts();
+    String esc(String text) => htmlEscape.convert(text);
     final back = returnUri == null
-        ? '<p>Можно закрыть эту вкладку и вернуться в Transmitter.</p>'
-        : '<p><a href="${htmlEscape.convert(returnUri.toString())}" '
+        ? '<p>${esc(texts.closeHint)}</p>'
+        : '<p><a href="${esc(returnUri.toString())}" '
               'style="display:inline-block;padding:14px 28px;border-radius:24px;'
               'background:#3f51b5;color:#fff;text-decoration:none;font-size:18px">'
-              'Вернуться в Transmitter</a></p>';
+              '${esc(texts.returnLabel)}</a></p>';
     return '<!DOCTYPE html><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
         '<title>Transmitter</title>'
         '<body style="font-family:sans-serif;text-align:center;padding-top:15vh">'
-        '<h2>Вход выполнен</h2>$back';
+        '<h2>${esc(texts.title)}</h2>$back';
   }
 
   /// Слушаем и IPv4, и IPv6: браузер может открыть `localhost` по любому из них.
@@ -92,7 +98,7 @@ class LoopbackAuthBrowser implements AuthBrowser {
       }
     }
     if (servers.isEmpty) {
-      throw const AuthException('Порт $port занят другой программой');
+      throw const AuthException(ErrorCode.authPortBusy, {'port': '$port'});
     }
     return servers;
   }

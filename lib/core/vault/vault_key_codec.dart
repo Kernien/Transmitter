@@ -1,7 +1,20 @@
 import 'dart:convert';
 
+import '../errors/app_error.dart';
 import '../storage/cloud_provider_id.dart';
 import 'vault_key.dart';
+
+/// Строка не является ключом Transmitter ([ErrorCode.keyNotTransmitter])
+/// или ключ повреждён ([ErrorCode.keyCorrupted]).
+class InvalidVaultKeyException extends FormatException implements CodedError {
+  const InvalidVaultKeyException(this.code) : super('Invalid Transmitter key');
+
+  @override
+  final ErrorCode code;
+
+  @override
+  Map<String, Object> get args => const {};
+}
 
 /// Превращает [VaultKey] в строку для QR-кода или копирования и обратно.
 ///
@@ -18,20 +31,21 @@ class VaultKeyCodec {
           .encode(utf8.encode(jsonEncode(toJson(key))))
           .replaceAll('=', '');
 
-  /// Бросает [FormatException], если строка не является ключом Transmitter.
+  /// Бросает [InvalidVaultKeyException], если строка не является ключом
+  /// Transmitter или ключ повреждён.
   VaultKey decode(String input) {
     final text = input.trim();
     if (!text.startsWith(_prefix)) {
-      throw const FormatException('Это не ключ Transmitter');
+      throw const InvalidVaultKeyException(ErrorCode.keyNotTransmitter);
     }
     try {
       final payload = base64Url.normalize(text.substring(_prefix.length));
       final json = jsonDecode(utf8.decode(base64Url.decode(payload)));
       return fromJson(json as Map<String, dynamic>);
-    } on FormatException {
+    } on InvalidVaultKeyException {
       rethrow;
     } catch (_) {
-      throw const FormatException('Ключ повреждён');
+      throw const InvalidVaultKeyException(ErrorCode.keyCorrupted);
     }
   }
 
@@ -52,10 +66,8 @@ class VaultKeyCodec {
         maxFileSize:
             (json['m'] as num?)?.toInt() ?? VaultKey.defaultMaxFileSize,
       );
-    } on FormatException {
-      rethrow;
     } catch (_) {
-      throw const FormatException('Ключ повреждён');
+      throw const InvalidVaultKeyException(ErrorCode.keyCorrupted);
     }
   }
 }
