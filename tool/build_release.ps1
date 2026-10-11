@@ -40,5 +40,20 @@ Copy-Item -Recurse 'build/windows/x64/runner/Release' "$stage/Transmitter"
 Compress-Archive -Path "$stage/Transmitter" -DestinationPath "$dist/Transmitter-$version-windows-x64.zip"
 Remove-Item -Recurse -Force $stage
 
+# Установщик (Inno Setup 6): installer/transmitter.iss.
+$iscc = @(
+    "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe",
+    "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+    "$env:ProgramFiles\Inno Setup 6\ISCC.exe"
+) | Where-Object { Test-Path $_ } | Select-Object -First 1
+if ($iscc) {
+    $release = (Resolve-Path 'build/windows/x64/runner/Release').Path
+    $distFull = (Resolve-Path $dist).Path
+    Invoke-Step 'Установщик Windows' {
+        & $iscc /Q "/DAppVersion=$version" "/DSourceDir=$release" "/DOutputDir=$distFull" installer/transmitter.iss
+    }
+} else {
+    Write-Warning 'Inno Setup 6 не найден — установщик не собран (winget install JRSoftware.InnoSetup)'
+}
 Write-Host "Готово: $dist" -ForegroundColor Green
 Get-ChildItem $dist | Select-Object Name, @{ n = 'МБ'; e = { [math]::Round($_.Length / 1MB, 1) } }
