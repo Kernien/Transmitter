@@ -10,9 +10,10 @@
 |---|---|
 | 📱 **Android** | 应用，支持系统“分享”菜单 |
 | 🖥️ **Windows** | 带安装程序的应用，可将文件拖放到窗口中 |
+| 🐧 **Linux** | AppImage——单个文件，无需安装；已在 Steam Deck 上测试 |
 | 🌐 **浏览器** | https://kernien.github.io/transmitter-web/ ——无需安装 |
 
-版本 **0.4.0**。
+版本 **0.5.0**。
 
 > **界面语言。** 应用界面有英语和俄语；在中文系统上显示为英语（可用 🌐 按钮切换）。本指南中的按钮名称先给出中文，括号内是应用中实际显示的英文，例如 **新建密钥**（“New key”）。
 
@@ -50,18 +51,27 @@
 ### Android
 
 1. 从 [**Releases**](https://github.com/Kernien/Transmitter/releases) 下载 APK：
-   - `Transmitter-0.4.0-android-arm64.apk` ——适用于近几年的大多数手机；
-   - `Transmitter-0.4.0-android-armv7.apk` ——适用于较旧或入门级机型（如果第一个无法安装）。
+   - `Transmitter-0.5.0-android-arm64.apk` ——适用于近几年的大多数手机；
+   - `Transmitter-0.5.0-android-armv7.apk` ——适用于较旧或入门级机型（如果第一个无法安装）。
 2. 在手机上打开该文件。Android 会询问是否允许从此来源（浏览器或文件管理器）安装——请允许。
 
 **工作资料（Shelter）。** 先在个人资料中安装 Transmitter，然后在 Shelter 中选中它，点击 **克隆到工作资料**。在工作资料中登录云盘也需要浏览器——请把浏览器一并克隆过去。
 
 ### Windows
 
-1. 从 [**Releases**](https://github.com/Kernien/Transmitter/releases) 下载 `Transmitter-0.4.0-windows-setup.exe` 并运行。它只为当前用户安装（无需管理员权限），并在开始菜单中添加 Transmitter。可在 **设置 → 应用** 中卸载；密钥和云盘登录状态会保留。
+1. 从 [**Releases**](https://github.com/Kernien/Transmitter/releases) 下载 `Transmitter-0.5.0-windows-setup.exe` 并运行。它只为当前用户安装（无需管理员权限），并在开始菜单中添加 Transmitter。可在 **设置 → 应用** 中卸载；密钥和云盘登录状态会保留。
 2. 首次启动时，Windows 可能提示“Windows 已保护你的电脑”——因为应用没有付费的代码签名证书。点击 **更多信息 → 仍要运行**。
 
-不想安装？`Transmitter-0.4.0-windows-x64.zip` 是便携版：解压到任意位置，运行 `transmitter.exe` 即可。
+不想安装？`Transmitter-0.5.0-windows-x64.zip` 是便携版：解压到任意位置，运行 `transmitter.exe` 即可。
+
+### Linux 和 Steam Deck
+
+1. 从 [**Releases**](https://github.com/Kernien/Transmitter/releases) 下载 `Transmitter-0.5.0-linux-x86_64.AppImage`。
+2. 将文件设为可执行：在文件管理器中右键 → **属性 → 权限 → 可执行**（或运行 `chmod +x Transmitter-*.AppImage`），然后启动。
+
+**Steam Deck：** 以上操作在桌面模式下进行（Steam 键 → 电源 → 切换到桌面）。若想在游戏模式中也能启动 Transmitter，右键点击文件 → **添加到 Steam**，它会出现在库中的非 Steam 游戏里。
+
+Linux 版没有二维码扫描器——请以字符串形式粘贴密钥。密钥和云盘登录信息保存在 `~/.local/share/app.transmitter.transmitter`（仅当前用户可访问）。另有 `Transmitter-0.5.0-linux-x64.tar.gz`：解压后运行 `transmitter` 即可。
 
 ### 浏览器
 
@@ -122,12 +132,12 @@
 | 条目没有出现在另一台设备上 | 检查网络，并确认打开的是同一个库；列表每 5 秒刷新一次。在 Shelter 中确认工作资料里的 Transmitter 没有被冻结 |
 | “Sign in to the cloud again” | 主界面上的 ☁ → **退出**（“Sign out”）→ **登录**（“Sign in”） |
 | 小米手机无法安装 APK | 为用来打开该文件的应用允许“安装未知来源应用” |
+| Linux 上 AppImage 无法启动 | 将文件设为可执行（见“安装 → Linux”）。部分发行版需要安装 `libfuse2` 软件包；Steam Deck 已自带 |
 
 ---
 
 ## 后续计划
 
-- Linux 版本；
 - MEGA 云盘；
 - iPhone 版本；
 - 在应用内直接查看照片、播放音频和视频。

@@ -196,11 +196,13 @@ Dropbox. Для личного использования этого доста�
 
 ## Выпуск релиза
 
-1. Поднять версию в `pubspec.yaml` (`version: 0.5.0+5` — номер после `+`
+1. Поднять версию в `pubspec.yaml` (`version: 0.6.0+6` — номер после `+`
    увеличивается с каждым релизом, иначе Android не обновит приложение).
 2. Собрать всё в `build/dist`:
    APK, zip и установщик Windows (нужен Inno Setup 6:
-   `winget install JRSoftware.InnoSetup`; сценарий — `installer/transmitter.iss`).
+   `winget install JRSoftware.InnoSetup`; сценарий — `installer/transmitter.iss`),
+   AppImage и tar.gz для Linux (если установлен WSL с Ubuntu-24.04, см.
+   «Сборка для Linux»).
 
    ```powershell
    powershell -File tool/build_release.ps1
@@ -212,9 +214,7 @@ Dropbox. Для личного использования этого доста�
    powershell -File tool/deploy_web.ps1
    ```
 
-4. Собрать Linux-версию (AppImage и tar.gz в тот же `build/dist`) — см.
-   «Сборка для Linux».
-5. Тег и GitHub Release с файлами из `build/dist`.
+4. Тег и GitHub Release с файлами из `build/dist`.
 
 **Ключ подписи Android** лежит в `%USERPROFILE%\.transmitter-signing\`
 (`upload-keystore.jks` и копия `key.properties` с паролем); рабочая копия
@@ -236,7 +236,7 @@ Dropbox. Для личного использования этого доста�
 | Google Drive (drive.file; на устройствах — вход с refresh token, в вебе — временный) | ✅ (0.3.0) |
 | Установщик Windows (Inno Setup: для текущего пользователя, меню «Пуск», удаление через «Параметры») | ✅ (0.4.0) |
 | Интерфейс на русском и английском, выбор языка в приложении | ✅ (0.4.0) |
-| Версия для Linux (AppImage, tar.gz) | ✅ (WSL, Steam Deck) |
+| Версия для Linux (AppImage, tar.gz) | ✅ (0.5.0) |
 | Лимит размера файла выбирается при создании ключа (10–100 МБ, хранится в ключе) | ✅ (0.2.0) |
 | Имена устройств (подсказка при первом запуске, «· рабочий» в рабочем профиле, смена кнопкой на главном экране) | ✅ (0.2.0) |
 

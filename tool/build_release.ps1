@@ -55,5 +55,14 @@ if ($iscc) {
 } else {
     Write-Warning 'Inno Setup 6 не найден — установщик не собран (winget install JRSoftware.InnoSetup)'
 }
+# Linux-версия собирается в WSL (Ubuntu-24.04), см. docs/DEVELOPMENT.md.
+$env:WSL_UTF8 = '1'
+if ((wsl.exe -l -q 2>$null) -match 'Ubuntu-24.04') {
+    $project = (Resolve-Path '.').Path
+    $wslProject = '/mnt/' + $project.Substring(0, 1).ToLower() + ($project.Substring(2) -replace '\\', '/')
+    Invoke-Step 'Linux' { wsl.exe -d Ubuntu-24.04 --cd $wslProject -- bash tool/build_linux.sh }
+} else {
+    Write-Warning 'WSL с Ubuntu-24.04 не найден — Linux-версия не собрана'
+}
 Write-Host "Готово: $dist" -ForegroundColor Green
 Get-ChildItem $dist | Select-Object Name, @{ n = 'МБ'; e = { [math]::Round($_.Length / 1MB, 1) } }

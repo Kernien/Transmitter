@@ -14,9 +14,10 @@ right on the device: the cloud only ever sees meaningless bytes.
 |---|---|
 | 📱 **Android** | app, including the system “Share” menu |
 | 🖥️ **Windows** | app with an installer, drag-and-drop files into the window |
+| 🐧 **Linux** | AppImage — a single file, no installation; tested on Steam Deck |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — nothing to install |
 
-Version **0.4.0**. The interface is in **English and Russian** — it follows the
+Version **0.5.0**. The interface is in **English and Russian** — it follows the
 system language, or pick one with the 🌐 button.
 
 ## Why
@@ -78,9 +79,9 @@ browser.
 ### Android
 
 1. Download the APK from [**Releases**](https://github.com/Kernien/Transmitter/releases):
-   - `Transmitter-0.4.0-android-arm64.apk` — for most phones from recent
+   - `Transmitter-0.5.0-android-arm64.apk` — for most phones from recent
      years;
-   - `Transmitter-0.4.0-android-armv7.apk` — for older or budget models, if
+   - `Transmitter-0.5.0-android-armv7.apk` — for older or budget models, if
      the first one doesn't install.
 2. Open the file on your phone. Android will ask to allow installs from this
    source (your browser or file manager) — allow it.
@@ -91,15 +92,31 @@ the cloud in the work profile also needs a browser there — clone one as well.
 
 ### Windows
 
-1. Download `Transmitter-0.4.0-windows-setup.exe` from [**Releases**](https://github.com/Kernien/Transmitter/releases)
+1. Download `Transmitter-0.5.0-windows-setup.exe` from [**Releases**](https://github.com/Kernien/Transmitter/releases)
    and run it. It installs for your user only — no administrator rights
    needed — and adds Transmitter to the Start menu. Uninstall it in
    **Settings → Apps**; your keys and cloud sign-ins are kept.
 2. On first launch Windows may say “Windows protected your PC” — the app has
    no paid code-signing certificate. Click **More info → Run anyway**.
 
-Prefer no installation? `Transmitter-0.4.0-windows-x64.zip` is a portable
+Prefer no installation? `Transmitter-0.5.0-windows-x64.zip` is a portable
 version: unpack it anywhere and run `transmitter.exe`.
+
+### Linux and Steam Deck
+
+1. Download `Transmitter-0.5.0-linux-x86_64.AppImage` from [**Releases**](https://github.com/Kernien/Transmitter/releases).
+2. Make the file executable — in the file manager, right-click →
+   **Properties → Permissions → Is executable** (or
+   `chmod +x Transmitter-*.AppImage`) — and run it.
+
+**Steam Deck:** do this in Desktop Mode (Steam button → Power → Switch to
+Desktop). To launch Transmitter from Game Mode as well, right-click the file →
+**Add to Steam** — it will appear in your library among non-Steam games.
+
+There is no QR scanner on Linux — paste the key as a string. Keys and cloud
+sign-ins are stored in `~/.local/share/app.transmitter.transmitter`
+(accessible only to your user). There is also
+`Transmitter-0.5.0-linux-x64.tar.gz`: extract it and run `transmitter`.
 
 ### Browser
 
@@ -185,12 +202,12 @@ open.
 | An item didn't show up on another device | Check your connection and that the same vault is open; the feed refreshes every 5 seconds. In Shelter, make sure Transmitter isn't frozen in the work profile |
 | “Sign in to the cloud again” | ☁ on the main screen → **Sign out** → **Sign in** |
 | Xiaomi won't install the APK | Allow installs from unknown sources for the app you open the file with |
+| The AppImage won't start on Linux | Make the file executable (see Installation → Linux). Some distributions need the `libfuse2` package; Steam Deck already has it |
 
 ---
 
 ## What's next
 
-- a Linux version;
 - the MEGA cloud;
 - an iPhone version;
 - viewing photos, audio and video right in the app.
