@@ -119,7 +119,7 @@ git clone --depth 1 -b <версия Flutter> https://github.com/flutter/flutter
 Сборка AppImage и tar.gz в `build/dist` (тесты прогоняются и под Linux):
 
 ```powershell
-wsl -d Ubuntu-24.04 --cd /mnt/d/MEGA/Code/Transmitter -- bash tool/build_linux.sh
+wsl -d Ubuntu-24.04 --cd /mnt/f/Code/Projects/Transmitter -- bash tool/build_linux.sh
 ```
 
 Особенности Linux:
