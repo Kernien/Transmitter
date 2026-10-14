@@ -566,6 +566,12 @@ abstract class AppLocalizations {
   /// **'Attach a file (up to {limit})'**
   String attachFileTooltip(String limit);
 
+  /// No description provided for @attachMediaTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo or video from the gallery (up to {limit})'**
+  String attachMediaTooltip(String limit);
+
   /// No description provided for @composeHint.
   ///
   /// In en, this message translates to:

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../core/errors/app_error.dart';
 import '../../core/files/file_transfer_service.dart';
+import '../../core/files/media_picker.dart';
 import '../../core/share/outgoing_share.dart';
 import '../../core/utils/clock.dart';
 import '../../data/post_repository.dart';
@@ -17,6 +18,7 @@ class FeedController extends ChangeNotifier {
     this._repository, {
     required this._files,
     required this._pollInterval,
+    this._media = const NoMediaPicker(),
     this._share = const DisabledShareSender(),
     this._clock = DateTime.now,
     ExportTexts exportTexts = ExportTexts.english,
@@ -24,6 +26,7 @@ class FeedController extends ChangeNotifier {
 
   final PostRepository _repository;
   final FileTransferService _files;
+  final MediaPicker _media;
   final ShareSender _share;
   final Duration _pollInterval;
   final Clock _clock;
@@ -202,11 +205,28 @@ class FeedController extends ChangeNotifier {
 
   /// Предлагает выбрать файл и отправляет его с подписью [caption].
   /// Возвращает `true`, если файл отправлен (`false` — отмена или ошибка).
-  Future<bool> attachFile({String caption = ''}) async {
+  Future<bool> attachFile({String caption = ''}) => _attach(
+    () => _files.pickFile(maxSize: _repository.maxFileSize),
+    caption: caption,
+  );
+
+  /// Можно ли выбрать фото или видео в Галерее (на телефоне).
+  bool get canAttachMedia => _media.isAvailable;
+
+  /// Как [attachFile], но фото или видео выбирается в Галерее.
+  Future<bool> attachMedia({String caption = ''}) => _attach(
+    () => _media.pickMedia(maxSize: _repository.maxFileSize),
+    caption: caption,
+  );
+
+  Future<bool> _attach(
+    Future<PickedFile?> Function() pick, {
+    required String caption,
+  }) async {
     if (_sending) return false;
     final PickedFile? picked;
     try {
-      picked = await _files.pickFile(maxSize: _repository.maxFileSize);
+      picked = await pick();
     } catch (e) {
       _error = e;
       _notify();

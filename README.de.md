@@ -182,6 +182,8 @@ an und scanne ihn von dort.
 - **Datei** — 📎 links neben dem Feld (Text im Feld wird zur Bildunterschrift),
   Dateien ins Fenster ziehen oder unter Android: **Teilen → Transmitter** in
   jeder App.
+- **Foto oder Video** (Android) — 🖼 links neben 📎 öffnet die Galerie-App;
+  so findet man Aufnahmen leichter als in den Dateien.
 
 Neues erscheint auf den anderen Geräten innerhalb weniger Sekunden, solange
 der Verlauf geöffnet ist.

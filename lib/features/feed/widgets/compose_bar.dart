@@ -30,6 +30,16 @@ class _ComposeBarState extends State<ComposeBar> {
         padding: const EdgeInsets.fromLTRB(4, 4, 8, 8),
         child: Row(
           children: [
+            if (context.read<FeedController>().canAttachMedia)
+              IconButton(
+                tooltip: context.l10n.attachMediaTooltip(
+                  context.l10n.sizeLimitOf(
+                    context.read<FeedController>().maxFileSize,
+                  ),
+                ),
+                onPressed: sending ? null : _attachMedia,
+                icon: const Icon(Icons.photo_library_outlined),
+              ),
             IconButton(
               tooltip: context.l10n.attachFileTooltip(
                 context.l10n.sizeLimitOf(
@@ -80,6 +90,13 @@ class _ComposeBarState extends State<ComposeBar> {
   /// Текст из поля ввода становится подписью к файлу.
   Future<void> _attach() async {
     final ok = await context.read<FeedController>().attachFile(
+      caption: _text.text,
+    );
+    if (ok) _text.clear();
+  }
+
+  Future<void> _attachMedia() async {
+    final ok = await context.read<FeedController>().attachMedia(
       caption: _text.text,
     );
     if (ok) _text.clear();

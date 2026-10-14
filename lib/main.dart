@@ -10,7 +10,9 @@ import 'core/auth/auth_browser.dart';
 import 'core/auth/platform_auth_browser.dart';
 import 'core/device/device_identity.dart';
 import 'core/device/platform_device_name_suggester.dart';
+import 'core/files/android_gallery_picker.dart';
 import 'core/files/file_picker_transfer_service.dart';
+import 'core/files/media_picker.dart';
 import 'core/persistence/platform_key_value_store.dart';
 import 'core/share/android_incoming_share_source.dart';
 import 'core/share/incoming_share.dart';
@@ -93,6 +95,8 @@ Future<void> main() async {
       files: FilePickerTransferService(
         saveDialogTitle: () => language.current.actionSaveFile,
       ),
+      // На телефоне фото удобнее выбирать в Галерее, чем в файлах.
+      media: isAndroid ? const AndroidGalleryPicker() : const NoMediaPicker(),
       incomingShares: isAndroid
           ? AndroidIncomingShareSource(
               maxFileSize: VaultKey.absoluteMaxFileSize,

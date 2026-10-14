@@ -162,6 +162,8 @@ QR code on your computer or in the browser and scan it from there.
 - **A file** — 📎 to the left of the field (any text in the field becomes the
   file's caption), or drag files into the window, or on Android:
   **Share → Transmitter** in any app.
+- **A photo or video** (Android) — 🖼 to the left of 📎 opens your gallery app,
+  which is easier than digging through files.
 
 New items appear on your other devices within a few seconds while the feed is
 open.

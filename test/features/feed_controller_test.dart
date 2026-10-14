@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:transmitter/core/crypto/aes_gcm_cipher.dart';
 import 'package:transmitter/core/errors/app_error.dart';
 import 'package:transmitter/core/files/file_transfer_service.dart';
+import 'package:transmitter/core/files/media_picker.dart';
 import 'package:transmitter/core/storage/cloud_storage.dart';
 import 'package:transmitter/core/storage/in_memory_cloud_storage.dart';
 import 'package:transmitter/core/vault/vault_key.dart';
@@ -109,6 +110,42 @@ void main() {
       },
     );
 
+    test('фото из Галереи уходит с подписью и тем же лимитом', () async {
+      final gallery = _FakeMediaPicker()
+        ..nextPick = PickedFile(
+          name: 'IMG_0001.jpg',
+          bytes: bytes,
+          mimeType: 'image/jpeg',
+        );
+      final feed = FeedController(
+        EncryptedCloudPostRepository(
+          storage: cloud,
+          vaultId: 'v',
+          cipher: AesGcmCipher(List<int>.filled(32, 3)),
+          deviceName: 'A',
+        ),
+        files: files,
+        media: gallery,
+        pollInterval: const Duration(hours: 1),
+      );
+      expect(feed.canAttachMedia, isTrue);
+      expect(await feed.attachMedia(caption: 'закат'), isTrue);
+      expect(gallery.lastMaxSize, VaultKey.defaultMaxFileSize);
+      expect(feed.posts.single.attachment!.fileName, 'IMG_0001.jpg');
+      expect(feed.posts.single.text, 'закат');
+
+      gallery.nextPick = null;
+      expect(await feed.attachMedia(), isFalse);
+      expect(feed.error, isNull);
+      feed.dispose();
+    });
+
+    test('без Галереи кнопка не предлагается', () {
+      final feed = controllerFor('A');
+      expect(feed.canAttachMedia, isFalse);
+      feed.dispose();
+    });
+
     test(
       'отмена выбора файла ничего не отправляет и не показывает ошибку',
       () async {
@@ -177,4 +214,18 @@ void main() {
       feed.dispose();
     });
   });
+}
+
+class _FakeMediaPicker implements MediaPicker {
+  PickedFile? nextPick;
+  int? lastMaxSize;
+
+  @override
+  bool get isAvailable => true;
+
+  @override
+  Future<PickedFile?> pickMedia({required int maxSize}) async {
+    lastMaxSize = maxSize;
+    return nextPick;
+  }
 }

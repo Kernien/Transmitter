@@ -104,6 +104,8 @@
   "feedEmpty": "Nothing here yet. Send a link or drop a file here.",
   "attachFileTooltip": "Attach a file (up to {limit})",
   "@attachFileTooltip": { "placeholders": { "limit": { "type": "String" } } },
+  "attachMediaTooltip": "Photo or video from the gallery (up to {limit})",
+  "@attachMediaTooltip": { "placeholders": { "limit": { "type": "String" } } },
   "composeHint": "Link or text",
   "send": "Send",
   "actions": "Actions",

@@ -288,6 +288,11 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String attachMediaTooltip(String limit) {
+    return 'Фото или видео из Галереи (до $limit)';
+  }
+
+  @override
   String get composeHint => 'Ссылка или текст';
 
   @override

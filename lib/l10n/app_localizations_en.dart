@@ -287,6 +287,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String attachMediaTooltip(String limit) {
+    return 'Photo or video from the gallery (up to $limit)';
+  }
+
+  @override
   String get composeHint => 'Link or text';
 
   @override

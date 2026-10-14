@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../core/device/device_identity.dart';
 import '../core/files/file_transfer_service.dart';
+import '../core/files/media_picker.dart';
 import '../core/share/incoming_share.dart';
 import '../core/share/outgoing_share.dart';
 import '../core/storage/cloud_connection_service.dart';
@@ -23,6 +24,7 @@ class TransmitterApp extends StatelessWidget {
     required this.language,
     required this.sessions,
     required this.files,
+    this.media = const NoMediaPicker(),
     required this.incomingShares,
     required this.shareSender,
   });
@@ -33,6 +35,7 @@ class TransmitterApp extends StatelessWidget {
   final LanguageController language;
   final VaultSessionFactory sessions;
   final FileTransferService files;
+  final MediaPicker media;
   final IncomingShareSource incomingShares;
   final ShareSender shareSender;
 
@@ -46,6 +49,7 @@ class TransmitterApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: language),
         Provider.value(value: sessions),
         Provider<FileTransferService>.value(value: files),
+        Provider<MediaPicker>.value(value: media),
         Provider<IncomingShareSource>.value(value: incomingShares),
         Provider<ShareSender>.value(value: shareSender),
       ],
