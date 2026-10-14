@@ -211,8 +211,9 @@ open.
 ## What's next
 
 - the MEGA cloud;
-- an iPhone version;
-- viewing photos, audio and video right in the app.
+- comments on items — a note you can add and edit later;
+- viewing photos, audio and video right in the app;
+- an iPhone version.
 
 ---
 

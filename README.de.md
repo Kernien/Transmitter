@@ -236,8 +236,9 @@ der Verlauf geöffnet ist.
 ## Wie es weitergeht
 
 - die Cloud MEGA;
-- eine Version für das iPhone;
-- Fotos, Audio und Videos direkt in der App ansehen.
+- Kommentare zu Einträgen — eine Notiz, die sich hinzufügen und später ändern lässt;
+- Fotos, Audio und Videos direkt in der App ansehen;
+- eine Version für das iPhone.
 
 ---
 
