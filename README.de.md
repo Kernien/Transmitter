@@ -18,7 +18,7 @@ Bytes.
 | 🐧 **Linux** | AppImage — eine einzige Datei ohne Installation; getestet auf dem Steam Deck |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — keine Installation nötig |
 
-Version **0.6.0**.
+Version **0.7.0**.
 
 > **Sprache der Oberfläche.** Die App gibt es auf Englisch und Russisch; auf
 > einem deutschen System ist sie auf Englisch (umschalten mit der 🌐-Taste).
@@ -65,6 +65,10 @@ Computer und Browser.
   „Redmi 10 · work“, „Laptop“.
 - **Englisch und Russisch.** Die Sprache folgt dem System oder wird in der App
   gewählt.
+- **Öffentliche Boards.** Öffne einen beliebigen Tresor nur zum Lesen und
+  teile ihn mit anderen: Mit einem Leseschlüssel lassen sich Einträge ansehen,
+  kopieren und herunterladen, aber nicht ändern. Leser brauchen kein
+  Cloud-Konto.
 - **Keine Registrierung.** Keine Transmitter-Konten: Geräte werden über einen
   Schlüssel verbunden — per QR-Code oder als Zeichenfolge.
 
@@ -90,9 +94,9 @@ Computer und Browser.
 ### Android
 
 1. Lade die APK unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter:
-   - `Transmitter-0.6.0-android-arm64.apk` — für die meisten Handys der
+   - `Transmitter-0.7.0-android-arm64.apk` — für die meisten Handys der
      letzten Jahre;
-   - `Transmitter-0.6.0-android-armv7.apk` — für ältere oder günstige
+   - `Transmitter-0.7.0-android-armv7.apk` — für ältere oder günstige
      Modelle, falls sich die erste nicht installieren lässt.
 2. Öffne die Datei auf dem Handy. Android fragt, ob Installationen aus dieser
    Quelle (Browser oder Dateimanager) erlaubt sind — erlaube es.
@@ -104,7 +108,7 @@ klone ihn ebenfalls.
 
 ### Windows
 
-1. Lade `Transmitter-0.6.0-windows-setup.exe` unter [**Releases**](https://github.com/Kernien/Transmitter/releases)
+1. Lade `Transmitter-0.7.0-windows-setup.exe` unter [**Releases**](https://github.com/Kernien/Transmitter/releases)
    herunter und starte es. Die Installation gilt nur für deinen Benutzer —
    ohne Administratorrechte — und legt Transmitter im Startmenü an.
    Deinstallieren unter **Einstellungen → Apps**; Schlüssel und
@@ -114,12 +118,12 @@ klone ihn ebenfalls.
    Signaturzertifikat. Klicke auf **Weitere Informationen → Trotzdem
    ausführen**.
 
-Lieber ohne Installation? `Transmitter-0.6.0-windows-x64.zip` ist eine
+Lieber ohne Installation? `Transmitter-0.7.0-windows-x64.zip` ist eine
 portable Version: irgendwo entpacken und `transmitter.exe` starten.
 
 ### Linux und Steam Deck
 
-1. Lade `Transmitter-0.6.0-linux-x86_64.AppImage` unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter.
+1. Lade `Transmitter-0.7.0-linux-x86_64.AppImage` unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter.
 2. Mache die Datei ausführbar — im Dateimanager per Rechtsklick →
    **Eigenschaften → Berechtigungen → Ausführbar** (oder
    `chmod +x Transmitter-*.AppImage`) — und starte sie.
@@ -132,7 +136,7 @@ Bibliothek unter den Nicht-Steam-Spielen.
 Unter Linux gibt es keinen QR-Scanner — füge den Schlüssel als Text ein.
 Schlüssel und Cloud-Anmeldungen liegen in
 `~/.local/share/app.transmitter.transmitter` (nur für deinen Benutzer
-lesbar). Außerdem gibt es `Transmitter-0.6.0-linux-x64.tar.gz`: entpacken und
+lesbar). Außerdem gibt es `Transmitter-0.7.0-linux-x64.tar.gz`: entpacken und
 `transmitter` starten.
 
 ### Browser
@@ -193,7 +197,8 @@ der Verlauf geöffnet ist.
 ### 4. Mit Einträgen arbeiten
 
 - **⋮ neben einem Eintrag:** **Kommentar hinzufügen** („Add comment“, später
-  „Edit comment“), **Teilen** („Share“), **Datei speichern** („Save
+  „Edit comment“), **Text auswählen** („Select text“, um einen Teil zu
+  kopieren), **Teilen** („Share“), **Datei speichern** („Save
   file“), **Text kopieren** („Copy text“ — Link oder Bildunterschrift), **Auf
   allen Geräten löschen** („Delete on all devices“).
 - **Tippen** auf einen Link öffnet ihn, auf eine Datei speichert sie.
@@ -219,6 +224,37 @@ der Verlauf geöffnet ist.
   entfernen** („Remove from device“). Die Daten in der Cloud und auf anderen
   Geräten bleiben erhalten.
 
+### 6. Öffentliche Boards: mit anderen teilen
+
+Jeder Tresor lässt sich **nur zum Lesen** öffnen — zum Beispiel, um eine
+Sammlung von Links oder Fotos mit Freunden oder Kollegen zu teilen.
+
+**Besitzer:**
+
+1. ⋮ neben dem Tresor → **Lesezugriff…** („Read-only access…“) →
+   **Zugriff öffnen** („Open access“). Bei Dropbox bittet die App einmalig
+   um eine neue Anmeldung (Schaltfläche „Sign in to Dropbox again“ direkt in
+   diesem Fenster) — so erhält sie das Recht, öffentliche Links zu erstellen.
+2. Es erscheint ein **Leseschlüssel** — QR-Code und Zeichenkette `TRM1R.…`.
+   Schicke ihn an die Personen, mit denen du teilen möchtest. Er lässt sich
+   dort jederzeit wieder anzeigen.
+3. Danach nutzt du den Tresor wie gewohnt: Neue Einträge, Kommentare und
+   Löschungen erreichen die Leser von selbst, innerhalb etwa einer Minute.
+4. **Zugriff schließen** („Close access“) — alle ausgegebenen Leseschlüssel
+   funktionieren nicht mehr. Öffnest du den Zugriff erneut, gibt es einen
+   neuen Schlüssel.
+
+**Leser:** QR-Symbol oben → Leseschlüssel einfügen oder scannen. Das Board
+erscheint in der Liste mit dem Vermerk „Read-only“. Ein Cloud-Konto oder eine
+Anmeldung ist nicht nötig, auch der Browser genügt. Einträge lassen sich
+ansehen, kopieren, herunterladen und weiterleiten, aber nicht ändern.
+
+Ein Leser sieht **den gesamten Tresor** samt Kommentaren — lege zum Teilen mit
+anderen also einen eigenen Tresor an. Hinter den Cloud-Links liegen nur
+verschlüsselte Daten, und der Leseschlüssel enthält nicht das Geheimnis des
+Tresors — ändern lässt er sich damit nicht. Leseschlüssel öffnen sich ab
+Transmitter 0.7.0.
+
 ---
 
 ## Wenn etwas nicht funktioniert
@@ -232,6 +268,9 @@ der Verlauf geöffnet ist.
 | Ein Eintrag erscheint nicht auf einem anderen Gerät | Internetverbindung prüfen und ob derselbe Tresor geöffnet ist; der Verlauf aktualisiert sich alle 5 Sekunden. In Shelter prüfen, dass Transmitter im Arbeitsprofil nicht eingefroren ist |
 | „Sign in to the cloud again“ | ☁ auf dem Startbildschirm → **Abmelden** („Sign out“) → **Anmelden** („Sign in“) |
 | Xiaomi lässt die APK nicht installieren | Installation aus unbekannten Quellen für die App erlauben, mit der du die Datei öffnest |
+| Bei einem `TRM1R.…`-Schlüssel erscheint „This isn't a Transmitter key“ | Das ist ein Leseschlüssel eines öffentlichen Boards: Transmitter auf 0.7.0 oder neuer aktualisieren |
+| Beim Öffnen des Lesezugriffs: erneut bei Dropbox anmelden | Im selben Fenster „Sign in to Dropbox again“ drücken und den Zugriff erlauben — nur einmal nötig |
+| „The owner has closed access to this board“ | Dieser Leseschlüssel funktioniert nicht mehr — bitte den Besitzer um einen neuen |
 | Das AppImage startet unter Linux nicht | Mache die Datei ausführbar (siehe Installation → Linux). Manche Distributionen brauchen das Paket `libfuse2`; auf dem Steam Deck ist es schon vorhanden |
 
 ---
