@@ -499,6 +499,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errKeyCorrupted => 'The key is damaged';
 
   @override
+  String get boardAccessAction => 'Read-only access…';
+
+  @override
+  String get boardAccessTitle => 'Read-only access';
+
+  @override
+  String get boardIntro =>
+      'Anyone with the reader key will be able to view, copy and download all items in this vault, including comments — but not change them. Readers don\'t need a cloud account.';
+
+  @override
+  String get boardOpenAccess => 'Open access';
+
+  @override
+  String get boardReaderHint =>
+      'Send this reader key to the people you want to share with. New items will appear for them automatically.';
+
+  @override
+  String get boardCloseAccess => 'Close access';
+
+  @override
+  String get boardCloseTitle => 'Close access?';
+
+  @override
+  String get boardCloseText =>
+      'All reader keys you have given out will stop working. If you open access again, there will be a new key.';
+
+  @override
+  String get boardClosed => 'Access closed';
+
+  @override
+  String get boardUnsupported => 'This cloud doesn\'t support public boards';
+
+  @override
   String errCloudSharingNotAllowed(String provider) {
     return 'Sign in to $provider again to allow public links: ☁ → $provider → Sign out, then Sign in';
   }

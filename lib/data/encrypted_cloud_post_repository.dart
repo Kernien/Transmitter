@@ -51,6 +51,9 @@ class EncryptedCloudPostRepository implements PostRepository {
   @override
   final int maxFileSize;
 
+  @override
+  Object? get backgroundError => null;
+
   final CloudStorage _storage;
   final Cipher _cipher;
   final String _deviceName;
@@ -265,6 +268,10 @@ class EncryptedCloudPostRepository implements PostRepository {
   }
 
   String _attachmentPath(Attachment a) => '$_filesDir/${a.id}.bin';
+
+  /// Путь к зашифрованному файлу вложения в облаке (для публичной доски).
+  static String attachmentPath(String vaultId, String attachmentId) =>
+      '$vaultId/files/$attachmentId.bin';
 
   static String _fileNameFor(Post post) =>
       '${_baseNameFor(post)}$_postExtension';

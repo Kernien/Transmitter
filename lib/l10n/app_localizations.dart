@@ -902,6 +902,66 @@ abstract class AppLocalizations {
   /// **'The key is damaged'**
   String get errKeyCorrupted;
 
+  /// No description provided for @boardAccessAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-only access…'**
+  String get boardAccessAction;
+
+  /// No description provided for @boardAccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-only access'**
+  String get boardAccessTitle;
+
+  /// No description provided for @boardIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone with the reader key will be able to view, copy and download all items in this vault, including comments — but not change them. Readers don\'t need a cloud account.'**
+  String get boardIntro;
+
+  /// No description provided for @boardOpenAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Open access'**
+  String get boardOpenAccess;
+
+  /// No description provided for @boardReaderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Send this reader key to the people you want to share with. New items will appear for them automatically.'**
+  String get boardReaderHint;
+
+  /// No description provided for @boardCloseAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Close access'**
+  String get boardCloseAccess;
+
+  /// No description provided for @boardCloseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Close access?'**
+  String get boardCloseTitle;
+
+  /// No description provided for @boardCloseText.
+  ///
+  /// In en, this message translates to:
+  /// **'All reader keys you have given out will stop working. If you open access again, there will be a new key.'**
+  String get boardCloseText;
+
+  /// No description provided for @boardClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Access closed'**
+  String get boardClosed;
+
+  /// No description provided for @boardUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This cloud doesn\'t support public boards'**
+  String get boardUnsupported;
+
   /// No description provided for @errCloudSharingNotAllowed.
   ///
   /// In en, this message translates to:

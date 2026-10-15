@@ -189,7 +189,9 @@ class FeedController extends ChangeNotifier {
       // Посты, удалённые на других устройствах, больше нельзя выбрать.
       final ids = _posts.map((p) => p.id).toSet();
       _selected.retainWhere(ids.contains);
-      _error = null;
+      // Например, не удалось обновить публичную доску: лента работает,
+      // но владелец должен об этом знать.
+      _error = _repository.backgroundError;
     } catch (e) {
       _error = e;
     } finally {

@@ -498,6 +498,39 @@ class AppLocalizationsRu extends AppLocalizations {
   String get errKeyCorrupted => 'Ключ повреждён';
 
   @override
+  String get boardAccessAction => 'Доступ на чтение…';
+
+  @override
+  String get boardAccessTitle => 'Доступ на чтение';
+
+  @override
+  String get boardIntro =>
+      'Любой, у кого есть ключ читателя, сможет смотреть, копировать и скачивать все записи этой базы вместе с комментариями — но не менять их. Аккаунт облака читателю не нужен.';
+
+  @override
+  String get boardOpenAccess => 'Открыть доступ';
+
+  @override
+  String get boardReaderHint =>
+      'Отправьте этот ключ читателя тем, с кем хотите поделиться. Новые записи появятся у них сами.';
+
+  @override
+  String get boardCloseAccess => 'Закрыть доступ';
+
+  @override
+  String get boardCloseTitle => 'Закрыть доступ?';
+
+  @override
+  String get boardCloseText =>
+      'Все выданные ключи читателя перестанут работать. Если открыть доступ снова, ключ будет новым.';
+
+  @override
+  String get boardClosed => 'Доступ закрыт';
+
+  @override
+  String get boardUnsupported => 'Это облако не поддерживает публичные доски';
+
+  @override
   String errCloudSharingNotAllowed(String provider) {
     return 'Чтобы разрешить публичные ссылки, войдите в $provider заново: ☁ → $provider → «Выйти», затем «Войти»';
   }

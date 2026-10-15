@@ -11,6 +11,7 @@ import '../cloud_connect/connect_cloud_screen.dart';
 import '../device/device_name_dialog.dart';
 import '../feed/feed_screen.dart';
 import '../settings/language_dialog.dart';
+import 'board_access_sheet.dart';
 import 'create_vault_dialog.dart';
 import 'import_vault_screen.dart';
 import 'share_vault_sheet.dart';
@@ -139,6 +140,10 @@ class _VaultTile extends StatelessWidget {
         onSelected: (action) => _onAction(context, action),
         itemBuilder: (_) => [
           PopupMenuItem(value: _VaultAction.share, child: Text(l.showKeyQr)),
+          PopupMenuItem(
+            value: _VaultAction.board,
+            child: Text(l.boardAccessAction),
+          ),
           PopupMenuItem(value: _VaultAction.rename, child: Text(l.rename)),
           PopupMenuItem(
             value: _VaultAction.remove,
@@ -154,6 +159,8 @@ class _VaultTile extends StatelessWidget {
     switch (action) {
       case _VaultAction.share:
         await showShareVaultSheet(context, vault);
+      case _VaultAction.board:
+        await showBoardAccessSheet(context, vault);
       case _VaultAction.rename:
         final label = await _askLabel(context, vault.label);
         if (label != null) await controller.rename(vault, label);
@@ -207,7 +214,7 @@ class _VaultTile extends StatelessWidget {
   }
 }
 
-enum _VaultAction { share, rename, remove }
+enum _VaultAction { share, board, rename, remove }
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
