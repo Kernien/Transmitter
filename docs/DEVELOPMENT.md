@@ -141,8 +141,8 @@ wsl -d Ubuntu-24.04 --cd /mnt/f/Code/Projects/Transmitter -- bash tool/build_lin
    - **App folder** — приложение видит только свою папку;
    - имя приложения (должно быть уникальным во всём Dropbox).
 2. Вкладка **Permissions**: отметьте `files.metadata.read`,
-   `files.metadata.write`, `files.content.read`, `files.content.write` →
-   **Submit**.
+   `files.metadata.write`, `files.content.read`, `files.content.write`, а для
+   публичных досок — `sharing.write` и `sharing.read` → **Submit**.
 3. Вкладка **Settings → OAuth 2 → Redirect URIs**, добавьте по одному:
    - `http://localhost:47819/dropbox` — Windows;
    - `app.transmitter://oauth/dropbox` — Android;
@@ -184,6 +184,11 @@ Dropbox. Для личного использования этого доста�
      `http://localhost:47820/auth.html`.
 
    Client ID → `config/dev.json` → `GOOGLE_WEB_CLIENT_ID`.
+8. **APIs & Services → Credentials → Create credentials → API key**
+   (имя «Transmitter public read»), **API restrictions → Restrict key →
+   Google Drive API**. Ключ → `config/dev.json` → `GOOGLE_API_KEY`. Он не
+   секретный: им читатели публичных досок скачивают файлы, открытые
+   «всем по ссылке».
 
 Особенности входа:
 
@@ -291,8 +296,14 @@ Dropbox. Для личного использования этого доста�
    поэтому записать в неё нельзя; облако без ключа видит только
    зашифрованные байты. Опись подписывается (Ed25519) ключом владельца —
    читатель проверяет, что её никто не подменил. Отозвать выданный ключ
-   читателя нельзя — только создать новую доску. Перед началом проверить:
-   скачивание по публичным ссылкам из веб-версии (CORS) у обоих облаков.
+   читателя нельзя — только создать новую доску.
+
+   **Проверено 2026-10-15** (`dart run tool/check_public_links.dart <API key>`):
+   у Dropbox и Google Drive публичная ссылка создаётся из папки приложения,
+   файл скачивается без входа и из браузера (CORS), после обновления файла
+   ссылка прежняя, содержимое новое. Dropbox: прямой адрес — тот же путь
+   на `dl.dropboxusercontent.com` без `dl=0`. Google Drive:
+   `files/<id>?alt=media&key=<GOOGLE_API_KEY>`.
 2. **Просмотр медиа прямо в приложении:**
    - изображения — миниатюры в ленте и полноэкранный просмотр с масштабом;
    - аудио — встроенный плеер в карточке поста;
