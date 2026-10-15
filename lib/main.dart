@@ -13,6 +13,7 @@ import 'core/device/platform_device_name_suggester.dart';
 import 'core/files/android_gallery_picker.dart';
 import 'core/files/file_picker_transfer_service.dart';
 import 'core/files/media_picker.dart';
+import 'core/persistence/platform_blob_cache.dart';
 import 'core/persistence/platform_key_value_store.dart';
 import 'core/share/android_incoming_share_source.dart';
 import 'core/share/incoming_share.dart';
@@ -97,6 +98,8 @@ Future<void> main() async {
       sessions: VaultSessionFactory(
         connections: connections,
         deviceName: () => device.name,
+        // Записи на устройстве: лента открывается сразу, даже без сети.
+        cache: await createPlatformBlobCache(),
         // Публичные доски читаются по ссылкам, без входа в облако.
         readers: {
           CloudProviderId.dropbox: DropboxPublicReader(httpClient),

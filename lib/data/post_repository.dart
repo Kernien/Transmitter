@@ -27,6 +27,10 @@ abstract interface class PostRepository {
   /// их сразу, пока идёт обновление.
   List<Post>? get cachedPosts;
 
+  /// Подхватывает записи, сохранённые на устройстве с прошлого раза, без
+  /// обращения к облаку. После этого [cachedPosts] может стать не `null`.
+  Future<void> warmUp();
+
   /// Отправляет текст. Если текст — одна ссылка, пост получает тип
   /// [PostKind.link].
   Future<Post> sendText(String text);

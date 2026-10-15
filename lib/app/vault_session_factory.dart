@@ -1,8 +1,11 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart' as hash;
+
 import '../core/crypto/aes_gcm_cipher.dart';
 import '../core/crypto/board_signature.dart';
 import '../core/crypto/vault_key_derivation.dart';
+import '../core/persistence/blob_cache.dart';
 import '../core/storage/cloud_connection_service.dart';
 import '../core/storage/cloud_storage.dart';
 import '../core/storage/cloud_provider_id.dart';
@@ -27,8 +30,12 @@ class VaultSessionFactory {
     required this._connections,
     required this._deviceName,
     this._readers = const {},
+    this._cache = const NoBlobCache(),
     this._derivation = const VaultKeyDerivation(),
   });
+
+  /// Кеш на устройстве: у каждой базы и доски своя область.
+  final BlobCache _cache;
 
   /// Чтение публичных досок без входа — по облакам.
   final Map<CloudProviderId, PublicFileReader> _readers;
@@ -81,9 +88,16 @@ class VaultSessionFactory {
     if (reader == null) {
       throw UnsupportedError('${key.provider.title} boards are not supported');
     }
+    final id = '${key.provider.code}:${key.locator}';
     return _boards.putIfAbsent(
-      '${key.provider.code}:${key.locator}',
-      () => PublicBoardRepository(reader: reader, key: key),
+      id,
+      () => PublicBoardRepository(
+        reader: reader,
+        key: key,
+        blobs: _cache.scope(
+          'board-${hash.sha256.convert(utf8.encode(id)).toString().substring(0, 32)}',
+        ),
+      ),
     );
   }
 
@@ -110,6 +124,7 @@ class VaultSessionFactory {
     cipher: AesGcmCipher(secrets.encryptionKey),
     deviceName: _deviceName(),
     maxFileSize: key.maxFileSize,
+    blobs: _cache.scope('${key.provider.code}-${secrets.vaultId}'),
   );
 
   Future<BoardPublisher?> _publisher(

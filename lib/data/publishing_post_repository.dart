@@ -33,6 +33,9 @@ class PublishingPostRepository implements PostRepository {
   List<Post>? get cachedPosts => _inner.cachedPosts;
 
   @override
+  Future<void> warmUp() => _inner.warmUp();
+
+  @override
   Object? get backgroundError => _error ?? _inner.backgroundError;
 
   /// Завершение фонового обновления описи (для тестов).

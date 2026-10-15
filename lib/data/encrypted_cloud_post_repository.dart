@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../core/crypto/cipher.dart';
+import '../core/persistence/blob_cache.dart';
 import '../core/storage/cloud_storage.dart';
 import '../core/utils/clock.dart';
 import '../core/utils/link_detector.dart';
@@ -39,6 +40,7 @@ class EncryptedCloudPostRepository implements PostRepository {
     Clock? clock,
     IdGenerator? idGenerator,
     this._linkDetector = const LinkDetector(),
+    this._blobs = const NoBlobCache(),
   }) : _clock = clock ?? DateTime.now,
        _newId = idGenerator ?? const Uuid().v4,
        _postsDir = '$vaultId/posts',
@@ -47,6 +49,7 @@ class EncryptedCloudPostRepository implements PostRepository {
   static const String _postExtension = '.post';
   static const String _noteExtension = '.note';
   static const String _noteSeparator = '~';
+  static const String _indexKey = 'index.json';
 
   @override
   final int maxFileSize;
@@ -63,6 +66,14 @@ class EncryptedCloudPostRepository implements PostRepository {
   final Clock _clock;
   final IdGenerator _newId;
   final LinkDetector _linkDetector;
+
+  /// Зашифрованные файлы постов и комментариев на устройстве — чтобы не
+  /// качать их заново после перезапуска. Имена файлов уникальны и не
+  /// меняются (правка комментария — новый файл), поэтому кеш не устаревает.
+  final BlobCache _blobs;
+
+  /// Имена файлов из последнего сохранённого списка кеша.
+  Set<String>? _indexed;
   final String _postsDir;
   final String _filesDir;
 
@@ -97,13 +108,64 @@ class EncryptedCloudPostRepository implements PostRepository {
         !cache.containsKey(name) && !_unreadable.contains(name);
     await Future.wait([
       for (final name in postNames.where((n) => isFresh(n, _cache)))
-        _load(name, (json) => _cache[name] = Post.fromJson(json)),
+        _loadPost(name),
       for (final name in noteNames.where((n) => isFresh(n, _notes)))
-        _load(name, (json) => _notes[name] = PostNote.fromJson(json)),
+        _loadNote(name),
     ]);
 
     _fetched = true;
+    await _saveIndex();
     return _assemble();
+  }
+
+  @override
+  Future<void> warmUp() async {
+    if (_fetched) return;
+    final names = await _readIndex();
+    if (names == null) return;
+    await Future.wait([
+      for (final name in names)
+        if (name.endsWith(_postExtension))
+          _loadPost(name, localOnly: true)
+        else if (name.endsWith(_noteExtension))
+          _loadNote(name, localOnly: true),
+    ]);
+    _indexed = names;
+    _fetched = true;
+  }
+
+  Future<void> _loadPost(String name, {bool localOnly = false}) => _load(
+    name,
+    (json) => _cache[name] = Post.fromJson(json),
+    localOnly: localOnly,
+  );
+
+  Future<void> _loadNote(String name, {bool localOnly = false}) => _load(
+    name,
+    (json) => _notes[name] = PostNote.fromJson(json),
+    localOnly: localOnly,
+  );
+
+  Future<Set<String>?> _readIndex() async {
+    final raw = await _blobs.read(_indexKey);
+    if (raw == null) return null;
+    try {
+      return (jsonDecode(utf8.decode(raw)) as List).cast<String>().toSet();
+    } on Object {
+      return null;
+    }
+  }
+
+  /// Запоминает, какие файлы известны, и убирает из кеша удалённые.
+  Future<void> _saveIndex() async {
+    final names = {..._cache.keys, ..._notes.keys};
+    final previous = _indexed ??= await _readIndex() ?? {};
+    if (setEquals(previous, names)) return;
+    for (final gone in previous.difference(names)) {
+      await _blobs.delete(gone);
+    }
+    await _blobs.write(_indexKey, utf8.encode(jsonEncode(names.toList())));
+    _indexed = names;
   }
 
   @override
@@ -128,22 +190,47 @@ class EncryptedCloudPostRepository implements PostRepository {
     return latest;
   }
 
+  /// Файл берётся из кеша на устройстве, а если его там нет (или он
+  /// испорчен) — из облака, после чего кладётся в кеш.
   Future<void> _load(
     String fileName,
+    void Function(Map<String, dynamic> json) store, {
+    bool localOnly = false,
+  }) async {
+    final cached = await _blobs.read(fileName);
+    if (cached != null) {
+      if (await _decode(cached, store) == null) return;
+      await _blobs.delete(fileName);
+    }
+    if (localOnly) return;
+    try {
+      final encrypted = await _storage.download('$_postsDir/$fileName');
+      final error = await _decode(encrypted, store);
+      if (error == null) {
+        await _blobs.write(fileName, encrypted);
+      } else {
+        _markUnreadable(fileName, error);
+      }
+    } on StorageNotFoundException {
+      // Файл удалили, пока мы его скачивали.
+    }
+  }
+
+  /// Расшифровывает и разбирает файл; возвращает ошибку или `null`.
+  Future<Object?> _decode(
+    List<int> encrypted,
     void Function(Map<String, dynamic> json) store,
   ) async {
     try {
-      final encrypted = await _storage.download('$_postsDir/$fileName');
       final json = utf8.decode(await _cipher.decrypt(encrypted));
       store(jsonDecode(json) as Map<String, dynamic>);
-    } on StorageNotFoundException {
-      // Файл удалили, пока мы его скачивали.
+      return null;
     } on DecryptionException catch (e) {
-      _markUnreadable(fileName, e);
+      return e;
     } on FormatException catch (e) {
-      _markUnreadable(fileName, e);
+      return e;
     } on TypeError catch (e) {
-      _markUnreadable(fileName, e);
+      return e;
     }
   }
 
@@ -206,6 +293,7 @@ class EncryptedCloudPostRepository implements PostRepository {
     final fileName = _fileNameFor(post);
     await _storage.delete('$_postsDir/$fileName');
     _cache.remove(fileName);
+    await _blobs.delete(fileName);
     await _deleteNotes(_noteFilesFor(post));
     final attachment = post.attachment;
     if (attachment != null) {
@@ -228,10 +316,11 @@ class EncryptedCloudPostRepository implements PostRepository {
         editorDevice: _deviceName,
       );
       final fileName = _noteFileNameFor(post, note);
-      await _storage.upload(
-        '$_postsDir/$fileName',
-        await _cipher.encrypt(utf8.encode(jsonEncode(note.toJson()))),
+      final encrypted = await _cipher.encrypt(
+        utf8.encode(jsonEncode(note.toJson())),
       );
+      await _storage.upload('$_postsDir/$fileName', encrypted);
+      await _blobs.write(fileName, encrypted);
       _notes[fileName] = note;
     }
     await _deleteNotes(old.where((name) => !_isCurrent(name, note)));
@@ -251,6 +340,7 @@ class EncryptedCloudPostRepository implements PostRepository {
     for (final name in names.toList()) {
       await _storage.delete('$_postsDir/$name');
       _notes.remove(name);
+      await _blobs.delete(name);
     }
   }
 
@@ -277,6 +367,7 @@ class EncryptedCloudPostRepository implements PostRepository {
       utf8.encode(jsonEncode(post.toJson())),
     );
     await _storage.upload('$_postsDir/$fileName', encrypted);
+    await _blobs.write(fileName, encrypted);
     _cache[fileName] = post;
     return post;
   }

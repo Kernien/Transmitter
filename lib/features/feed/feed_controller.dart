@@ -188,8 +188,27 @@ class FeedController extends ChangeNotifier {
   }
 
   void start() {
-    refresh();
+    _firstLoad();
     _timer = Timer.periodic(_pollInterval, (_) => refresh());
+  }
+
+  /// Сначала — записи, сохранённые на устройстве (лента появляется сразу,
+  /// даже без сети), затем обновление из облака.
+  Future<void> _firstLoad() async {
+    if (_initialLoad) {
+      try {
+        await _repository.warmUp();
+      } catch (e) {
+        debugPrint('Local cache unavailable: $e');
+      }
+      final cached = _repository.cachedPosts;
+      if (cached != null && _initialLoad) {
+        _posts = cached;
+        _initialLoad = false;
+        _notify();
+      }
+    }
+    await refresh();
   }
 
   Future<void> refresh() async {
