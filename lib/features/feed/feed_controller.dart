@@ -22,7 +22,15 @@ class FeedController extends ChangeNotifier {
     this._share = const DisabledShareSender(),
     this._clock = DateTime.now,
     ExportTexts exportTexts = ExportTexts.english,
-  }) : _exporter = SelectionExporter(_repository, exportTexts);
+  }) : _exporter = SelectionExporter(_repository, exportTexts) {
+    // Повторный вход в ленту: записи уже известны — показываем их сразу,
+    // обновление идёт в фоне.
+    final cached = _repository.cachedPosts;
+    if (cached != null) {
+      _posts = cached;
+      _initialLoad = false;
+    }
+  }
 
   final PostRepository _repository;
   final FileTransferService _files;

@@ -22,6 +22,11 @@ abstract interface class PostRepository {
   /// новые посты.
   Future<List<Post>> fetchPosts();
 
+  /// Посты, уже известные без обращения к облаку (после прошлого
+  /// [fetchPosts]); `null`, если ещё ничего не загружалось. Лента показывает
+  /// их сразу, пока идёт обновление.
+  List<Post>? get cachedPosts;
+
   /// Отправляет текст. Если текст — одна ссылка, пост получает тип
   /// [PostKind.link].
   Future<Post> sendText(String text);

@@ -41,6 +41,31 @@ void main() {
     feed.dispose();
   });
 
+  test('повторный вход в ленту: записи видны сразу, без загрузки', () async {
+    final repository = EncryptedCloudPostRepository(
+      storage: cloud,
+      vaultId: 'v',
+      cipher: AesGcmCipher(List<int>.filled(32, 3)),
+      deviceName: 'A',
+    );
+    FeedController open() => FeedController(
+      repository,
+      files: files,
+      pollInterval: const Duration(hours: 1),
+    );
+
+    final first = open();
+    expect(first.isInitialLoad, isTrue);
+    await first.sendText('запомни');
+    await first.refresh();
+    first.dispose();
+
+    final second = open();
+    expect(second.isInitialLoad, isFalse);
+    expect(second.posts.single.text, 'запомни');
+    second.dispose();
+  });
+
   test('refresh подтягивает посты другого устройства', () async {
     final a = controllerFor('A');
     final b = controllerFor('B');

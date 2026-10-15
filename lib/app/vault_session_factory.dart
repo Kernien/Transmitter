@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../core/crypto/aes_gcm_cipher.dart';
 import '../core/crypto/board_signature.dart';
 import '../core/crypto/vault_key_derivation.dart';
@@ -15,8 +17,13 @@ import '../data/publishing_post_repository.dart';
 
 /// Собирает [PostRepository] для выбранного ключа: выводит секреты,
 /// берёт хранилище подключённого облака и настраивает шифрование.
+///
+/// Открытые сессии живут, пока работает приложение: при повторном входе в
+/// ленту уже скачанные записи не загружаются заново. Сессия базы
+/// пересоздаётся после нового входа в облако (у старой устаревший токен) и
+/// после смены имени устройства (им подписываются новые записи).
 class VaultSessionFactory {
-  const VaultSessionFactory({
+  VaultSessionFactory({
     required this._connections,
     required this._deviceName,
     this._readers = const {},
@@ -32,9 +39,33 @@ class VaultSessionFactory {
   final String Function() _deviceName;
   final VaultKeyDerivation _derivation;
 
+  final Map<String, ({String stamp, Future<PostRepository> session})>
+  _sessions = {};
+  final Map<String, PostRepository> _boards = {};
+
   /// Лента базы. Если облако умеет открывать файлы по ссылке, изменения
   /// сразу попадают и в публичную доску (когда доступ на чтение открыт).
-  Future<PostRepository> open(VaultKey key) async {
+  Future<PostRepository> open(VaultKey key) {
+    final id = '${key.provider.code}:${base64Url.encode(key.secret)}';
+    final stamp =
+        '${_connections.connectionEpoch(key.provider)}/${_deviceName()}/'
+        '${key.maxFileSize}';
+    final cached = _sessions[id];
+    if (cached != null && cached.stamp == stamp) return cached.session;
+
+    final session = _create(key);
+    _sessions[id] = (stamp: stamp, session: session);
+    // Неудачную попытку (нет сети, не подключено облако) не запоминаем.
+    session.then(
+      (_) {},
+      onError: (Object _) {
+        if (identical(_sessions[id]?.session, session)) _sessions.remove(id);
+      },
+    );
+    return session;
+  }
+
+  Future<PostRepository> _create(VaultKey key) async {
     final secrets = await _derivation.derive(key.secret);
     final storage = _connections.storageFor(key.provider);
     final repository = _repository(key, storage, secrets);
@@ -50,7 +81,10 @@ class VaultSessionFactory {
     if (reader == null) {
       throw UnsupportedError('${key.provider.title} boards are not supported');
     }
-    return PublicBoardRepository(reader: reader, key: key);
+    return _boards.putIfAbsent(
+      '${key.provider.code}:${key.locator}',
+      () => PublicBoardRepository(reader: reader, key: key),
+    );
   }
 
   /// Управление доступом на чтение; `null`, если облако не умеет

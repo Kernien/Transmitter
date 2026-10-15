@@ -30,6 +30,9 @@ class PublishingPostRepository implements PostRepository {
   bool get isReadOnly => _inner.isReadOnly;
 
   @override
+  List<Post>? get cachedPosts => _inner.cachedPosts;
+
+  @override
   Object? get backgroundError => _error ?? _inner.backgroundError;
 
   /// Завершение фонового обновления описи (для тестов).

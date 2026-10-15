@@ -17,6 +17,7 @@ class CloudConnectionService extends ChangeNotifier {
   final CloudProviderRegistry _registry;
   final SecureKeyValueStore _store;
   final Map<CloudProviderId, String> _credentials = {};
+  final Map<CloudProviderId, int> _epochs = {};
 
   static String _storeKey(CloudProviderId id) => 'cloud_credentials.${id.code}';
 
@@ -32,6 +33,11 @@ class CloudConnectionService extends ChangeNotifier {
 
   bool isConnected(CloudProviderId id) => _credentials.containsKey(id);
 
+  /// Меняется при каждом входе в облако и выходе из него (но не при
+  /// обновлении токена) — открытые сессии баз по нему понимают, что их
+  /// хранилище устарело.
+  int connectionEpoch(CloudProviderId id) => _epochs[id] ?? 0;
+
   CloudProviderAdapter adapterFor(CloudProviderId id) =>
       _registry.adapterFor(id);
 
@@ -46,12 +52,14 @@ class CloudConnectionService extends ChangeNotifier {
       onCredentialsChanged: (updated) async => credentials = updated,
     );
     await storage.listFiles('');
+    _epochs[id] = connectionEpoch(id) + 1;
     await _save(id, credentials);
   }
 
   Future<void> disconnect(CloudProviderId id) async {
     await _store.delete(_storeKey(id));
     _credentials.remove(id);
+    _epochs[id] = connectionEpoch(id) + 1;
     notifyListeners();
   }
 

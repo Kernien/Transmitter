@@ -45,6 +45,11 @@ class PublicBoardRepository implements PostRepository {
   /// Адреса файлов из последней прочитанной описи.
   Map<String, String> _files = const {};
 
+  List<Post>? _lastPosts;
+
+  @override
+  List<Post>? get cachedPosts => _lastPosts;
+
   @override
   bool get isReadOnly => true;
 
@@ -64,7 +69,7 @@ class PublicBoardRepository implements PostRepository {
     }
     final snapshot = await BoardManifestCodec(_cipher).decode(bytes, _verifier);
     _files = snapshot.fileLocators;
-    return snapshot.posts;
+    return _lastPosts = snapshot.posts;
   }
 
   @override

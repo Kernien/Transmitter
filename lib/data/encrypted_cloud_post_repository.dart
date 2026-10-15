@@ -76,6 +76,9 @@ class EncryptedCloudPostRepository implements PostRepository {
   final Set<String> _unreadable = {};
 
   bool _postsDirReady = false;
+
+  /// Загружалась ли лента хотя бы раз (см. [cachedPosts]).
+  bool _fetched = false;
   bool _filesDirReady = false;
 
   @override
@@ -99,10 +102,18 @@ class EncryptedCloudPostRepository implements PostRepository {
         _load(name, (json) => _notes[name] = PostNote.fromJson(json)),
     ]);
 
+    _fetched = true;
+    return _assemble();
+  }
+
+  @override
+  List<Post>? get cachedPosts => _fetched ? _assemble() : null;
+
+  /// Известные посты с комментариями, от старых к новым.
+  List<Post> _assemble() {
     final notes = _latestNotes();
-    final posts = [for (final p in _cache.values) p.withNote(notes[p.id])]
+    return [for (final p in _cache.values) p.withNote(notes[p.id])]
       ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
-    return posts;
   }
 
   /// Самый свежий комментарий для каждого поста.
