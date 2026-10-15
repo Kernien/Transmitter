@@ -55,7 +55,7 @@ class _ImportVaultScreenState extends State<ImportVaultScreen> {
               maxLines: 4,
               decoration: InputDecoration(
                 border: const OutlineInputBorder(),
-                hintText: 'TRM1.…',
+                hintText: 'TRM1.… / TRM1R.…',
                 errorText: _error == null ? null : l.describeError(_error!),
               ),
             ),
@@ -78,7 +78,8 @@ class _ImportVaultScreenState extends State<ImportVaultScreen> {
 
   Future<void> _submit(String code) async {
     try {
-      final key = await context.read<VaultsController>().importCode(code);
+      // Ключ базы или ключ читателя доски — определяется по строке.
+      final key = await context.read<VaultsController>().importAny(code);
       if (mounted) Navigator.pop(context, key);
     } on InvalidVaultKeyException catch (e) {
       setState(() => _error = e);

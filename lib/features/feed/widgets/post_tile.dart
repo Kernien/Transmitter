@@ -7,7 +7,7 @@ import '../../../app/l10n.dart';
 import '../../../domain/post.dart';
 import '../feed_controller.dart';
 
-enum _PostAction { select, note, share, save, copy, delete }
+enum _PostAction { select, note, share, save, copy, selectText, delete }
 
 /// Один пост в ленте. Нажатие открывает ссылку или сохраняет файл, долгое
 /// нажатие выделяет пост (см. режим выделения в FeedController), остальные
@@ -17,13 +17,17 @@ class PostTile extends StatelessWidget {
 
   final Post post;
 
-  List<_PostAction> _actions({required bool canShare}) => [
+  List<_PostAction> _actions({
+    required bool canShare,
+    required bool readOnly,
+  }) => [
     _PostAction.select,
-    _PostAction.note,
+    if (!readOnly) _PostAction.note,
     if (canShare) _PostAction.share,
     if (post.attachment != null) _PostAction.save,
     if (post.text.isNotEmpty) _PostAction.copy,
-    _PostAction.delete,
+    if (post.text.isNotEmpty || post.note != null) _PostAction.selectText,
+    if (!readOnly) _PostAction.delete,
   ];
 
   @override
@@ -97,6 +101,9 @@ class PostTile extends StatelessWidget {
                                 canShare: context
                                     .read<FeedController>()
                                     .canShare,
+                                readOnly: context
+                                    .read<FeedController>()
+                                    .isReadOnly,
                               ))
                                 PopupMenuItem(
                                   value: action,
@@ -159,6 +166,11 @@ class PostTile extends StatelessWidget {
         await feed.sharePost(post);
       case _PostAction.save:
         await _save(context, post);
+      case _PostAction.selectText:
+        await showDialog<void>(
+          context: context,
+          builder: (_) => _SelectTextDialog(post: post),
+        );
       case _PostAction.copy:
         await Clipboard.setData(ClipboardData(text: post.text));
         messenger.showSnackBar(SnackBar(content: Text(l.copied)));
@@ -221,10 +233,63 @@ class _ActionLabel extends StatelessWidget {
       _PostAction.share => (Icons.share, l.share),
       _PostAction.save => (Icons.download, l.actionSaveFile),
       _PostAction.copy => (Icons.copy, l.actionCopyText),
+      _PostAction.selectText => (Icons.text_fields, l.actionSelectText),
       _PostAction.delete => (Icons.delete_outline, l.actionDeleteEverywhere),
     };
     return Row(
-      children: [Icon(icon, size: 20), const SizedBox(width: 12), Text(text)],
+      children: [
+        Icon(icon, size: 20),
+        const SizedBox(width: 12),
+        // Длинные надписи (крупный шрифт, узкий экран) переносятся.
+        Flexible(child: Text(text)),
+      ],
+    );
+  }
+}
+
+/// Текст записи и комментарий, из которых можно выделить и скопировать
+/// любой кусок. В самой ленте текст не выделяется: долгое нажатие там
+/// выделяет запись целиком, а нажатие на ссылку открывает её.
+class _SelectTextDialog extends StatelessWidget {
+  const _SelectTextDialog({required this.post});
+
+  final Post post;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final theme = Theme.of(context);
+    final note = post.note;
+    return AlertDialog(
+      title: Text(l.actionSelectText),
+      content: SingleChildScrollView(
+        child: SelectionArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (post.text.isNotEmpty) Text(post.text),
+              if (note != null) ...[
+                if (post.text.isNotEmpty) const SizedBox(height: 16),
+                Text(
+                  l.noteTitle,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.outline,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(note.text),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l.closeAction),
+        ),
+      ],
     );
   }
 }

@@ -114,6 +114,9 @@ class FeedController extends ChangeNotifier {
 
   bool get canShare => _share.isAvailable;
 
+  /// Публичная доска у читателя: без отправки, комментариев и удаления.
+  bool get isReadOnly => _repository.isReadOnly;
+
   /// Лимит размера файла в этой базе.
   int get maxFileSize => _repository.maxFileSize;
 

@@ -5,6 +5,7 @@ import '../../app/l10n.dart';
 import '../../app/widgets/content_width.dart';
 import '../../core/device/device_identity.dart';
 import '../../core/storage/cloud_connection_service.dart';
+import '../../core/vault/reader_key.dart';
 import '../../core/vault/vault_key.dart';
 import '../cloud_connect/clouds_screen.dart';
 import '../cloud_connect/connect_cloud_screen.dart';
@@ -24,7 +25,9 @@ class VaultsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final vaults = context.watch<VaultsController>().vaults;
+    final controller = context.watch<VaultsController>();
+    final vaults = controller.vaults;
+    final boards = controller.boards;
 
     return Scaffold(
       appBar: AppBar(
@@ -54,12 +57,14 @@ class VaultsScreen extends StatelessWidget {
         ],
       ),
       body: ContentWidth(
-        child: vaults.isEmpty
+        child: vaults.isEmpty && boards.isEmpty
             ? const _EmptyState()
             : ListView.separated(
-                itemCount: vaults.length,
+                itemCount: vaults.length + boards.length,
                 separatorBuilder: (_, _) => const Divider(height: 1),
-                itemBuilder: (context, i) => _VaultTile(vault: vaults[i]),
+                itemBuilder: (context, i) => i < vaults.length
+                    ? _VaultTile(vault: vaults[i])
+                    : _BoardTile(board: boards[i - vaults.length]),
               ),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -81,10 +86,16 @@ class VaultsScreen extends StatelessWidget {
   }
 
   Future<void> _import(BuildContext context) async {
-    final key = await Navigator.of(context).push<VaultKey>(
+    final key = await Navigator.of(context).push<Object>(
       MaterialPageRoute(builder: (_) => const ImportVaultScreen()),
     );
-    if (key != null && context.mounted) await openVault(context, key);
+    if (!context.mounted) return;
+    switch (key) {
+      case VaultKey():
+        await openVault(context, key);
+      case ReaderKey():
+        await openBoard(context, key);
+    }
   }
 }
 
@@ -110,8 +121,13 @@ Future<void> openVault(BuildContext context, VaultKey key) async {
     if (connected != true || !context.mounted) return;
   }
   await Navigator.of(context)
-      .push(MaterialPageRoute(builder: (_) => FeedScreen(vaultKey: key)));
+      .push(MaterialPageRoute(builder: (_) => FeedScreen.vault(key)));
 }
+
+/// Открывает публичную доску для чтения — вход в облако не нужен.
+Future<void> openBoard(BuildContext context, ReaderKey key) =>
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => FeedScreen.board(key)));
 
 class _VaultTile extends StatelessWidget {
   const _VaultTile({required this.vault});
@@ -169,28 +185,6 @@ class _VaultTile extends StatelessWidget {
     }
   }
 
-  Future<String?> _askLabel(BuildContext context, String current) {
-    final l = context.l10n;
-    final text = TextEditingController(text: current);
-    return showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l.nameTitle),
-        content: TextField(controller: text, autofocus: true),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, text.text),
-            child: Text(l.save),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<bool> _confirmRemove(BuildContext context) async {
     final l = context.l10n;
     final result = await showDialog<bool>(
@@ -214,7 +208,92 @@ class _VaultTile extends StatelessWidget {
   }
 }
 
+/// Спрашивает новое название базы или доски.
+Future<String?> _askLabel(BuildContext context, String current) {
+  final l = context.l10n;
+  final text = TextEditingController(text: current);
+  return showDialog<String>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(l.nameTitle),
+      content: TextField(controller: text, autofocus: true),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, text.text),
+          child: Text(l.save),
+        ),
+      ],
+    ),
+  );
+}
+
 enum _VaultAction { share, board, rename, remove }
+
+/// Публичная доска, которую на этом устройстве можно только читать.
+class _BoardTile extends StatelessWidget {
+  const _BoardTile({required this.board});
+
+  final ReaderKey board;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return ListTile(
+      leading: const CircleAvatar(child: Icon(Icons.public)),
+      title: Text(board.label.isEmpty ? l.untitled : board.label),
+      subtitle: Text(l.boardSubtitle(board.provider.title)),
+      onTap: () => openBoard(context, board),
+      trailing: PopupMenuButton<_BoardAction>(
+        onSelected: (action) => _onAction(context, action),
+        itemBuilder: (_) => [
+          PopupMenuItem(value: _BoardAction.share, child: Text(l.showKeyQr)),
+          PopupMenuItem(value: _BoardAction.rename, child: Text(l.rename)),
+          PopupMenuItem(
+            value: _BoardAction.remove,
+            child: Text(l.removeFromDevice),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _onAction(BuildContext context, _BoardAction action) async {
+    final controller = context.read<VaultsController>();
+    final l = context.l10n;
+    switch (action) {
+      case _BoardAction.share:
+        await showReaderKeySheet(context, board);
+      case _BoardAction.rename:
+        final label = await _askLabel(context, board.label);
+        if (label != null) await controller.renameBoard(board, label);
+      case _BoardAction.remove:
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(l.removeKeyTitle),
+            content: Text(l.removeBoardText),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(l.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(l.delete),
+              ),
+            ],
+          ),
+        );
+        if (confirmed == true) await controller.removeBoard(board);
+    }
+  }
+}
+
+enum _BoardAction { share, rename, remove }
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState();

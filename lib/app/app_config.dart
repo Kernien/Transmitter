@@ -23,6 +23,14 @@ class AppConfig {
     'GOOGLE_WEB_CLIENT_ID',
   );
 
+  /// API-ключ Google (только Drive API, не секретный): читатели публичных
+  /// досок скачивают по нему открытые по ссылке файлы.
+  static const String googleApiKey = String.fromEnvironment('GOOGLE_API_KEY');
+
   /// Как часто проверять облако на новые посты, пока база открыта.
   static const Duration pollInterval = Duration(seconds: 5);
+
+  /// Как часто читатель публичной доски проверяет обновления: реже, чтобы
+  /// не нагружать облако владельца.
+  static const Duration boardPollInterval = Duration(seconds: 30);
 }

@@ -54,6 +54,9 @@ class EncryptedCloudPostRepository implements PostRepository {
   @override
   Object? get backgroundError => null;
 
+  @override
+  bool get isReadOnly => false;
+
   final CloudStorage _storage;
   final Cipher _cipher;
   final String _deviceName;

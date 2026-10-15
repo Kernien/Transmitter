@@ -74,6 +74,7 @@ extension AppLocalizationsX on AppLocalizations {
       ErrorCode.keyNotTransmitter => errKeyNotTransmitter,
       ErrorCode.keyCorrupted => errKeyCorrupted,
       ErrorCode.boardSignatureInvalid => errBoardSignatureInvalid,
+      ErrorCode.boardClosed => errBoardClosed,
     };
   }
 }

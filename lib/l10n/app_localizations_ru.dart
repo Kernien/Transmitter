@@ -337,6 +337,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get actionCopyText => 'Копировать текст';
 
   @override
+  String get actionSelectText => 'Выделить текст';
+
+  @override
+  String get closeAction => 'Закрыть';
+
+  @override
   String get actionDeleteEverywhere => 'Удалить для всех устройств';
 
   @override
@@ -526,6 +532,33 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get boardClosed => 'Доступ закрыт';
+
+  @override
+  String get errBoardClosed => 'Владелец закрыл доступ к этой доске';
+
+  @override
+  String boardSubtitle(String provider) {
+    return 'Только чтение · $provider';
+  }
+
+  @override
+  String get readOnly => 'Только чтение';
+
+  @override
+  String get readerKeyWarning =>
+      'Это ключ только для чтения: с ним доску можно смотреть, но не менять.';
+
+  @override
+  String get removeBoardText =>
+      'Доска пропадёт только с этого устройства. Чтобы вернуть её, снова понадобится ключ читателя.';
+
+  @override
+  String boardSignInAgain(String provider) {
+    return 'Войти в $provider заново';
+  }
+
+  @override
+  String get boardEmpty => 'На доске пока ничего нет';
 
   @override
   String get boardUnsupported => 'Это облако не поддерживает публичные доски';

@@ -5,6 +5,8 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../app/l10n.dart';
 import '../../app/vault_session_factory.dart';
+import '../../core/storage/cloud_connection_service.dart';
+import '../../core/storage/cloud_provider_id.dart';
 import '../../core/vault/vault_key.dart';
 import 'board_access_controller.dart';
 
@@ -20,15 +22,16 @@ Future<void> showBoardAccessSheet(BuildContext context, VaultKey key) {
         publisher: () => sessions.openBoard(key),
         label: key.label,
       )..load(),
-      child: _BoardAccessView(label: key.label),
+      child: _BoardAccessView(label: key.label, provider: key.provider),
     ),
   );
 }
 
 class _BoardAccessView extends StatelessWidget {
-  const _BoardAccessView({required this.label});
+  const _BoardAccessView({required this.label, required this.provider});
 
   final String label;
+  final CloudProviderId provider;
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +73,22 @@ class _BoardAccessView extends StatelessWidget {
                 l.describeError(error),
                 textAlign: TextAlign.center,
                 style: TextStyle(color: theme.colorScheme.error),
+              ),
+            ],
+            if (board.needsSignIn) ...[
+              const SizedBox(height: 12),
+              FilledButton.tonalIcon(
+                icon: const Icon(Icons.login),
+                label: Text(l.boardSignInAgain(provider.title)),
+                // Вход начинается прямо в обработчике нажатия: в браузере
+                // иначе окно входа заблокируют.
+                onPressed: board.isBusy
+                    ? null
+                    : () => board.signInAgain(
+                        context.read<CloudConnectionService>().connect(
+                          provider,
+                        ),
+                      ),
               ),
             ],
           ],

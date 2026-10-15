@@ -149,6 +149,15 @@ void main() {
     expect(cloud.uploads, uploads, reason: 'опись одинакова на обоих');
   });
 
+  test('открытие убирает описи, оставшиеся от прерванных попыток', () async {
+    await cloud.ensureFolder('$vaultId/board');
+    await cloud.upload('$vaultId/board/old.board', Uint8List(3));
+    final key = await publisher().open(label: 'Доска');
+    final manifests = cloud.files.keys.where((p) => p.endsWith('.board'));
+    expect(manifests, hasLength(1));
+    expect(key.locator, 'pub:${manifests.single}');
+  });
+
   test('повторное открытие с другого устройства даёт тот же ключ', () async {
     final first = await publisher().open(label: 'Доска');
     final second = await publisher().open(label: 'Другое название');

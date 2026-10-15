@@ -656,6 +656,18 @@ abstract class AppLocalizations {
   /// **'Copy text'**
   String get actionCopyText;
 
+  /// No description provided for @actionSelectText.
+  ///
+  /// In en, this message translates to:
+  /// **'Select text'**
+  String get actionSelectText;
+
+  /// No description provided for @closeAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get closeAction;
+
   /// No description provided for @actionDeleteEverywhere.
   ///
   /// In en, this message translates to:
@@ -955,6 +967,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Access closed'**
   String get boardClosed;
+
+  /// No description provided for @errBoardClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'The owner has closed access to this board'**
+  String get errBoardClosed;
+
+  /// No description provided for @boardSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-only · {provider}'**
+  String boardSubtitle(String provider);
+
+  /// No description provided for @readOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-only'**
+  String get readOnly;
+
+  /// No description provided for @readerKeyWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a read-only key: with it the board can be viewed, but not changed.'**
+  String get readerKeyWarning;
+
+  /// No description provided for @removeBoardText.
+  ///
+  /// In en, this message translates to:
+  /// **'The board will disappear only from this device. To get it back, you will need the reader key again.'**
+  String get removeBoardText;
+
+  /// No description provided for @boardSignInAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to {provider} again'**
+  String boardSignInAgain(String provider);
+
+  /// No description provided for @boardEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing on this board yet'**
+  String get boardEmpty;
 
   /// No description provided for @boardUnsupported.
   ///

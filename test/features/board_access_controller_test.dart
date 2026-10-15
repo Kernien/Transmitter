@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:transmitter/core/crypto/aes_gcm_cipher.dart';
 import 'package:transmitter/core/crypto/board_signature.dart';
+import 'package:transmitter/core/errors/app_error.dart';
 import 'package:transmitter/core/storage/cloud_provider_id.dart';
 import 'package:transmitter/core/storage/cloud_storage.dart';
 import 'package:transmitter/core/vault/reader_key_codec.dart';
@@ -84,4 +85,41 @@ void main() {
     await c.load();
     expect(attempts, 2);
   });
+
+  test('нет права на ссылки: повторный вход и доступ открыт', () async {
+    final noScope = _NoScopeCloud();
+    cloud = noScope;
+    final c = controller();
+    await c.load();
+    expect(await c.openAccess(), isFalse);
+    expect(c.needsSignIn, isTrue);
+    expect(
+      cloud.files.keys.where((p) => p.contains('/board/')),
+      isEmpty,
+      reason: 'неудачная попытка не оставляет файлов',
+    );
+
+    // «Вход» выдал новые права.
+    noScope.allowed = true;
+    var signedIn = false;
+    expect(await c.signInAgain(Future(() => signedIn = true)), isTrue);
+    expect(signedIn, isTrue);
+    expect(c.status, BoardAccessStatus.open);
+    expect(c.needsSignIn, isFalse);
+    expect(c.readerCode, startsWith('TRM1R.'));
+  });
+}
+
+class _NoScopeCloud extends SharingCloud {
+  bool allowed = false;
+
+  @override
+  Future<String> publish(String path) {
+    if (!allowed) {
+      throw const StorageException(ErrorCode.cloudSharingNotAllowed, {
+        'provider': 'Dropbox',
+      });
+    }
+    return super.publish(path);
+  }
 }

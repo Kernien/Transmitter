@@ -125,6 +125,8 @@ class BoardPublisher {
   BoardState? _state;
   DateTime? _stateLoadedAt;
 
+  static const String _manifestExtension = '.board';
+
   String get _statePath => '$_dir/state.bin';
   String _manifestPath(BoardState s) => '$_dir/${s.manifestName}';
 
@@ -166,7 +168,13 @@ class BoardPublisher {
     if (existing != null) return readerKeyFor(existing);
 
     await _storage.ensureFolder(_dir);
-    final manifestName = '${_newId()}.board';
+    // Доступ закрыт — любая опись в папке осталась от прерванной попытки.
+    for (final file in await _storage.listFiles(_dir)) {
+      if (file.name.endsWith(_manifestExtension)) {
+        await _storage.delete('$_dir/${file.name}');
+      }
+    }
+    final manifestName = '${_newId()}$_manifestExtension';
     final empty = BoardSnapshot(
       label: label,
       updatedAt: _clock().toUtc(),
@@ -174,14 +182,23 @@ class BoardPublisher {
       fileLocators: const {},
     );
     // Опись должна существовать до того, как её откроют по ссылке.
+    final manifestPath = '$_dir/$manifestName';
     await _storage.upload(
-      '$_dir/$manifestName',
+      manifestPath,
       await _manifests.encode(empty, _signer),
     );
+    final String manifestLocator;
+    try {
+      manifestLocator = await _sharing.publish(manifestPath);
+    } catch (_) {
+      // Например, нет права на ссылки: опись без ссылки не нужна.
+      await _storage.delete(manifestPath);
+      rethrow;
+    }
     final opened = BoardState(
       label: label,
       manifestName: manifestName,
-      manifestLocator: await _sharing.publish('$_dir/$manifestName'),
+      manifestLocator: manifestLocator,
       fileLocators: const {},
       contentHash: _hashOf(empty),
     );

@@ -337,6 +337,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionCopyText => 'Copy text';
 
   @override
+  String get actionSelectText => 'Select text';
+
+  @override
+  String get closeAction => 'Close';
+
+  @override
   String get actionDeleteEverywhere => 'Delete on all devices';
 
   @override
@@ -527,6 +533,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get boardClosed => 'Access closed';
+
+  @override
+  String get errBoardClosed => 'The owner has closed access to this board';
+
+  @override
+  String boardSubtitle(String provider) {
+    return 'Read-only · $provider';
+  }
+
+  @override
+  String get readOnly => 'Read-only';
+
+  @override
+  String get readerKeyWarning =>
+      'This is a read-only key: with it the board can be viewed, but not changed.';
+
+  @override
+  String get removeBoardText =>
+      'The board will disappear only from this device. To get it back, you will need the reader key again.';
+
+  @override
+  String boardSignInAgain(String provider) {
+    return 'Sign in to $provider again';
+  }
+
+  @override
+  String get boardEmpty => 'Nothing on this board yet';
 
   @override
   String get boardUnsupported => 'This cloud doesn\'t support public boards';

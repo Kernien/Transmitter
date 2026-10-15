@@ -9,6 +9,7 @@ import '../../app/widgets/content_width.dart';
 import '../../core/files/file_transfer_service.dart';
 import '../../core/files/media_picker.dart';
 import '../../core/share/outgoing_share.dart';
+import '../../core/vault/reader_key.dart';
 import '../../core/vault/vault_key.dart';
 import '../../data/post_repository.dart';
 import 'feed_controller.dart';
@@ -16,24 +17,35 @@ import 'selection_exporter.dart';
 import 'widgets/compose_bar.dart';
 import 'widgets/post_tile.dart';
 
-/// Лента постов одной базы.
+/// Лента постов одной базы или публичной доски.
 class FeedScreen extends StatefulWidget {
-  const FeedScreen({super.key, required this.vaultKey});
+  /// База владельца: всё можно.
+  FeedScreen.vault(VaultKey vault, {super.key})
+    : label = vault.label,
+      pollInterval = AppConfig.pollInterval,
+      _open = ((sessions) => sessions.open(vault));
 
-  final VaultKey vaultKey;
+  /// Публичная доска у читателя: только чтение, без входа в облако.
+  FeedScreen.board(ReaderKey board, {super.key})
+    : label = board.label,
+      pollInterval = AppConfig.boardPollInterval,
+      _open = ((sessions) async => sessions.openAsReader(board));
+
+  final String label;
+  final Duration pollInterval;
+  final Future<PostRepository> Function(VaultSessionFactory) _open;
 
   @override
   State<FeedScreen> createState() => _FeedScreenState();
 }
 
 class _FeedScreenState extends State<FeedScreen> {
-  late final Future<PostRepository> _repository = context
-      .read<VaultSessionFactory>()
-      .open(widget.vaultKey);
+  late final Future<PostRepository> _repository = widget._open(
+    context.read<VaultSessionFactory>(),
+  );
 
-  String get _title => widget.vaultKey.label.isEmpty
-      ? context.l10n.vaultFallbackTitle
-      : widget.vaultKey.label;
+  String get _title =>
+      widget.label.isEmpty ? context.l10n.vaultFallbackTitle : widget.label;
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +73,7 @@ class _FeedScreenState extends State<FeedScreen> {
             files: context.read<FileTransferService>(),
             media: context.read<MediaPicker>(),
             share: context.read<ShareSender>(),
-            pollInterval: AppConfig.pollInterval,
+            pollInterval: widget.pollInterval,
             exportTexts: ExportTexts(
               textFileName: context.l10n.exportTextFileName,
               fileNote: context.l10n.exportFileNote,
@@ -100,19 +112,28 @@ class _FeedView extends StatelessWidget {
   AppBar _normalAppBar(BuildContext context) => AppBar(
     title: Text(title),
     actions: [
-      PopupMenuButton<String>(
-        onSelected: (_) => _confirmClear(context),
-        itemBuilder: (_) => [
-          PopupMenuItem(
-            value: 'clear',
-            child: ListTile(
-              leading: const Icon(Icons.delete_sweep_outlined),
-              title: Text(context.l10n.clearFeed),
-              contentPadding: EdgeInsets.zero,
-            ),
+      if (context.read<FeedController>().isReadOnly)
+        Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: Chip(
+            avatar: const Icon(Icons.visibility_outlined, size: 18),
+            label: Text(context.l10n.readOnly),
           ),
-        ],
-      ),
+        )
+      else
+        PopupMenuButton<String>(
+          onSelected: (_) => _confirmClear(context),
+          itemBuilder: (_) => [
+            PopupMenuItem(
+              value: 'clear',
+              child: ListTile(
+                leading: const Icon(Icons.delete_sweep_outlined),
+                title: Text(context.l10n.clearFeed),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ],
+        ),
     ],
   );
 
@@ -153,11 +174,12 @@ class _FeedView extends StatelessWidget {
                 icon: const Icon(Icons.download),
                 onPressed: () => _saveSelected(context),
               ),
-        IconButton(
-          tooltip: l.deleteSelected,
-          icon: const Icon(Icons.delete_outline),
-          onPressed: busy ? null : () => _confirmDeleteSelected(context),
-        ),
+        if (!feed.isReadOnly)
+          IconButton(
+            tooltip: l.deleteSelected,
+            icon: const Icon(Icons.delete_outline),
+            onPressed: busy ? null : () => _confirmDeleteSelected(context),
+          ),
       ],
     );
   }
@@ -235,6 +257,8 @@ class _FileDropZoneState extends State<_FileDropZone> {
 
   @override
   Widget build(BuildContext context) {
+    // На доску у читателя ничего не отправить.
+    if (context.read<FeedController>().isReadOnly) return widget.child;
     final theme = Theme.of(context);
     return DropTarget(
       onDragEntered: (_) => setState(() => _dragging = true),
@@ -306,15 +330,21 @@ class _FeedBody extends StatelessWidget {
           child: feed.isInitialLoad
               ? const Center(child: CircularProgressIndicator())
               : posts.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(
-                      context.l10n.feedEmpty,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                )
+              // При ошибке (нет сети, доступ к доске закрыт) достаточно
+              // баннера: подсказка «пока пусто» сбивала бы с толку.
+              ? feed.error != null
+                    ? const SizedBox.shrink()
+                    : Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            feed.isReadOnly
+                                ? context.l10n.boardEmpty
+                                : context.l10n.feedEmpty,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      )
               : ListView.builder(
                   reverse: true,
                   padding: const EdgeInsets.symmetric(vertical: 8),
@@ -323,7 +353,7 @@ class _FeedBody extends StatelessWidget {
                       PostTile(post: posts[posts.length - 1 - i]),
                 ),
         ),
-        const ComposeBar(),
+        if (!feed.isReadOnly) const ComposeBar(),
       ],
     );
   }

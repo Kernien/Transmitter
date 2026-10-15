@@ -34,6 +34,7 @@ enum ErrorCode {
   keyCorrupted,
   // Публичные доски.
   boardSignatureInvalid,
+  boardClosed,
 }
 
 /// Ошибка с кодом для показа пользователю.

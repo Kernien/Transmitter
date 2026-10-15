@@ -19,9 +19,13 @@ import 'core/share/incoming_share.dart';
 import 'core/share/outgoing_share.dart';
 import 'core/storage/cloud_connection_service.dart';
 import 'core/storage/cloud_provider_adapter.dart';
+import 'core/storage/cloud_provider_id.dart';
 import 'core/storage/providers/dropbox/dropbox_adapter.dart';
+import 'core/storage/providers/dropbox/dropbox_public_reader.dart';
 import 'core/storage/providers/google_drive/google_drive_adapter.dart';
+import 'core/storage/providers/google_drive/google_public_reader.dart';
 import 'core/vault/vault_key.dart';
+import 'core/vault/reader_key_store.dart';
 import 'core/vault/vault_key_store.dart';
 import 'features/vaults/vaults_controller.dart';
 
@@ -72,7 +76,10 @@ Future<void> main() async {
   ]);
 
   final connections = CloudConnectionService(registry, secureStore);
-  final vaults = VaultsController(VaultKeyStore(secureStore));
+  final vaults = VaultsController(
+    VaultKeyStore(secureStore),
+    readers: ReaderKeyStore(secureStore),
+  );
   final device = DeviceIdentity(
     secureStore,
     createPlatformDeviceNameSuggester(
@@ -90,6 +97,14 @@ Future<void> main() async {
       sessions: VaultSessionFactory(
         connections: connections,
         deviceName: () => device.name,
+        // Публичные доски читаются по ссылкам, без входа в облако.
+        readers: {
+          CloudProviderId.dropbox: DropboxPublicReader(httpClient),
+          CloudProviderId.googleDrive: GooglePublicReader(
+            client: httpClient,
+            apiKey: AppConfig.googleApiKey,
+          ),
+        },
       ),
       language: language,
       files: FilePickerTransferService(

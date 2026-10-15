@@ -27,6 +27,9 @@ class PublishingPostRepository implements PostRepository {
   int get maxFileSize => _inner.maxFileSize;
 
   @override
+  bool get isReadOnly => _inner.isReadOnly;
+
+  @override
   Object? get backgroundError => _error ?? _inner.backgroundError;
 
   /// Завершение фонового обновления описи (для тестов).

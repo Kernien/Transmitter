@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../core/errors/app_error.dart';
 import '../../core/vault/reader_key_codec.dart';
 import '../../data/board_publisher.dart';
 
@@ -51,6 +52,13 @@ class BoardAccessController extends ChangeNotifier {
   /// Последняя ошибка; текст — `describeError`.
   Object? get error => _error;
 
+  /// Облако не дало открыть файлы по ссылке: вход был сделан до появления
+  /// этого права — нужен новый вход.
+  bool get needsSignIn => switch (_error) {
+    CodedError(code: ErrorCode.cloudSharingNotAllowed) => true,
+    _ => false,
+  };
+
   Future<void> load() async {
     _status = BoardAccessStatus.loading;
     _error = null;
@@ -78,6 +86,17 @@ class BoardAccessController extends ChangeNotifier {
   /// Возвращает `true`, если доступ открыт.
   Future<bool> openAccess() => _run(() async {
     final key = await _board!.open(label: _label);
+    _readerCode = _codec.encode(key);
+    _status = BoardAccessStatus.open;
+  });
+
+  /// Новый вход в облако ([signingIn] уже запущен из нажатия кнопки), затем
+  /// открытие доступа с новыми правами. Возвращает `true`, если доступ открыт.
+  Future<bool> signInAgain(Future<void> signingIn) => _run(() async {
+    await signingIn;
+    // Хранилище со старым токеном больше не годится.
+    final board = _board = (await _publisher())!;
+    final key = await board.open(label: _label);
     _readerCode = _codec.encode(key);
     _status = BoardAccessStatus.open;
   });

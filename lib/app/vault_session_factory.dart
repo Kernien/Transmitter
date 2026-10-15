@@ -3,11 +3,14 @@ import '../core/crypto/board_signature.dart';
 import '../core/crypto/vault_key_derivation.dart';
 import '../core/storage/cloud_connection_service.dart';
 import '../core/storage/cloud_storage.dart';
+import '../core/storage/cloud_provider_id.dart';
 import '../core/storage/public_sharing.dart';
+import '../core/vault/reader_key.dart';
 import '../core/vault/vault_key.dart';
 import '../data/board_publisher.dart';
 import '../data/encrypted_cloud_post_repository.dart';
 import '../data/post_repository.dart';
+import '../data/public_board_repository.dart';
 import '../data/publishing_post_repository.dart';
 
 /// Собирает [PostRepository] для выбранного ключа: выводит секреты,
@@ -16,8 +19,12 @@ class VaultSessionFactory {
   const VaultSessionFactory({
     required this._connections,
     required this._deviceName,
+    this._readers = const {},
     this._derivation = const VaultKeyDerivation(),
   });
+
+  /// Чтение публичных досок без входа — по облакам.
+  final Map<CloudProviderId, PublicFileReader> _readers;
 
   final CloudConnectionService _connections;
 
@@ -35,6 +42,15 @@ class VaultSessionFactory {
     return publisher == null
         ? repository
         : PublishingPostRepository(repository, publisher);
+  }
+
+  /// Публичная доска у читателя — только чтение, вход в облако не нужен.
+  PostRepository openAsReader(ReaderKey key) {
+    final reader = _readers[key.provider];
+    if (reader == null) {
+      throw UnsupportedError('${key.provider.title} boards are not supported');
+    }
+    return PublicBoardRepository(reader: reader, key: key);
   }
 
   /// Управление доступом на чтение; `null`, если облако не умеет
