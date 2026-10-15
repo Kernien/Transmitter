@@ -62,6 +62,25 @@ void main() {
     },
   );
 
+  test(
+    'комментарий сразу виден в ленте и доходит до другого устройства',
+    () async {
+      final a = controllerFor('A');
+      final b = controllerFor('B');
+      await a.sendText('https://example.com');
+      expect(await a.setNote(a.posts.single, 'почитать вечером'), isTrue);
+      expect(a.posts.single.note!.text, 'почитать вечером');
+
+      await b.refresh();
+      expect(b.posts.single.note!.text, 'почитать вечером');
+      expect(await b.setNote(b.posts.single, ''), isTrue);
+      await a.refresh();
+      expect(a.posts.single.note, isNull);
+      a.dispose();
+      b.dispose();
+    },
+  );
+
   test('очистка ленты удаляет всё на всех устройствах', () async {
     final a = controllerFor('A');
     await a.sendText('1');

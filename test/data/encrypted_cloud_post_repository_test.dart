@@ -162,4 +162,79 @@ void main() {
   test('пустое сообщение не отправляется', () {
     expect(() => device('A').sendText('   '), throwsArgumentError);
   });
+
+  group('комментарии', () {
+    Iterable<String> noteFiles() =>
+        cloud.files.keys.where((p) => p.endsWith('.note'));
+
+    test('комментарий виден на другом устройстве', () async {
+      final phone = device('Телефон');
+      final post = await phone.sendText('https://example.com');
+      final withNote = await phone.setNote(post, '  рецепт пирога  ');
+      expect(withNote.note!.text, 'рецепт пирога');
+
+      final note = (await device('Ноутбук').fetchPosts()).single.note!;
+      expect(note.text, 'рецепт пирога');
+      expect(note.editorDevice, 'Телефон');
+      expect(note.postId, post.id);
+    });
+
+    test('правка с другого устройства заменяет комментарий', () async {
+      final phone = device('Телефон');
+      final pc = device('Ноутбук');
+      final post = await phone.sendText('текст');
+      await phone.setNote(post, 'первый');
+
+      final seen = (await pc.fetchPosts()).single;
+      await pc.setNote(seen, 'второй');
+      expect(noteFiles(), hasLength(1), reason: 'старый файл удалён');
+
+      final updated = (await phone.fetchPosts()).single.note!;
+      expect(updated.text, 'второй');
+      expect(updated.editorDevice, 'Ноутбук');
+    });
+
+    test('из двух одновременных правок побеждает более поздняя', () async {
+      final a = device('A');
+      final b = device('B');
+      final post = await a.sendText('текст');
+      await b.fetchPosts();
+      // Обе правки сделаны, не видя друг друга: в облаке два файла.
+      await a.setNote(post, 'от A');
+      await b.setNote(post, 'от B');
+      expect(noteFiles(), hasLength(2));
+      expect((await device('C').fetchPosts()).single.note!.text, 'от B');
+    });
+
+    test('пустой текст удаляет комментарий', () async {
+      final a = device('A');
+      final post = await a.sendText('текст');
+      await a.setNote(post, 'пояснение');
+      final cleared = await a.setNote(post, '   ');
+      expect(cleared.note, isNull);
+      expect(noteFiles(), isEmpty);
+      expect((await device('B').fetchPosts()).single.note, isNull);
+    });
+
+    test('удаление записи удаляет и комментарий', () async {
+      final a = device('A');
+      final post = await a.sendText('текст');
+      await a.setNote(post, 'пояснение');
+      await a.deletePost(post);
+      expect(cloud.files, isEmpty);
+    });
+
+    test(
+      'пост в облаке не меняется: старые версии видят его как раньше',
+      () async {
+        final a = device('A');
+        final post = await a.sendText('текст');
+        final postFile = cloud.files.keys.single;
+        final before = cloud.files[postFile];
+        await a.setNote(post, 'пояснение');
+        expect(cloud.files[postFile], before);
+        expect(cloud.files.keys.where((p) => p.endsWith('.post')), [postFile]);
+      },
+    );
+  });
 }

@@ -17,12 +17,18 @@ typedef IdGenerator = String Function();
 ///
 /// Раскладка в облаке:
 /// ```
-/// <vaultId>/posts/<время>_<id>.post   — зашифрованный JSON поста
-/// <vaultId>/files/<id>.bin            — зашифрованное содержимое файла
+/// <vaultId>/posts/<время>_<id>.post               — зашифрованный JSON поста
+/// <vaultId>/posts/<время>_<id>~<правка>.note      — комментарий к посту
+/// <vaultId>/files/<id>.bin                        — зашифрованный файл
 /// ```
 /// Каждый пост лежит в отдельном файле, поэтому несколько устройств могут
 /// писать одновременно без конфликтов. Имена начинаются со времени, так что
 /// сортировка по имени совпадает с хронологией.
+///
+/// Комментарий лежит рядом с постом, а не внутри: пост не меняется, а правку
+/// комментария видно по списку файлов (новое время правки — новое имя), без
+/// лишних запросов. Действует самый свежий комментарий. Старые версии
+/// приложения читают только `.post` и комментарии не замечают.
 class EncryptedCloudPostRepository implements PostRepository {
   EncryptedCloudPostRepository({
     required this._storage,
@@ -39,6 +45,8 @@ class EncryptedCloudPostRepository implements PostRepository {
        _filesDir = '$vaultId/files';
 
   static const String _postExtension = '.post';
+  static const String _noteExtension = '.note';
+  static const String _noteSeparator = '~';
 
   @override
   final int maxFileSize;
@@ -55,6 +63,9 @@ class EncryptedCloudPostRepository implements PostRepository {
   /// Уже расшифрованные посты по имени файла в облаке.
   final Map<String, Post> _cache = {};
 
+  /// Уже расшифрованные комментарии по имени файла в облаке.
+  final Map<String, PostNote> _notes = {};
+
   /// Файлы, которые не удалось расшифровать: повторно их не скачиваем.
   final Set<String> _unreadable = {};
 
@@ -65,29 +76,49 @@ class EncryptedCloudPostRepository implements PostRepository {
   Future<List<Post>> fetchPosts() async {
     final remote = (await _storage.listFiles(_postsDir))
         .map((f) => f.name)
-        .where((name) => name.endsWith(_postExtension))
         .toSet();
+    final postNames = remote.where((n) => n.endsWith(_postExtension)).toSet();
+    final noteNames = remote.where((n) => n.endsWith(_noteExtension)).toSet();
 
-    // Посты, удалённые на других устройствах.
-    _cache.removeWhere((name, _) => !remote.contains(name));
+    // Посты и комментарии, удалённые на других устройствах.
+    _cache.removeWhere((name, _) => !postNames.contains(name));
+    _notes.removeWhere((name, _) => !noteNames.contains(name));
 
-    final fresh = remote.where(
-      (n) => !_cache.containsKey(n) && !_unreadable.contains(n),
-    );
-    await Future.wait(fresh.map(_loadPost));
+    bool isFresh(String name, Map<String, Object> cache) =>
+        !cache.containsKey(name) && !_unreadable.contains(name);
+    await Future.wait([
+      for (final name in postNames.where((n) => isFresh(n, _cache)))
+        _load(name, (json) => _cache[name] = Post.fromJson(json)),
+      for (final name in noteNames.where((n) => isFresh(n, _notes)))
+        _load(name, (json) => _notes[name] = PostNote.fromJson(json)),
+    ]);
 
-    final posts = _cache.values.toList()
+    final notes = _latestNotes();
+    final posts = [for (final p in _cache.values) p.withNote(notes[p.id])]
       ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
     return posts;
   }
 
-  Future<void> _loadPost(String fileName) async {
+  /// Самый свежий комментарий для каждого поста.
+  Map<String, PostNote> _latestNotes() {
+    final latest = <String, PostNote>{};
+    for (final note in _notes.values) {
+      final current = latest[note.postId];
+      if (current == null || note.editedAt.isAfter(current.editedAt)) {
+        latest[note.postId] = note;
+      }
+    }
+    return latest;
+  }
+
+  Future<void> _load(
+    String fileName,
+    void Function(Map<String, dynamic> json) store,
+  ) async {
     try {
       final encrypted = await _storage.download('$_postsDir/$fileName');
       final json = utf8.decode(await _cipher.decrypt(encrypted));
-      _cache[fileName] = Post.fromJson(
-        jsonDecode(json) as Map<String, dynamic>,
-      );
+      store(jsonDecode(json) as Map<String, dynamic>);
     } on StorageNotFoundException {
       // Файл удалили, пока мы его скачивали.
     } on DecryptionException catch (e) {
@@ -100,7 +131,7 @@ class EncryptedCloudPostRepository implements PostRepository {
   }
 
   void _markUnreadable(String fileName, Object error) {
-    debugPrint('Skipped unreadable post $fileName: $error');
+    debugPrint('Skipped unreadable file $fileName: $error');
     _unreadable.add(fileName);
   }
 
@@ -158,9 +189,51 @@ class EncryptedCloudPostRepository implements PostRepository {
     final fileName = _fileNameFor(post);
     await _storage.delete('$_postsDir/$fileName');
     _cache.remove(fileName);
+    await _deleteNotes(_noteFilesFor(post));
     final attachment = post.attachment;
     if (attachment != null) {
       await _storage.delete(_attachmentPath(attachment));
+    }
+  }
+
+  @override
+  Future<Post> setNote(Post post, String text) async {
+    final trimmed = text.trim();
+    // Старые комментарии удаляем после записи нового: при сбое посередине
+    // останется лишний файл, но текст не пропадёт.
+    final old = _noteFilesFor(post);
+    PostNote? note;
+    if (trimmed.isNotEmpty) {
+      note = PostNote(
+        postId: post.id,
+        text: trimmed,
+        editedAt: _clock().toUtc(),
+        editorDevice: _deviceName,
+      );
+      final fileName = _noteFileNameFor(post, note);
+      await _storage.upload(
+        '$_postsDir/$fileName',
+        await _cipher.encrypt(utf8.encode(jsonEncode(note.toJson()))),
+      );
+      _notes[fileName] = note;
+    }
+    await _deleteNotes(old.where((name) => !_isCurrent(name, note)));
+    return post.withNote(note);
+  }
+
+  bool _isCurrent(String name, PostNote? note) =>
+      note != null && _notes[name] == note;
+
+  /// Файлы комментариев поста, известные по последнему списку из облака.
+  List<String> _noteFilesFor(Post post) => [
+    for (final entry in _notes.entries)
+      if (entry.value.postId == post.id) entry.key,
+  ];
+
+  Future<void> _deleteNotes(Iterable<String> names) async {
+    for (final name in names.toList()) {
+      await _storage.delete('$_postsDir/$name');
+      _notes.remove(name);
     }
   }
 
@@ -193,11 +266,16 @@ class EncryptedCloudPostRepository implements PostRepository {
 
   String _attachmentPath(Attachment a) => '$_filesDir/${a.id}.bin';
 
-  static String _fileNameFor(Post post) {
-    final ts = post.createdAt.millisecondsSinceEpoch.toString().padLeft(
-      15,
-      '0',
-    );
-    return '${ts}_${post.id}$_postExtension';
-  }
+  static String _fileNameFor(Post post) =>
+      '${_baseNameFor(post)}$_postExtension';
+
+  static String _noteFileNameFor(Post post, PostNote note) =>
+      '${_baseNameFor(post)}$_noteSeparator'
+      '${_timestamp(note.editedAt)}$_noteExtension';
+
+  static String _baseNameFor(Post post) =>
+      '${_timestamp(post.createdAt)}_${post.id}';
+
+  static String _timestamp(DateTime time) =>
+      time.millisecondsSinceEpoch.toString().padLeft(15, '0');
 }

@@ -32,6 +32,43 @@ class Attachment {
   };
 }
 
+/// Комментарий к записи: пояснение, которое можно добавить, изменить или
+/// удалить с любого устройства базы. Хранится отдельно от записи.
+@immutable
+class PostNote {
+  const PostNote({
+    required this.postId,
+    required this.text,
+    required this.editedAt,
+    required this.editorDevice,
+  });
+
+  factory PostNote.fromJson(Map<String, dynamic> json) => PostNote(
+    postId: json['post'] as String,
+    text: json['text'] as String,
+    editedAt: DateTime.fromMillisecondsSinceEpoch(
+      (json['ts'] as num).toInt(),
+      isUtc: true,
+    ),
+    editorDevice: (json['from'] as String?) ?? '',
+  );
+
+  final String postId;
+  final String text;
+  final DateTime editedAt;
+
+  /// Устройство, с которого комментарий изменили последним.
+  final String editorDevice;
+
+  Map<String, dynamic> toJson() => {
+    'v': 1,
+    'post': postId,
+    'text': text,
+    'ts': editedAt.toUtc().millisecondsSinceEpoch,
+    'from': editorDevice,
+  };
+}
+
 /// Одна запись в базе: текст, ссылка или файл.
 @immutable
 class Post {
@@ -42,6 +79,7 @@ class Post {
     required this.senderDevice,
     this.text = '',
     this.attachment,
+    this.note,
   });
 
   factory Post.fromJson(Map<String, dynamic> json) => Post(
@@ -66,6 +104,20 @@ class Post {
   /// Текст сообщения, адрес ссылки или подпись к файлу.
   final String text;
   final Attachment? attachment;
+
+  /// Комментарий к записи. В JSON записи не входит: хранится отдельно.
+  final PostNote? note;
+
+  /// Та же запись с другим комментарием (`null` — без комментария).
+  Post withNote(PostNote? note) => Post(
+    id: id,
+    kind: kind,
+    createdAt: createdAt,
+    senderDevice: senderDevice,
+    text: text,
+    attachment: attachment,
+    note: note,
+  );
 
   Map<String, dynamic> toJson() => {
     'v': 1,

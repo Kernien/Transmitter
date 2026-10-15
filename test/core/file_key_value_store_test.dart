@@ -48,15 +48,11 @@ void main() {
     expect(await store().read('a'), '1');
   });
 
-  test(
-    'файл доступен только владельцу',
-    () async {
-      await store().write('a', '1');
-      final mode = (await file.stat()).mode & 0x1FF;
-      final dirMode = (await file.parent.stat()).mode & 0x1FF;
-      expect(mode, 0x180, reason: 'файл 600'); // rw-------
-      expect(dirMode, 0x1C0, reason: 'папка 700'); // rwx------
-    },
-    skip: Platform.isWindows ? 'права доступа Unix' : false,
-  );
+  test('файл доступен только владельцу', () async {
+    await store().write('a', '1');
+    final mode = (await file.stat()).mode & 0x1FF;
+    final dirMode = (await file.parent.stat()).mode & 0x1FF;
+    expect(mode, 0x180, reason: 'файл 600'); // rw-------
+    expect(dirMode, 0x1C0, reason: 'папка 700'); // rwx------
+  }, skip: Platform.isWindows ? 'права доступа Unix' : false);
 }

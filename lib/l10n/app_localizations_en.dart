@@ -314,6 +314,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionSelect => 'Select';
 
   @override
+  String get actionAddNote => 'Add comment';
+
+  @override
+  String get actionEditNote => 'Edit comment';
+
+  @override
+  String get noteTitle => 'Comment';
+
+  @override
+  String get noteHint => 'What is this, why it matters';
+
+  @override
+  String noteEditedBy(String device) {
+    return 'Last edited on $device';
+  }
+
+  @override
   String get actionSaveFile => 'Save file';
 
   @override

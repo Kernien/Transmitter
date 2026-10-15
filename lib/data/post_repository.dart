@@ -28,5 +28,10 @@ abstract interface class PostRepository {
 
   Future<Uint8List> downloadAttachment(Attachment attachment);
 
+  /// Удаляет пост вместе с файлом и комментарием.
   Future<void> deletePost(Post post);
+
+  /// Задаёт комментарий к посту; пустой текст удаляет комментарий.
+  /// Возвращает пост с новым комментарием.
+  Future<Post> setNote(Post post, String text);
 }

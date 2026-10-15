@@ -314,6 +314,23 @@ class AppLocalizationsRu extends AppLocalizations {
   String get actionSelect => 'Выбрать';
 
   @override
+  String get actionAddNote => 'Добавить комментарий';
+
+  @override
+  String get actionEditNote => 'Изменить комментарий';
+
+  @override
+  String get noteTitle => 'Комментарий';
+
+  @override
+  String get noteHint => 'Что это и зачем';
+
+  @override
+  String noteEditedBy(String device) {
+    return 'Последняя правка: $device';
+  }
+
+  @override
   String get actionSaveFile => 'Сохранить файл';
 
   @override

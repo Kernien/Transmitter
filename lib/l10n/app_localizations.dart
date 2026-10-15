@@ -614,6 +614,36 @@ abstract class AppLocalizations {
   /// **'Select'**
   String get actionSelect;
 
+  /// No description provided for @actionAddNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Add comment'**
+  String get actionAddNote;
+
+  /// No description provided for @actionEditNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit comment'**
+  String get actionEditNote;
+
+  /// No description provided for @noteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment'**
+  String get noteTitle;
+
+  /// No description provided for @noteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'What is this, why it matters'**
+  String get noteHint;
+
+  /// No description provided for @noteEditedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Last edited on {device}'**
+  String noteEditedBy(String device);
+
   /// No description provided for @actionSaveFile.
   ///
   /// In en, this message translates to:

@@ -314,6 +314,22 @@ class FeedController extends ChangeNotifier {
     }
   }
 
+  /// Задаёт комментарий к посту; пустой текст удаляет его.
+  /// Возвращает `true`, если изменение сохранено в облаке.
+  Future<bool> setNote(Post post, String text) async {
+    try {
+      final updated = await _repository.setNote(post, text);
+      _posts = [for (final p in _posts) p.id == post.id ? updated : p];
+      _error = null;
+      return true;
+    } catch (e) {
+      _error = e;
+      return false;
+    } finally {
+      _notify();
+    }
+  }
+
   Future<void> delete(Post post) async {
     try {
       await _repository.deletePost(post);

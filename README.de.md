@@ -57,6 +57,8 @@ Computer und Browser.
   Schlüssel, nichts vermischt sich.
 - **Mit mehreren Einträgen gleichzeitig arbeiten.** Auswählen und als ein
   ZIP-Archiv herunterladen, teilen oder löschen.
+- **Kommentare zu Einträgen.** Eine Notiz zu einem Link oder einer Datei —
+  was es ist und wozu; auf jedem Gerät änderbar oder löschbar.
 - **Überall löschen.** Ein gelöschter Eintrag verschwindet auf allen Geräten,
   samt Datei in der Cloud.
 - **Gerätenamen.** Bei jedem Eintrag sieht man, woher er kommt: „Redmi 10“,
@@ -190,7 +192,8 @@ der Verlauf geöffnet ist.
 
 ### 4. Mit Einträgen arbeiten
 
-- **⋮ neben einem Eintrag:** **Teilen** („Share“), **Datei speichern** („Save
+- **⋮ neben einem Eintrag:** **Kommentar hinzufügen** („Add comment“, später
+  „Edit comment“), **Teilen** („Share“), **Datei speichern** („Save
   file“), **Text kopieren** („Copy text“ — Link oder Bildunterschrift), **Auf
   allen Geräten löschen** („Delete on all devices“).
 - **Tippen** auf einen Link öffnet ihn, auf eine Datei speichert sie.
@@ -235,9 +238,8 @@ der Verlauf geöffnet ist.
 
 ## Wie es weitergeht
 
-- die Cloud MEGA;
-- Kommentare zu Einträgen — eine Notiz, die sich hinzufügen und später ändern lässt;
 - Fotos, Audio und Videos direkt in der App ansehen;
+- die Cloud MEGA;
 - eine Version für das iPhone.
 
 ---

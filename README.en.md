@@ -49,6 +49,8 @@ browser.
   and another for your computer: each has its own key, and they never mix.
 - **Work with many items at once.** Select them, then download as a single zip
   archive, share or delete.
+- **Comments on items.** A note on a link or file — what it is and why;
+  edit or delete it from any device.
 - **Delete everywhere.** A deleted item disappears from all devices, along with
   its file in the cloud.
 - **Device names.** Every item shows where it came from: “Redmi 10”,
@@ -170,7 +172,7 @@ open.
 
 ### 4. Work with items
 
-- **⋮ next to an item:** **Share**, **Save file**, **Copy text** (the link or
+- **⋮ next to an item:** **Add comment** (later — **Edit comment**), **Share**, **Save file**, **Copy text** (the link or
   caption), **Delete on all devices**.
 - **Tap** a link to open it, tap a file to save it.
 - **Long-press** (or **Select** in the ⋮ menu) starts selection. Tick several
@@ -210,9 +212,8 @@ open.
 
 ## What's next
 
-- the MEGA cloud;
-- comments on items — a note you can add and edit later;
 - viewing photos, audio and video right in the app;
+- the MEGA cloud;
 - an iPhone version.
 
 ---

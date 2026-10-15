@@ -7,7 +7,7 @@ import '../../../app/l10n.dart';
 import '../../../domain/post.dart';
 import '../feed_controller.dart';
 
-enum _PostAction { select, share, save, copy, delete }
+enum _PostAction { select, note, share, save, copy, delete }
 
 /// Один пост в ленте. Нажатие открывает ссылку или сохраняет файл, долгое
 /// нажатие выделяет пост (см. режим выделения в FeedController), остальные
@@ -19,6 +19,7 @@ class PostTile extends StatelessWidget {
 
   List<_PostAction> _actions({required bool canShare}) => [
     _PostAction.select,
+    _PostAction.note,
     if (canShare) _PostAction.share,
     if (post.attachment != null) _PostAction.save,
     if (post.text.isNotEmpty) _PostAction.copy,
@@ -68,6 +69,7 @@ class PostTile extends StatelessWidget {
                       padding: const EdgeInsets.only(right: 8),
                       child: _content(theme),
                     ),
+                    if (post.note case final note?) _NoteView(note: note),
                     Row(
                       children: [
                         Expanded(
@@ -98,7 +100,10 @@ class PostTile extends StatelessWidget {
                               ))
                                 PopupMenuItem(
                                   value: action,
-                                  child: _ActionLabel(action),
+                                  child: _ActionLabel(
+                                    action,
+                                    hasNote: post.note != null,
+                                  ),
                                 ),
                             ],
                           ),
@@ -144,6 +149,12 @@ class PostTile extends StatelessWidget {
     switch (action) {
       case _PostAction.select:
         feed.toggleSelection(post);
+      case _PostAction.note:
+        final text = await showDialog<String>(
+          context: context,
+          builder: (_) => _NoteDialog(initial: post.note?.text ?? ''),
+        );
+        if (text != null) await feed.setNote(post, text);
       case _PostAction.share:
         await feed.sharePost(post);
       case _PostAction.save:
@@ -193,15 +204,20 @@ class PostTile extends StatelessWidget {
 }
 
 class _ActionLabel extends StatelessWidget {
-  const _ActionLabel(this.action);
+  const _ActionLabel(this.action, {required this.hasNote});
 
   final _PostAction action;
+  final bool hasNote;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final (icon, text) = switch (action) {
       _PostAction.select => (Icons.check_box_outlined, l.actionSelect),
+      _PostAction.note => (
+        hasNote ? Icons.edit_note : Icons.add_comment_outlined,
+        hasNote ? l.actionEditNote : l.actionAddNote,
+      ),
       _PostAction.share => (Icons.share, l.share),
       _PostAction.save => (Icons.download, l.actionSaveFile),
       _PostAction.copy => (Icons.copy, l.actionCopyText),
@@ -209,6 +225,104 @@ class _ActionLabel extends StatelessWidget {
     };
     return Row(
       children: [Icon(icon, size: 20), const SizedBox(width: 12), Text(text)],
+    );
+  }
+}
+
+/// Комментарий под записью.
+class _NoteView extends StatelessWidget {
+  const _NoteView({required this.note});
+
+  final PostNote note;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, right: 8),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Icon(
+                Icons.comment_outlined,
+                size: 16,
+                color: theme.colorScheme.outline,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Tooltip(
+                message: context.l10n.noteEditedBy(note.editorDevice),
+                child: Text(note.text, style: theme.textTheme.bodyMedium),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Добавление или изменение комментария. Возвращает новый текст
+/// (пустой — удалить комментарий) или `null`, если пользователь отменил.
+class _NoteDialog extends StatefulWidget {
+  const _NoteDialog({required this.initial});
+
+  final String initial;
+
+  @override
+  State<_NoteDialog> createState() => _NoteDialogState();
+}
+
+class _NoteDialogState extends State<_NoteDialog> {
+  late final _text = TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _text.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return AlertDialog(
+      title: Text(l.noteTitle),
+      content: TextField(
+        controller: _text,
+        autofocus: true,
+        minLines: 2,
+        maxLines: 6,
+        textCapitalization: TextCapitalization.sentences,
+        decoration: InputDecoration(
+          hintText: l.noteHint,
+          border: const OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        if (widget.initial.isNotEmpty)
+          TextButton(
+            onPressed: () => Navigator.pop(context, ''),
+            child: Text(l.delete),
+          ),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _text.text),
+          child: Text(l.save),
+        ),
+      ],
     );
   }
 }
