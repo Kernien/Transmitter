@@ -7,6 +7,7 @@ import '../../../auth/bearer_request.dart';
 import '../../../auth/oauth_token_manager.dart';
 import '../../../errors/app_error.dart';
 import '../../cloud_storage.dart';
+import '../../public_sharing.dart';
 
 /// Google Drive через REST API v3 с правом `drive.file`: приложение видит
 /// только созданные им файлы.
@@ -14,7 +15,10 @@ import '../../cloud_storage.dart';
 /// Путей в Drive нет — файлы и папки адресуются по id, родитель задаётся
 /// id. Корень наших путей — видимая папка [rootFolderName] в «Моём диске»;
 /// id папок и файлов кешируются по пути.
-class GoogleDriveStorage implements CloudStorage {
+///
+/// Публичный доступ (для досок) — разрешение «все, у кого есть ссылка» на
+/// файл; `drive.file` позволяет это для файлов приложения.
+class GoogleDriveStorage implements CloudStorage, PublicSharing {
   GoogleDriveStorage({required this._tokens, required this._client});
 
   static const String rootFolderName = 'Transmitter';
@@ -120,6 +124,49 @@ class GoogleDriveStorage implements CloudStorage {
           _client.delete(Uri.parse('$_api/files/$id'), headers: _auth(token)),
     );
     _fileIds.remove(normalized);
+    if (response.statusCode == 204 ||
+        response.statusCode == 200 ||
+        response.statusCode == 404) {
+      return;
+    }
+    _fail(response);
+  }
+
+  // ---- Публичный доступ ----
+
+  /// Id разрешения «все, у кого есть ссылка» в Drive.
+  static const String _anyonePermission = 'anyoneWithLink';
+
+  /// Локатор — id файла; [GooglePublicReader] скачивает его с API-ключом.
+  @override
+  Future<String> publish(String path) async {
+    final normalized = _normalize(path);
+    final id = await _fileId(normalized);
+    if (id == null) throw StorageNotFoundException(path);
+    final response = await _send(
+      (token) => _client.post(
+        Uri.parse('$_api/files/$id/permissions?fields=id'),
+        headers: {..._auth(token), 'Content-Type': 'application/json'},
+        body: utf8.encode(jsonEncode({'role': 'reader', 'type': 'anyone'})),
+      ),
+    );
+    if (response.statusCode == 404) {
+      _fileIds.remove(normalized);
+      throw StorageNotFoundException(path);
+    }
+    if (response.statusCode != 200) _fail(response);
+    return id;
+  }
+
+  @override
+  Future<void> unpublish(String path, String locator) async {
+    final response = await _send(
+      (token) => _client.delete(
+        Uri.parse('$_api/files/$locator/permissions/$_anyonePermission'),
+        headers: _auth(token),
+      ),
+    );
+    // 404 — файла или разрешения уже нет.
     if (response.statusCode == 204 ||
         response.statusCode == 200 ||
         response.statusCode == 404) {

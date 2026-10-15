@@ -183,6 +183,9 @@
   "errDecryptionFailed": "Couldn't decrypt the data",
   "errKeyNotTransmitter": "This isn't a Transmitter key",
   "errKeyCorrupted": "The key is damaged",
+  "errCloudSharingNotAllowed": "Sign in to {provider} again to allow public links: ☁ → {provider} → Sign out, then Sign in",
+  "@errCloudSharingNotAllowed": { "placeholders": { "provider": { "type": "String" } } },
+  "errBoardSignatureInvalid": "The board failed the integrity check: it was damaged or tampered with",
   "errUnknown": "Error: {error}",
   "@errUnknown": { "placeholders": { "error": { "type": "String" } } }
 }

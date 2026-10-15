@@ -499,6 +499,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errKeyCorrupted => 'The key is damaged';
 
   @override
+  String errCloudSharingNotAllowed(String provider) {
+    return 'Sign in to $provider again to allow public links: ☁ → $provider → Sign out, then Sign in';
+  }
+
+  @override
+  String get errBoardSignatureInvalid =>
+      'The board failed the integrity check: it was damaged or tampered with';
+
+  @override
   String errUnknown(String error) {
     return 'Error: $error';
   }

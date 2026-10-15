@@ -902,6 +902,18 @@ abstract class AppLocalizations {
   /// **'The key is damaged'**
   String get errKeyCorrupted;
 
+  /// No description provided for @errCloudSharingNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to {provider} again to allow public links: ☁ → {provider} → Sign out, then Sign in'**
+  String errCloudSharingNotAllowed(String provider);
+
+  /// No description provided for @errBoardSignatureInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The board failed the integrity check: it was damaged or tampered with'**
+  String get errBoardSignatureInvalid;
+
   /// No description provided for @errUnknown.
   ///
   /// In en, this message translates to:

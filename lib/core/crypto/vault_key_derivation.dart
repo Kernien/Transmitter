@@ -31,6 +31,11 @@ class VaultKeyDerivation {
     return VaultSecrets(vaultId: _hex(id), encryptionKey: encryptionKey);
   }
 
+  /// Зерно ключа подписи публичной доски (Ed25519). Одинаково на всех
+  /// устройствах владельца; читателю передаётся только открытый ключ.
+  Future<Uint8List> boardSigningSeed(List<int> masterSecret) =>
+      _expand(masterSecret, 'board-signing-key', 32);
+
   Future<Uint8List> _expand(List<int> secret, String info, int length) async {
     final hkdf = Hkdf(hmac: Hmac.sha256(), outputLength: length);
     final key = await hkdf.deriveKey(

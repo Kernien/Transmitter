@@ -66,12 +66,14 @@ extension AppLocalizationsX on AppLocalizations {
         provider,
         arg('details'),
       ),
+      ErrorCode.cloudSharingNotAllowed => errCloudSharingNotAllowed(provider),
       ErrorCode.fileTooLarge => errFileTooLarge(
         sizeLimitOf(args['maxBytes'] as int? ?? 0),
       ),
       ErrorCode.decryptionFailed => errDecryptionFailed,
       ErrorCode.keyNotTransmitter => errKeyNotTransmitter,
       ErrorCode.keyCorrupted => errKeyCorrupted,
+      ErrorCode.boardSignatureInvalid => errBoardSignatureInvalid,
     };
   }
 }

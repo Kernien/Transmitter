@@ -10,6 +10,7 @@ import 'package:transmitter/core/auth/oauth_token_manager.dart';
 import 'package:transmitter/core/storage/cloud_storage.dart';
 import 'package:transmitter/core/storage/providers/google_drive/google_drive_authenticator.dart';
 import 'package:transmitter/core/storage/providers/google_drive/google_drive_storage.dart';
+import 'package:transmitter/core/storage/providers/google_drive/google_public_reader.dart';
 
 const _folderMime = 'application/vnd.google-apps.folder';
 
@@ -19,6 +20,10 @@ class FakeDrive {
   final Map<String, Map<String, dynamic>> items = {};
   final Map<String, Uint8List> contents = {};
   final Map<String, Map<String, dynamic>> _sessions = {};
+
+  /// Файлы, открытые «всем, у кого есть ссылка».
+  final Set<String> public = {};
+  static const apiKey = 'api-key';
   int _next = 0;
   int requests = 0;
   String? expectedToken = 'tok';
@@ -34,6 +39,16 @@ class FakeDrive {
     requests++;
     final url = r.url;
     if (url.host == 'upload.example') return _finishResumable(r);
+    // Публичное чтение: без токена, с API-ключом.
+    if (url.queryParameters.containsKey('key')) {
+      final id = url.pathSegments.last;
+      final data = contents[id];
+      return url.queryParameters['key'] == apiKey &&
+              public.contains(id) &&
+              data != null
+          ? http.Response.bytes(data, 200)
+          : _json({'error': {}}, 404);
+    }
     if (expectedToken != null &&
         r.headers['Authorization'] != 'Bearer $expectedToken') {
       return _json({
@@ -42,6 +57,17 @@ class FakeDrive {
     }
     final upload = url.path.startsWith('/upload/drive/v3/files');
     final segments = url.pathSegments;
+    if (segments.contains('permissions')) {
+      final id = segments[segments.indexOf('files') + 1];
+      if (!items.containsKey(id)) return _json({'error': {}}, 404);
+      if (r.method == 'POST') {
+        expect(jsonDecode(r.body), {'role': 'reader', 'type': 'anyone'});
+        public.add(id);
+        return _json({'id': 'anyoneWithLink'});
+      }
+      expect(segments.last, 'anyoneWithLink');
+      return http.Response('', public.remove(id) ? 204 : 404);
+    }
     final fileId = segments.last == 'files' ? null : segments.last;
 
     if (upload && url.queryParameters['uploadType'] == 'multipart') {
@@ -312,6 +338,38 @@ void main() {
         ),
       );
       expect(s.ensureFolder('a'), throwsA(isA<StorageQuotaException>()));
+    });
+
+    test('публичный доступ: открыть, прочитать без входа, закрыть', () async {
+      final s = storage();
+      await s.upload('v1/board.bin', Uint8List.fromList([7, 8, 9]));
+      final reader = GooglePublicReader(
+        client: drive.client,
+        apiKey: FakeDrive.apiKey,
+      );
+
+      final locator = await s.publish('v1/board.bin');
+      expect(locator, drive.byName('board.bin')!['id']);
+      expect(await reader.download(locator), [7, 8, 9]);
+
+      // Обновлённый файл доступен по тому же адресу.
+      await s.upload('v1/board.bin', Uint8List.fromList([1]));
+      expect(await reader.download(locator), [1]);
+
+      await s.unpublish('v1/board.bin', locator);
+      expect(
+        reader.download(locator),
+        throwsA(isA<StorageNotFoundException>()),
+      );
+      // Повторное закрытие — без ошибки.
+      await s.unpublish('v1/board.bin', locator);
+    });
+
+    test('открыть доступ к несуществующему файлу — not found', () {
+      expect(
+        storage().publish('v1/nope.bin'),
+        throwsA(isA<StorageNotFoundException>()),
+      );
     });
   });
 

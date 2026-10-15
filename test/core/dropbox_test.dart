@@ -7,8 +7,10 @@ import 'package:http/testing.dart';
 import 'package:transmitter/core/auth/auth_browser.dart';
 import 'package:transmitter/core/auth/oauth_credentials.dart';
 import 'package:transmitter/core/auth/oauth_token_manager.dart';
+import 'package:transmitter/core/errors/app_error.dart';
 import 'package:transmitter/core/storage/cloud_storage.dart';
 import 'package:transmitter/core/storage/providers/dropbox/dropbox_authenticator.dart';
+import 'package:transmitter/core/storage/providers/dropbox/dropbox_public_reader.dart';
 import 'package:transmitter/core/storage/providers/dropbox/dropbox_storage.dart';
 
 /// Имитация браузера: «входит» и возвращает заданные параметры.
@@ -291,6 +293,88 @@ void main() {
         storage().upload('a', Uint8List(1)),
         throwsA(isA<StorageQuotaException>()),
       );
+    });
+
+    group('публичные ссылки', () {
+      const link =
+          'https://www.dropbox.com/scl/fi/abc/board.bin?rlkey=xyz&dl=0';
+
+      test('publish создаёт ссылку на файл', () async {
+        handler = (r) async {
+          expect(r.url.path, '/2/sharing/create_shared_link_with_settings');
+          expect(jsonDecode(r.body)['path'], '/v1/board.bin');
+          return jsonResponse({'url': link});
+        };
+        expect(await storage().publish('v1/board.bin'), link);
+      });
+
+      test('ссылка уже есть — берётся существующая', () async {
+        handler = (r) async => r.url.path.endsWith('/list_shared_links')
+            ? jsonResponse({
+                'links': [
+                  {'url': link},
+                ],
+              })
+            : jsonResponse({
+                'error_summary': 'shared_link_already_exists/metadata/..',
+              }, 409);
+        expect(await storage().publish('v1/board.bin'), link);
+        expect(jsonDecode(requests.last.body), {
+          'path': '/v1/board.bin',
+          'direct_only': true,
+        });
+      });
+
+      test('нет права sharing.write — понятная ошибка', () async {
+        handler = (_) async => jsonResponse({
+          'error_summary': 'missing_scope/..',
+          'error': {'.tag': 'missing_scope', 'required_scope': 'sharing.write'},
+        }, 401);
+        expect(
+          storage().publish('v1/board.bin'),
+          throwsA(
+            isA<StorageException>().having(
+              (e) => e.code,
+              'code',
+              ErrorCode.cloudSharingNotAllowed,
+            ),
+          ),
+        );
+      });
+
+      test('unpublish отзывает ссылку; если её уже нет — без ошибки', () async {
+        handler = (r) async {
+          expect(r.url.path, '/2/sharing/revoke_shared_link');
+          expect(jsonDecode(r.body), {'url': link});
+          return jsonResponse({'error_summary': 'shared_link_not_found/'}, 409);
+        };
+        await storage().unpublish('v1/board.bin', link);
+      });
+
+      test('читатель качает по прямому адресу без входа', () async {
+        late http.Request seen;
+        final reader = DropboxPublicReader(
+          MockClient((r) async {
+            seen = r;
+            return r.url.host == 'dl.dropboxusercontent.com'
+                ? http.Response.bytes([1, 2, 3], 200)
+                : http.Response('', 404);
+          }),
+        );
+        expect(await reader.download(link), [1, 2, 3]);
+        expect(
+          seen.url.toString(),
+          'https://dl.dropboxusercontent.com/scl/fi/abc/board.bin?rlkey=xyz',
+        );
+        expect(seen.headers.containsKey('Authorization'), isFalse);
+      });
+
+      test('ссылку отозвали — StorageNotFoundException', () {
+        final reader = DropboxPublicReader(
+          MockClient((_) async => http.Response('', 404)),
+        );
+        expect(reader.download(link), throwsA(isA<StorageNotFoundException>()));
+      });
     });
   });
 }

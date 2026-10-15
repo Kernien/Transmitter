@@ -7,10 +7,14 @@ import '../../../auth/bearer_request.dart';
 import '../../../auth/oauth_token_manager.dart';
 import '../../../errors/app_error.dart';
 import '../../cloud_storage.dart';
+import '../../public_sharing.dart';
 
 /// Dropbox через HTTP API v2. Приложение с доступом «App folder», поэтому
 /// корень путей — папка `Приложения/<имя приложения>` в Dropbox пользователя.
-class DropboxStorage implements CloudStorage {
+///
+/// Публичные ссылки (для досок) требуют права `sharing.write`; у входа,
+/// сделанного до его появления, права нет — нужен новый вход.
+class DropboxStorage implements CloudStorage, PublicSharing {
   DropboxStorage({required this._tokens, required this._client});
 
   static const String _rpcHost = 'https://api.dropboxapi.com/2';
@@ -97,6 +101,43 @@ class DropboxStorage implements CloudStorage {
     _fail(response);
   }
 
+  // ---- Публичные ссылки ----
+
+  /// Локатор — ссылка вида `https://www.dropbox.com/scl/fi/…?rlkey=…`;
+  /// [DropboxPublicReader] скачивает по ней файл напрямую.
+  @override
+  Future<String> publish(String path) async {
+    final remote = _remote(path);
+    final response = await _rpc('/sharing/create_shared_link_with_settings', {
+      'path': remote,
+    });
+    if (response.statusCode == 200) {
+      return (jsonDecode(response.body) as Map)['url'] as String;
+    }
+    final summary = _errorSummary(response);
+    if (summary.startsWith('shared_link_already_exists')) {
+      final listed = await _rpc('/sharing/list_shared_links', {
+        'path': remote,
+        'direct_only': true,
+      });
+      if (listed.statusCode != 200) _fail(listed);
+      final links = (jsonDecode(listed.body) as Map)['links'] as List;
+      if (links.isNotEmpty) return (links.first as Map)['url'] as String;
+    }
+    if (summary.contains('not_found')) throw StorageNotFoundException(path);
+    _fail(response);
+  }
+
+  @override
+  Future<void> unpublish(String path, String locator) async {
+    final response = await _rpc('/sharing/revoke_shared_link', {
+      'url': locator,
+    });
+    // 409 — ссылки уже нет.
+    if (response.statusCode == 200 || response.statusCode == 409) return;
+    _fail(response);
+  }
+
   Future<http.Response> _rpc(String endpoint, Map<String, Object?> args) =>
       _authorized(
         (token) => _client.post(
@@ -159,6 +200,11 @@ class DropboxStorage implements CloudStorage {
     // Ошибки формата запроса (400) Dropbox присылает обычным текстом.
     if (summary.isEmpty) summary = response.body.trim();
     if (summary.length > 300) summary = '${summary.substring(0, 300)}…';
+    if (summary.contains('missing_scope')) {
+      throw const StorageException(ErrorCode.cloudSharingNotAllowed, {
+        'provider': 'Dropbox',
+      });
+    }
     if (response.statusCode == 401) throw const StorageAuthException();
     if (summary.contains('insufficient_space')) {
       throw const StorageQuotaException();

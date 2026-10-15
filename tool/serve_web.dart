@@ -29,18 +29,25 @@ const Map<String, String> _mimeTypes = {
 Future<void> main() async {
   final root = Directory('build/web');
   if (!root.existsSync()) {
-    stderr.writeln('Нет папки build/web. Сначала выполните: '
-        'flutter build web --dart-define-from-file=config/dev.json');
+    stderr.writeln(
+      'Нет папки build/web. Сначала выполните: '
+      'flutter build web --dart-define-from-file=config/dev.json',
+    );
     exitCode = 1;
     return;
   }
 
   final servers = <HttpServer>[];
-  for (final address in [InternetAddress.loopbackIPv4, InternetAddress.loopbackIPv6]) {
+  for (final address in [
+    InternetAddress.loopbackIPv4,
+    InternetAddress.loopbackIPv6,
+  ]) {
     try {
       servers.add(await HttpServer.bind(address, port));
     } on SocketException catch (e) {
-      stderr.writeln('Не удалось занять ${address.address}:$port — ${e.message}');
+      stderr.writeln(
+        'Не удалось занять ${address.address}:$port — ${e.message}',
+      );
     }
   }
   if (servers.isEmpty) {
@@ -51,7 +58,9 @@ Future<void> main() async {
   for (final server in servers) {
     server.listen((request) => _serve(root, request));
   }
-  stdout.writeln('Transmitter Web: http://localhost:$port  (Ctrl+C — остановить)');
+  stdout.writeln(
+    'Transmitter Web: http://localhost:$port  (Ctrl+C — остановить)',
+  );
 }
 
 Future<void> _serve(Directory root, HttpRequest request) async {
@@ -62,11 +71,16 @@ Future<void> _serve(Directory root, HttpRequest request) async {
   final file = File('${root.path}$path');
   // Не выпускаем запросы за пределы build/web.
   final inside = !path.split(RegExp(r'[/\\]')).contains('..');
-  final target = inside && file.existsSync() ? file : File('${root.path}/index.html');
+  final target = inside && file.existsSync()
+      ? file
+      : File('${root.path}/index.html');
 
   final extension = target.path.split('.').last.toLowerCase();
   response.headers
-    ..set(HttpHeaders.contentTypeHeader, _mimeTypes[extension] ?? 'application/octet-stream')
+    ..set(
+      HttpHeaders.contentTypeHeader,
+      _mimeTypes[extension] ?? 'application/octet-stream',
+    )
     ..set(HttpHeaders.cacheControlHeader, 'no-cache');
   await response.addStream(target.openRead());
   await response.close();

@@ -146,5 +146,7 @@
   "errDecryptionFailed": "Не удалось расшифровать данные",
   "errKeyNotTransmitter": "Это не ключ Transmitter",
   "errKeyCorrupted": "Ключ повреждён",
+  "errCloudSharingNotAllowed": "Чтобы разрешить публичные ссылки, войдите в {provider} заново: ☁ → {provider} → «Выйти», затем «Войти»",
+  "errBoardSignatureInvalid": "Доска не прошла проверку подлинности: она повреждена или подменена",
   "errUnknown": "Ошибка: {error}"
 }

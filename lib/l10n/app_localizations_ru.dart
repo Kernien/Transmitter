@@ -498,6 +498,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get errKeyCorrupted => 'Ключ повреждён';
 
   @override
+  String errCloudSharingNotAllowed(String provider) {
+    return 'Чтобы разрешить публичные ссылки, войдите в $provider заново: ☁ → $provider → «Выйти», затем «Войти»';
+  }
+
+  @override
+  String get errBoardSignatureInvalid =>
+      'Доска не прошла проверку подлинности: она повреждена или подменена';
+
+  @override
   String errUnknown(String error) {
     return 'Ошибка: $error';
   }

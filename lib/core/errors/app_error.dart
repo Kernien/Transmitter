@@ -26,11 +26,14 @@ enum ErrorCode {
   cloudFileNotFound, // path
   cloudNoUploadUrl, // provider
   cloudRequestFailed, // provider, details
+  cloudSharingNotAllowed, // provider — нет права на публичные ссылки
   // Файлы, шифрование, ключи.
   fileTooLarge, // maxBytes
   decryptionFailed,
   keyNotTransmitter,
   keyCorrupted,
+  // Публичные доски.
+  boardSignatureInvalid,
 }
 
 /// Ошибка с кодом для показа пользователю.
