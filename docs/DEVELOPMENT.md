@@ -188,7 +188,11 @@ Dropbox. Для личного использования этого доста�
    (имя «Transmitter public read»), **API restrictions → Restrict key →
    Google Drive API**. Ключ → `config/dev.json` → `GOOGLE_API_KEY`. Он не
    секретный: им читатели публичных досок скачивают файлы, открытые
-   «всем по ссылке».
+   «всем по ссылке». GitHub Secret Scanning находит его в `main.dart.js`
+   веб-версии и присылает письмо «Secrets detected» — предупреждение
+   закрывается как **Won't fix** (так сделано 2026-10-15). Если ключом
+   начнут злоупотреблять (квота Drive API), создайте новый и замените в
+   `config/dev.json`.
 
 Особенности входа:
 
