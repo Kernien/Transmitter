@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:transmitter/app/l10n.dart';
 import 'package:transmitter/core/auth/auth_browser.dart';
 import 'package:transmitter/core/errors/app_error.dart';
@@ -62,6 +64,15 @@ void main() {
       'big.iso: Файл больше 25 МБ',
     );
     expect(en.describeError(StateError('x')), startsWith('Error: '));
+    // Нет сети — понятный текст вместо технического.
+    expect(
+      ru.describeError(http.ClientException('Network is unreachable')),
+      'Нет связи — проверьте интернет и попробуйте ещё раз',
+    );
+    expect(
+      en.describeError(TimeoutException('slow')),
+      startsWith('No connection'),
+    );
   });
 
   test('размеры файлов по правилам языка', () {

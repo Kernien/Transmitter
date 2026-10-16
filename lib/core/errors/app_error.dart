@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:http/http.dart' as http;
+
 /// Коды ошибок, которые видит пользователь.
 ///
 /// Слой core не хранит готовых текстов (он не знает языка интерфейса):
@@ -44,6 +48,11 @@ abstract interface class CodedError {
   /// Параметры для текста: provider, details, maxBytes, port, path.
   Map<String, Object> get args;
 }
+
+/// Нет связи: устройство не в сети, сервер недоступен или не ответил.
+/// Такие ошибки приходят от сетевого слоя без кода (см. `describeError`).
+bool isNetworkError(Object error) =>
+    error is http.ClientException || error is TimeoutException;
 
 /// Технический текст ошибки для журналов (не для пользователя).
 String describeForLog(CodedError error) =>

@@ -926,6 +926,12 @@ abstract class AppLocalizations {
   /// **'The key is damaged'**
   String get errKeyCorrupted;
 
+  /// No description provided for @errNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection — check your internet and try again'**
+  String get errNetwork;
+
   /// No description provided for @boardAccessAction.
   ///
   /// In en, this message translates to:

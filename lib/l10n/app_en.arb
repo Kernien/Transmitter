@@ -188,6 +188,7 @@
   "errDecryptionFailed": "Couldn't decrypt the data",
   "errKeyNotTransmitter": "This isn't a Transmitter key",
   "errKeyCorrupted": "The key is damaged",
+  "errNetwork": "No connection — check your internet and try again",
   "boardAccessAction": "Read-only access…",
   "boardAccessTitle": "Read-only access",
   "boardIntro": "Anyone with the reader key will be able to view, copy and download all items in this vault, including comments — but not change them. Readers don't need a cloud account.",

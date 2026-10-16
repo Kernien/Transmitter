@@ -36,6 +36,7 @@ extension AppLocalizationsX on AppLocalizations {
     if (error is FileError) {
       return '${error.fileName}: ${describeError(error.cause)}';
     }
+    if (isNetworkError(error)) return errNetwork;
     if (error is! CodedError) return errUnknown('$error');
     final args = error.args;
     String arg(String name) => '${args[name] ?? ''}';

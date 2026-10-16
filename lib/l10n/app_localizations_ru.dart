@@ -513,6 +513,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get errKeyCorrupted => 'Ключ повреждён';
 
   @override
+  String get errNetwork =>
+      'Нет связи — проверьте интернет и попробуйте ещё раз';
+
+  @override
   String get boardAccessAction => 'Доступ на чтение…';
 
   @override

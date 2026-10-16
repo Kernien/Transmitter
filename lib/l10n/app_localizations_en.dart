@@ -514,6 +514,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errKeyCorrupted => 'The key is damaged';
 
   @override
+  String get errNetwork => 'No connection — check your internet and try again';
+
+  @override
   String get boardAccessAction => 'Read-only access…';
 
   @override
