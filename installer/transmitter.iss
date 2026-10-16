@@ -26,6 +26,8 @@ AppPublisher=Kernien
 AppPublisherURL=https://github.com/Kernien/Transmitter
 AppSupportURL=https://github.com/Kernien/Transmitter/issues
 AppUpdatesURL=https://github.com/Kernien/Transmitter/releases
+; Transmitter запущен — установщик просит его закрыть (имя «замка» — windows/runner/main.cpp).
+AppMutex=Local\app.transmitter.transmitter
 DefaultDirName={autopf}\Transmitter
 DefaultGroupName=Transmitter
 DisableProgramGroupPage=yes
