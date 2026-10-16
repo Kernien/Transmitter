@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../core/crypto/aes_gcm_cipher.dart';
 import '../core/crypto/board_signature.dart';
+import '../core/crypto/cipher.dart';
 import '../core/errors/app_error.dart';
 import '../core/persistence/blob_cache.dart';
 import '../core/storage/cloud_storage.dart';
@@ -75,6 +76,9 @@ class PublicBoardRepository implements PostRepository {
     } on StorageNotFoundException {
       // Доступ закрыт — сохранённая копия больше не нужна.
       await _blobs.delete(_manifestKey);
+      for (final id in _files.keys) {
+        await _blobs.delete(attachmentCacheKey(id));
+      }
       throw const BoardClosedException();
     }
     final posts = await _apply(bytes);
@@ -97,15 +101,36 @@ class PublicBoardRepository implements PostRepository {
   /// Проверяет подпись, расшифровывает и запоминает опись.
   Future<List<Post>> _apply(Uint8List bytes) async {
     final snapshot = await BoardManifestCodec(_cipher).decode(bytes, _verifier);
+    // Файлы записей, которые владелец удалил, убираем и из кеша.
+    for (final id in _files.keys) {
+      if (!snapshot.fileLocators.containsKey(id)) {
+        await _blobs.delete(attachmentCacheKey(id));
+      }
+    }
     _files = snapshot.fileLocators;
     return _lastPosts = snapshot.posts;
   }
 
   @override
   Future<Uint8List> downloadAttachment(Attachment attachment) async {
+    final key = attachmentCacheKey(attachment.id);
+    final cacheable = attachment.size <= attachmentCacheLimit;
+    if (cacheable) {
+      final cached = await _blobs.read(key);
+      if (cached != null) {
+        try {
+          return await _cipher.decrypt(cached);
+        } on DecryptionException {
+          await _blobs.delete(key);
+        }
+      }
+    }
     final locator = _files[attachment.id];
     if (locator == null) throw StorageNotFoundException(attachment.fileName);
-    return _cipher.decrypt(await _reader.download(locator));
+    final encrypted = await _reader.download(locator);
+    final bytes = await _cipher.decrypt(encrypted);
+    if (cacheable) await _blobs.write(key, encrypted);
+    return bytes;
   }
 
   @override

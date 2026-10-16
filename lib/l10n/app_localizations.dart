@@ -662,6 +662,18 @@ abstract class AppLocalizations {
   /// **'Select text'**
   String get actionSelectText;
 
+  /// No description provided for @showPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Show photo ({size})'**
+  String showPhoto(String size);
+
+  /// No description provided for @imageUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This image format can\'t be shown — save the file to open it'**
+  String get imageUnsupported;
+
   /// No description provided for @closeAction.
   ///
   /// In en, this message translates to:

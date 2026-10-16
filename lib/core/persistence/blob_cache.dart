@@ -17,6 +17,13 @@ abstract interface class BlobCache {
   BlobCache scope(String name);
 }
 
+/// Вложения кешируются на устройстве, только если не больше этого размера:
+/// фото и небольшие документы — да, большие файлы — нет.
+const int attachmentCacheLimit = 10 * 1024 * 1024;
+
+/// Ключ кеша для вложения.
+String attachmentCacheKey(String attachmentId) => 'att-$attachmentId.bin';
+
 /// Без кеша на диске (веб): всё хранится только в памяти сессии.
 class NoBlobCache implements BlobCache {
   const NoBlobCache();

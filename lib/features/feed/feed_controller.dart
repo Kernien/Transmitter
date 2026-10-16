@@ -9,6 +9,7 @@ import '../../core/share/outgoing_share.dart';
 import '../../core/utils/clock.dart';
 import '../../data/post_repository.dart';
 import '../../domain/post.dart';
+import 'attachment_previews.dart';
 import 'selection_exporter.dart';
 
 /// Состояние ленты одной базы: загрузка, периодический опрос облака,
@@ -121,6 +122,11 @@ class FeedController extends ChangeNotifier {
   // ---- «Поделиться» в другие приложения ----
 
   bool get canShare => _share.isAvailable;
+
+  /// Содержимое вложений для превью и просмотра фото (с кешем в памяти).
+  late final AttachmentPreviews previews = AttachmentPreviews(
+    _repository.downloadAttachment,
+  );
 
   /// Публичная доска у читателя: без отправки, комментариев и удаления.
   bool get isReadOnly => _repository.isReadOnly;
@@ -329,7 +335,8 @@ class FeedController extends ChangeNotifier {
     _saving.add(post.id);
     _notify();
     try {
-      final bytes = await _repository.downloadAttachment(attachment);
+      // Если фото уже показано, повторно не качаем.
+      final bytes = await previews.load(attachment);
       final saved = await _files.saveFile(
         fileName: attachment.fileName,
         bytes: bytes,

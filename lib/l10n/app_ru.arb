@@ -103,6 +103,8 @@
   "actionSaveFile": "Сохранить файл",
   "actionCopyText": "Копировать текст",
   "actionSelectText": "Выделить текст",
+  "showPhoto": "Показать фото ({size})",
+  "imageUnsupported": "Этот формат изображения не показать — сохраните файл, чтобы открыть его",
   "closeAction": "Закрыть",
   "actionDeleteEverywhere": "Удалить для всех устройств",
   "fileFallback": "Файл",

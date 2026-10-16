@@ -24,6 +24,20 @@ class Attachment {
   final int size;
   final String? mimeType;
 
+  static const _imageExtensions = {
+    'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'heic', 'heif', //
+  };
+
+  /// Фото, которое можно показать в ленте (по типу или расширению). Если
+  /// формат не поддерживается на устройстве, запись показывается как файл.
+  bool get isImage {
+    final mime = mimeType;
+    if (mime != null && mime.startsWith('image/')) return !mime.contains('svg');
+    final dot = fileName.lastIndexOf('.');
+    return dot >= 0 &&
+        _imageExtensions.contains(fileName.substring(dot + 1).toLowerCase());
+  }
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': fileName,

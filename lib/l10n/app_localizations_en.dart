@@ -340,6 +340,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionSelectText => 'Select text';
 
   @override
+  String showPhoto(String size) {
+    return 'Show photo ($size)';
+  }
+
+  @override
+  String get imageUnsupported =>
+      'This image format can\'t be shown — save the file to open it';
+
+  @override
   String get closeAction => 'Close';
 
   @override

@@ -101,6 +101,12 @@ class EncryptedCloudPostRepository implements PostRepository {
     final noteNames = remote.where((n) => n.endsWith(_noteExtension)).toSet();
 
     // Посты и комментарии, удалённые на других устройствах.
+    for (final entry in _cache.entries) {
+      final attachment = entry.value.attachment;
+      if (!postNames.contains(entry.key) && attachment != null) {
+        await _blobs.delete(attachmentCacheKey(attachment.id));
+      }
+    }
     _cache.removeWhere((name, _) => !postNames.contains(name));
     _notes.removeWhere((name, _) => !noteNames.contains(name));
 
@@ -271,10 +277,11 @@ class EncryptedCloudPostRepository implements PostRepository {
       await _storage.ensureFolder(_filesDir);
       _filesDirReady = true;
     }
-    await _storage.upload(
-      _attachmentPath(attachment),
-      await _cipher.encrypt(bytes),
-    );
+    final encrypted = await _cipher.encrypt(bytes);
+    await _storage.upload(_attachmentPath(attachment), encrypted);
+    if (bytes.length <= attachmentCacheLimit) {
+      await _blobs.write(attachmentCacheKey(attachment.id), encrypted);
+    }
     return _publish(
       _newPost(
         kind: PostKind.file,
@@ -285,8 +292,24 @@ class EncryptedCloudPostRepository implements PostRepository {
   }
 
   @override
-  Future<Uint8List> downloadAttachment(Attachment attachment) async =>
-      _cipher.decrypt(await _storage.download(_attachmentPath(attachment)));
+  Future<Uint8List> downloadAttachment(Attachment attachment) async {
+    final key = attachmentCacheKey(attachment.id);
+    final cacheable = attachment.size <= attachmentCacheLimit;
+    if (cacheable) {
+      final cached = await _blobs.read(key);
+      if (cached != null) {
+        try {
+          return await _cipher.decrypt(cached);
+        } on DecryptionException {
+          await _blobs.delete(key);
+        }
+      }
+    }
+    final encrypted = await _storage.download(_attachmentPath(attachment));
+    final bytes = await _cipher.decrypt(encrypted);
+    if (cacheable) await _blobs.write(key, encrypted);
+    return bytes;
+  }
 
   @override
   Future<void> deletePost(Post post) async {
@@ -294,6 +317,9 @@ class EncryptedCloudPostRepository implements PostRepository {
     await _storage.delete('$_postsDir/$fileName');
     _cache.remove(fileName);
     await _blobs.delete(fileName);
+    if (post.attachment case final attachment?) {
+      await _blobs.delete(attachmentCacheKey(attachment.id));
+    }
     await _deleteNotes(_noteFilesFor(post));
     final attachment = post.attachment;
     if (attachment != null) {

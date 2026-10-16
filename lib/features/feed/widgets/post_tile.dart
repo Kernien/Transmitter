@@ -6,6 +6,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../app/l10n.dart';
 import '../../../domain/post.dart';
 import '../feed_controller.dart';
+import '../attachment_previews.dart';
+import '../image_viewer_screen.dart';
 
 enum _PostAction { select, note, share, save, copy, selectText, delete }
 
@@ -51,6 +53,13 @@ class PostTile extends StatelessWidget {
             ? toggle
             : switch (post.kind) {
                 PostKind.link => () => _openLink(post.text),
+                // Фото открывается на весь экран, остальные файлы сохраняются.
+                PostKind.file when post.attachment?.isImage ?? false =>
+                  () => ImageViewerScreen.open(
+                    context,
+                    context.read<FeedController>(),
+                    post,
+                  ),
                 PostKind.file => () => _perform(context, _PostAction.save),
                 PostKind.text => null,
               },
@@ -392,6 +401,84 @@ class _NoteDialogState extends State<_NoteDialog> {
   }
 }
 
+/// Превью фото в ленте. Небольшие фото загружаются сами, для больших —
+/// кнопка «Показать фото», чтобы не тратить трафик без спроса. Если формат
+/// не поддерживается, превью просто не показывается — остаётся строка файла.
+class _ImagePreview extends StatefulWidget {
+  const _ImagePreview({required this.post, required this.attachment});
+
+  final Post post;
+  final Attachment attachment;
+
+  @override
+  State<_ImagePreview> createState() => _ImagePreviewState();
+}
+
+class _ImagePreviewState extends State<_ImagePreview> {
+  static const double _height = 220;
+  late bool _requested = widget.attachment.size <= attachmentPreviewAutoLimit;
+  bool _failed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_failed) return const SizedBox.shrink();
+    final feed = context.read<FeedController>();
+    final attachment = widget.attachment;
+    if (!_requested && feed.previews.peek(attachment) == null) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: OutlinedButton.icon(
+          icon: const Icon(Icons.image_outlined),
+          label: Text(
+            context.l10n.showPhoto(context.l10n.fileSize(attachment.size)),
+          ),
+          onPressed: () => setState(() => _requested = true),
+        ),
+      );
+    }
+    final width = MediaQuery.sizeOf(context).width;
+    final pixelRatio = MediaQuery.devicePixelRatioOf(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: FutureBuilder(
+        future: feed.previews.load(attachment),
+        builder: (context, snapshot) {
+          final bytes = snapshot.data;
+          if (snapshot.hasError) return const SizedBox.shrink();
+          if (bytes == null) {
+            return const SizedBox(
+              height: _height,
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+          return GestureDetector(
+            onTap: () => ImageViewerScreen.open(context, feed, widget.post),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: _height),
+                child: Image.memory(
+                  bytes,
+                  fit: BoxFit.contain,
+                  // Расшифровываем в размер превью, а не в полный — экономит
+                  // память на больших фото.
+                  cacheWidth: (width * pixelRatio).round().clamp(1, 1600),
+                  errorBuilder: (_, _, _) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) setState(() => _failed = true);
+                    });
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
 /// Файл в ленте: имя, размер, подпись и кнопка сохранения.
 class _FileContent extends StatelessWidget {
   const _FileContent({required this.post});
@@ -409,10 +496,14 @@ class _FileContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (attachment != null && attachment.isImage)
+          _ImagePreview(post: post, attachment: attachment),
         Row(
           children: [
             Icon(
-              Icons.insert_drive_file_outlined,
+              attachment != null && attachment.isImage
+                  ? Icons.image_outlined
+                  : Icons.insert_drive_file_outlined,
               color: theme.colorScheme.primary,
             ),
             const SizedBox(width: 8),

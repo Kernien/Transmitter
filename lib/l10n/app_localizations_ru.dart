@@ -340,6 +340,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get actionSelectText => 'Выделить текст';
 
   @override
+  String showPhoto(String size) {
+    return 'Показать фото ($size)';
+  }
+
+  @override
+  String get imageUnsupported =>
+      'Этот формат изображения не показать — сохраните файл, чтобы открыть его';
+
+  @override
   String get closeAction => 'Закрыть';
 
   @override
