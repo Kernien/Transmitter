@@ -340,6 +340,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionSelectText => 'Select text';
 
   @override
+  String get markdownSource => 'Show source text';
+
+  @override
+  String get documentUnreadable =>
+      'Can\'t read this document — save the file and open it in another app';
+
+  @override
   String get monospaceFont => 'Monospace font';
 
   @override

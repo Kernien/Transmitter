@@ -662,6 +662,18 @@ abstract class AppLocalizations {
   /// **'Select text'**
   String get actionSelectText;
 
+  /// No description provided for @markdownSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Show source text'**
+  String get markdownSource;
+
+  /// No description provided for @documentUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t read this document — save the file and open it in another app'**
+  String get documentUnreadable;
+
   /// No description provided for @monospaceFont.
   ///
   /// In en, this message translates to:

@@ -61,8 +61,8 @@ class PostTile extends StatelessWidget {
                     context.read<FeedController>(),
                     post,
                   ),
-                // Текстовый файл читается прямо в приложении.
-                PostKind.file when post.attachment?.isText ?? false =>
+                // Текст, Markdown и .docx читаются прямо в приложении.
+                PostKind.file when post.attachment?.isReadable ?? false =>
                   () => TextViewerScreen.open(
                     context,
                     context.read<FeedController>(),
@@ -513,7 +513,7 @@ class _FileContent extends StatelessWidget {
                   ? Icons.insert_drive_file_outlined
                   : attachment.isImage
                   ? Icons.image_outlined
-                  : attachment.isText
+                  : attachment.isReadable
                   ? Icons.description_outlined
                   : Icons.insert_drive_file_outlined,
               color: theme.colorScheme.primary,

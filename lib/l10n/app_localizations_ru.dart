@@ -340,6 +340,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get actionSelectText => 'Выделить текст';
 
   @override
+  String get markdownSource => 'Показать исходный текст';
+
+  @override
+  String get documentUnreadable =>
+      'Не удалось прочитать документ — сохраните файл и откройте его в другой программе';
+
+  @override
   String get monospaceFont => 'Моноширинный шрифт';
 
   @override

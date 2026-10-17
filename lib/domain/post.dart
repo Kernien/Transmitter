@@ -53,6 +53,21 @@ class Attachment {
         mime == 'application/xml';
   }
 
+  /// Markdown — показывается с оформлением.
+  bool get isMarkdown =>
+      _extension == 'md' ||
+      _extension == 'markdown' ||
+      mimeType == 'text/markdown';
+
+  /// Документ Word (.docx) — показывается его текст.
+  bool get isDocx =>
+      _extension == 'docx' ||
+      mimeType ==
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+  /// Можно прочитать прямо в приложении: текст, Markdown или .docx.
+  bool get isReadable => isText || isDocx;
+
   /// Расширение имени файла в нижнем регистре (без точки).
   String get _extension {
     final dot = fileName.lastIndexOf('.');

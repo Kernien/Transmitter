@@ -122,6 +122,8 @@
   "actionSaveFile": "Save file",
   "actionCopyText": "Copy text",
   "actionSelectText": "Select text",
+  "markdownSource": "Show source text",
+  "documentUnreadable": "Can't read this document — save the file and open it in another app",
   "monospaceFont": "Monospace font",
   "copyAll": "Copy all",
   "textTruncated": "Showing the beginning of the file ({size} in total) — save it to read everything",
