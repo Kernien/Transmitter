@@ -662,6 +662,24 @@ abstract class AppLocalizations {
   /// **'Select text'**
   String get actionSelectText;
 
+  /// No description provided for @monospaceFont.
+  ///
+  /// In en, this message translates to:
+  /// **'Monospace font'**
+  String get monospaceFont;
+
+  /// No description provided for @copyAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy all'**
+  String get copyAll;
+
+  /// No description provided for @textTruncated.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing the beginning of the file ({size} in total) — save it to read everything'**
+  String textTruncated(String size);
+
   /// No description provided for @showPhoto.
   ///
   /// In en, this message translates to:

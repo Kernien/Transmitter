@@ -8,6 +8,7 @@ import '../../../domain/post.dart';
 import '../feed_controller.dart';
 import '../attachment_previews.dart';
 import '../image_viewer_screen.dart';
+import '../text_viewer_screen.dart';
 
 enum _PostAction { select, note, share, save, copy, selectText, delete }
 
@@ -56,6 +57,13 @@ class PostTile extends StatelessWidget {
                 // Фото открывается на весь экран, остальные файлы сохраняются.
                 PostKind.file when post.attachment?.isImage ?? false =>
                   () => ImageViewerScreen.open(
+                    context,
+                    context.read<FeedController>(),
+                    post,
+                  ),
+                // Текстовый файл читается прямо в приложении.
+                PostKind.file when post.attachment?.isText ?? false =>
+                  () => TextViewerScreen.open(
                     context,
                     context.read<FeedController>(),
                     post,
@@ -501,8 +509,12 @@ class _FileContent extends StatelessWidget {
         Row(
           children: [
             Icon(
-              attachment != null && attachment.isImage
+              attachment == null
+                  ? Icons.insert_drive_file_outlined
+                  : attachment.isImage
                   ? Icons.image_outlined
+                  : attachment.isText
+                  ? Icons.description_outlined
                   : Icons.insert_drive_file_outlined,
               color: theme.colorScheme.primary,
             ),

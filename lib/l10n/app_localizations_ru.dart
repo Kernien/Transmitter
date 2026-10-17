@@ -340,6 +340,17 @@ class AppLocalizationsRu extends AppLocalizations {
   String get actionSelectText => 'Выделить текст';
 
   @override
+  String get monospaceFont => 'Моноширинный шрифт';
+
+  @override
+  String get copyAll => 'Копировать всё';
+
+  @override
+  String textTruncated(String size) {
+    return 'Показано начало файла (всего $size) — сохраните его, чтобы прочитать целиком';
+  }
+
+  @override
   String showPhoto(String size) {
     return 'Показать фото ($size)';
   }

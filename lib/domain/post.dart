@@ -33,9 +33,30 @@ class Attachment {
   bool get isImage {
     final mime = mimeType;
     if (mime != null && mime.startsWith('image/')) return !mime.contains('svg');
+    return _imageExtensions.contains(_extension);
+  }
+
+  static const _textExtensions = {
+    'txt', 'text', 'md', 'markdown', 'csv', 'tsv', 'json', 'xml', 'log', //
+    'ini', 'conf', 'cfg', 'yaml', 'yml', 'toml', 'srt', 'vtt', 'sub',
+    'html', 'htm', 'css', 'js', 'ts', 'dart', 'py', 'java', 'kt', 'swift',
+    'c', 'h', 'cpp', 'hpp', 'cs', 'go', 'rs', 'rb', 'php', 'sh', 'bat',
+    'ps1', 'sql', 'svg',
+  };
+
+  /// Текстовый файл, который можно прочитать прямо в приложении.
+  bool get isText {
+    if (_textExtensions.contains(_extension)) return true;
+    final mime = mimeType ?? '';
+    return mime.startsWith('text/') ||
+        mime == 'application/json' ||
+        mime == 'application/xml';
+  }
+
+  /// Расширение имени файла в нижнем регистре (без точки).
+  String get _extension {
     final dot = fileName.lastIndexOf('.');
-    return dot >= 0 &&
-        _imageExtensions.contains(fileName.substring(dot + 1).toLowerCase());
+    return dot < 0 ? '' : fileName.substring(dot + 1).toLowerCase();
   }
 
   Map<String, dynamic> toJson() => {

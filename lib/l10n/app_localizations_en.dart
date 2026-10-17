@@ -340,6 +340,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionSelectText => 'Select text';
 
   @override
+  String get monospaceFont => 'Monospace font';
+
+  @override
+  String get copyAll => 'Copy all';
+
+  @override
+  String textTruncated(String size) {
+    return 'Showing the beginning of the file ($size in total) — save it to read everything';
+  }
+
+  @override
   String showPhoto(String size) {
     return 'Show photo ($size)';
   }
