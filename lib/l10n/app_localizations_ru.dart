@@ -574,6 +574,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get boardEmpty => 'На доске пока ничего нет';
 
   @override
+  String boardRenameFailed(String error) {
+    return 'База переименована, но читатели пока видят старое название доски: $error';
+  }
+
+  @override
   String get boardUnsupported => 'Это облако не поддерживает публичные доски';
 
   @override

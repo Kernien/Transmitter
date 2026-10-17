@@ -1028,6 +1028,12 @@ abstract class AppLocalizations {
   /// **'Nothing on this board yet'**
   String get boardEmpty;
 
+  /// No description provided for @boardRenameFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The vault is renamed, but readers will still see the old board name: {error}'**
+  String boardRenameFailed(String error);
+
   /// No description provided for @boardUnsupported.
   ///
   /// In en, this message translates to:

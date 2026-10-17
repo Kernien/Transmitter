@@ -72,3 +72,7 @@ Name: "{autodesktop}\Transmitter"; Filename: "{app}\transmitter.exe"; Tasks: des
 
 [Run]
 Filename: "{app}\transmitter.exe"; Description: "{cm:LaunchProgram,Transmitter}"; Flags: nowait postinstall skipifsilent
+
+[Registry]
+; Положение окна (windows/runner/window_state.cpp) — удаляется вместе с программой.
+Root: HKCU; Subkey: "Software\Transmitter"; Flags: uninsdeletekey dontcreatekey

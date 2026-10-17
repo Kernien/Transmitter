@@ -574,6 +574,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get boardEmpty => 'Nothing on this board yet';
 
   @override
+  String boardRenameFailed(String error) {
+    return 'The vault is renamed, but readers will still see the old board name: $error';
+  }
+
+  @override
   String get boardUnsupported => 'This cloud doesn\'t support public boards';
 
   @override

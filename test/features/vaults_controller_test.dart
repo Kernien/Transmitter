@@ -70,4 +70,35 @@ void main() {
     await empty.load();
     expect(empty.boards, isEmpty);
   });
+
+  test('название от владельца обновляется, своё — нет', () async {
+    final c = controller();
+    await c.load();
+    await c.importAny(const ReaderKeyCodec().encode(readerKey));
+
+    await c.applyOwnerLabel(readerKey, 'Рецепты бабушки');
+    expect(c.boardLabel(readerKey), 'Рецепты бабушки');
+
+    await c.renameBoard(readerKey, 'Моё');
+    await c.applyOwnerLabel(readerKey, 'Ещё новее');
+    expect(c.boardLabel(readerKey), 'Моё');
+
+    // После перезапуска своё название по-прежнему главное.
+    final reloaded = controller();
+    await reloaded.load();
+    await reloaded.applyOwnerLabel(readerKey, 'Ещё новее');
+    expect(reloaded.boardLabel(readerKey), 'Моё');
+  });
+
+  test(
+    'ключи читателя хранятся как в 0.7.0 — старые версии их прочтут',
+    () async {
+      final c = controller();
+      await c.load();
+      await c.importAny(const ReaderKeyCodec().encode(readerKey));
+      await c.renameBoard(readerKey, 'Моё');
+      final raw = await store.read('reader_keys');
+      expect(raw, startsWith('['));
+    },
+  );
 }

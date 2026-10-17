@@ -158,6 +158,20 @@ void main() {
     expect(key.locator, 'pub:${manifests.single}');
   });
 
+  test('переименование доски видно читателям', () async {
+    final key = await publisher().open(label: 'Старое');
+    expect(await publisher().rename('Новое'), isTrue);
+    expect((await readAsReader(key)).label, 'Новое');
+    // Ключ для новых читателей — тоже с новым названием.
+    expect(
+      publisher().readerKeyFor((await publisher().state())!).label,
+      'Новое',
+    );
+
+    await publisher().close();
+    expect(await publisher().rename('Третье'), isFalse);
+  });
+
   test('повторное открытие с другого устройства даёт тот же ключ', () async {
     final first = await publisher().open(label: 'Доска');
     final second = await publisher().open(label: 'Другое название');

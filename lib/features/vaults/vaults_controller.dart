@@ -26,6 +26,9 @@ class VaultsController extends ChangeNotifier {
   List<VaultKey> _vaults = const [];
   List<ReaderKey> _boards = const [];
 
+  /// Адреса досок, которые читатель переименовал сам.
+  Set<String> _customLabels = const {};
+
   List<VaultKey> get vaults => List.unmodifiable(_vaults);
 
   /// Публичные доски, которые на этом устройстве можно только читать.
@@ -33,7 +36,9 @@ class VaultsController extends ChangeNotifier {
 
   Future<void> load() async {
     _vaults = await _store.loadAll();
-    _boards = await _readers?.loadAll() ?? const [];
+    final stored = await _readers?.loadAll();
+    _boards = stored?.keys ?? const [];
+    _customLabels = stored?.customLabels ?? const {};
     notifyListeners();
   }
 
@@ -83,17 +88,39 @@ class VaultsController extends ChangeNotifier {
       k.sameVaultAs(key) ? k.copyWith(label: label.trim()) : k,
   ]);
 
-  Future<void> renameBoard(ReaderKey key, String label) => _saveBoards([
-    for (final k in _boards)
-      k.sameBoardAs(key) ? k.copyWith(label: label.trim()) : k,
-  ]);
+  /// Своё название доски: название от владельца его больше не меняет.
+  Future<void> renameBoard(ReaderKey key, String label) => _saveBoards(
+    [
+      for (final k in _boards)
+        k.sameBoardAs(key) ? k.copyWith(label: label.trim()) : k,
+    ],
+    customLabels: {..._customLabels, key.locator},
+  );
+
+  /// Текущее название доски на этом устройстве.
+  String boardLabel(ReaderKey key) =>
+      _boards.where((k) => k.sameBoardAs(key)).firstOrNull?.label ?? key.label;
+
+  /// Владелец переименовал доску: название обновляется, если читатель не
+  /// задал своё.
+  Future<void> applyOwnerLabel(ReaderKey key, String ownerLabel) async {
+    if (_customLabels.contains(key.locator)) return;
+    final current = _boards.where((k) => k.sameBoardAs(key)).firstOrNull;
+    if (current == null || current.label == ownerLabel) return;
+    await _saveBoards([
+      for (final k in _boards)
+        k.sameBoardAs(key) ? k.copyWith(label: ownerLabel) : k,
+    ]);
+  }
 
   /// Удаляет ключ только с этого устройства. Данные в облаке остаются.
   Future<void> remove(VaultKey key) =>
       _save(_vaults.where((k) => !k.sameVaultAs(key)).toList());
 
-  Future<void> removeBoard(ReaderKey key) =>
-      _saveBoards(_boards.where((k) => !k.sameBoardAs(key)).toList());
+  Future<void> removeBoard(ReaderKey key) => _saveBoards(
+    _boards.where((k) => !k.sameBoardAs(key)).toList(),
+    customLabels: _customLabels.difference({key.locator}),
+  );
 
   Future<void> _save(List<VaultKey> next) async {
     await _store.saveAll(next);
@@ -101,11 +128,16 @@ class VaultsController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _saveBoards(List<ReaderKey> next) async {
+  Future<void> _saveBoards(
+    List<ReaderKey> next, {
+    Set<String>? customLabels,
+  }) async {
     final readers = _readers;
     if (readers == null) throw StateError('Boards are not available');
-    await readers.saveAll(next);
+    final custom = customLabels ?? _customLabels;
+    await readers.saveAll(next, custom);
     _boards = next;
+    _customLabels = custom;
     notifyListeners();
   }
 }

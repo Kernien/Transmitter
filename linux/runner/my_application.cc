@@ -14,6 +14,62 @@ struct _MyApplication {
 
 G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
 
+// Положение, размер и развёрнутость окна между запусками —
+// ~/.config/<APPLICATION_ID>/window.ini. На Wayland положение задаёт
+// оконная система, там запоминается только размер.
+static gchar* window_state_path() {
+  return g_build_filename(g_get_user_config_dir(), APPLICATION_ID,
+                          "window.ini", nullptr);
+}
+
+static void restore_window_state(GtkWindow* window) {
+  g_autoptr(GKeyFile) state = g_key_file_new();
+  g_autofree gchar* path = window_state_path();
+  gint width = 1280;
+  gint height = 720;
+  if (g_key_file_load_from_file(state, path, G_KEY_FILE_NONE, nullptr)) {
+    const gint w = g_key_file_get_integer(state, "window", "width", nullptr);
+    const gint h = g_key_file_get_integer(state, "window", "height", nullptr);
+    if (w >= 320 && h >= 240) {
+      width = w;
+      height = h;
+    }
+    if (g_key_file_has_key(state, "window", "x", nullptr)) {
+      gtk_window_move(window,
+                      g_key_file_get_integer(state, "window", "x", nullptr),
+                      g_key_file_get_integer(state, "window", "y", nullptr));
+    }
+    if (g_key_file_get_boolean(state, "window", "maximized", nullptr)) {
+      gtk_window_maximize(window);
+    }
+  }
+  gtk_window_set_default_size(window, width, height);
+}
+
+static gboolean save_window_state(GtkWidget* widget, GdkEvent* event,
+                                  gpointer user_data) {
+  GtkWindow* window = GTK_WINDOW(widget);
+  g_autoptr(GKeyFile) state = g_key_file_new();
+  g_autofree gchar* path = window_state_path();
+  // Размер развёрнутого окна не запоминаем — остаётся прежний обычный.
+  g_key_file_load_from_file(state, path, G_KEY_FILE_NONE, nullptr);
+  const gboolean maximized = gtk_window_is_maximized(window);
+  g_key_file_set_boolean(state, "window", "maximized", maximized);
+  if (!maximized) {
+    gint width, height, x, y;
+    gtk_window_get_size(window, &width, &height);
+    gtk_window_get_position(window, &x, &y);
+    g_key_file_set_integer(state, "window", "width", width);
+    g_key_file_set_integer(state, "window", "height", height);
+    g_key_file_set_integer(state, "window", "x", x);
+    g_key_file_set_integer(state, "window", "y", y);
+  }
+  g_autofree gchar* dir = g_path_get_dirname(path);
+  g_mkdir_with_parents(dir, 0700);
+  g_key_file_save_to_file(state, path, nullptr);
+  return FALSE;  // окно закрывается как обычно
+}
+
 // Called when first Flutter frame received.
 static void first_frame_cb(MyApplication* self, FlView* view) {
   gtk_widget_show(gtk_widget_get_toplevel(GTK_WIDGET(view)));
@@ -61,7 +117,9 @@ static void my_application_activate(GApplication* application) {
     gtk_window_set_title(window, "Transmitter");
   }
 
-  gtk_window_set_default_size(window, 1280, 720);
+  restore_window_state(window);
+  g_signal_connect(window, "delete-event", G_CALLBACK(save_window_state),
+                   nullptr);
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(

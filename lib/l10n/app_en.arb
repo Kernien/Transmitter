@@ -207,6 +207,8 @@
   "boardSignInAgain": "Sign in to {provider} again",
   "@boardSignInAgain": { "placeholders": { "provider": { "type": "String" } } },
   "boardEmpty": "Nothing on this board yet",
+  "boardRenameFailed": "The vault is renamed, but readers will still see the old board name: {error}",
+  "@boardRenameFailed": { "placeholders": { "error": { "type": "String" } } },
   "boardUnsupported": "This cloud doesn't support public boards",
   "errCloudSharingNotAllowed": "Sign in to {provider} again to allow public links: ☁ → {provider} → Sign out, then Sign in",
   "@errCloudSharingNotAllowed": { "placeholders": { "provider": { "type": "String" } } },

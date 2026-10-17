@@ -55,6 +55,10 @@ class PublicBoardRepository implements PostRepository {
   Map<String, String> _files = const {};
 
   List<Post>? _lastPosts;
+  String? _ownerLabel;
+
+  /// Название доски у владельца из последней описи (он мог её переименовать).
+  String? get ownerLabel => _ownerLabel;
 
   @override
   List<Post>? get cachedPosts => _lastPosts;
@@ -108,6 +112,7 @@ class PublicBoardRepository implements PostRepository {
       }
     }
     _files = snapshot.fileLocators;
+    _ownerLabel = snapshot.label;
     return _lastPosts = snapshot.posts;
   }
 

@@ -55,10 +55,11 @@ class BoardState {
   final String contentHash;
 
   BoardState copyWith({
+    String? label,
     Map<String, String>? fileLocators,
     String? contentHash,
   }) => BoardState(
-    label: label,
+    label: label ?? this.label,
     manifestName: manifestName,
     manifestLocator: manifestLocator,
     fileLocators: fileLocators ?? this.fileLocators,
@@ -205,6 +206,18 @@ class BoardPublisher {
     await _saveState(opened);
     await sync(await _loadPosts());
     return readerKeyFor(opened);
+  }
+
+  /// Новое название доски для читателей (база переименована). Возвращает
+  /// `false`, если доступ на чтение не открыт.
+  Future<bool> rename(String label) async {
+    final current = await state(refresh: true);
+    if (current == null) return false;
+    if (current.label != label) {
+      await _saveState(current.copyWith(label: label));
+      await sync(await _loadPosts());
+    }
+    return true;
   }
 
   /// Закрывает доступ: опись удаляется (её ссылка перестаёт работать),

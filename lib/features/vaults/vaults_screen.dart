@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../app/l10n.dart';
 import '../../app/widgets/content_width.dart';
+import '../../app/vault_session_factory.dart';
 import '../../core/device/device_identity.dart';
 import '../../core/storage/cloud_connection_service.dart';
 import '../../core/vault/reader_key.dart';
@@ -125,9 +126,19 @@ Future<void> openVault(BuildContext context, VaultKey key) async {
 }
 
 /// Открывает публичную доску для чтения — вход в облако не нужен.
-Future<void> openBoard(BuildContext context, ReaderKey key) =>
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (_) => FeedScreen.board(key)));
+Future<void> openBoard(BuildContext context, ReaderKey key) {
+  final vaults = context.read<VaultsController>();
+  return Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => FeedScreen.board(
+        key,
+        liveLabel: (context) =>
+            context.watch<VaultsController>().boardLabel(key),
+        onOwnerLabel: (label) => vaults.applyOwnerLabel(key, label),
+      ),
+    ),
+  );
+}
 
 class _VaultTile extends StatelessWidget {
   const _VaultTile({required this.vault});
@@ -179,9 +190,27 @@ class _VaultTile extends StatelessWidget {
         await showBoardAccessSheet(context, vault);
       case _VaultAction.rename:
         final label = await _askLabel(context, vault.label);
-        if (label != null) await controller.rename(vault, label);
+        if (label == null) return;
+        await controller.rename(vault, label);
+        if (context.mounted) await _renameBoard(context, label.trim());
       case _VaultAction.remove:
         if (await _confirmRemove(context)) await controller.remove(vault);
+    }
+  }
+
+  /// Если у базы открыт доступ на чтение, читатели увидят новое название.
+  Future<void> _renameBoard(BuildContext context, String label) async {
+    final connections = context.read<CloudConnectionService>();
+    if (!connections.isConnected(vault.provider)) return;
+    final sessions = context.read<VaultSessionFactory>();
+    final messenger = ScaffoldMessenger.of(context);
+    final l = context.l10n;
+    try {
+      await (await sessions.openBoard(vault))?.rename(label);
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l.boardRenameFailed(l.describeError(e)))),
+      );
     }
   }
 

@@ -12,6 +12,7 @@ import '../../core/share/outgoing_share.dart';
 import '../../core/vault/reader_key.dart';
 import '../../core/vault/vault_key.dart';
 import '../../data/post_repository.dart';
+import '../../data/public_board_repository.dart';
 import 'feed_controller.dart';
 import 'selection_exporter.dart';
 import 'widgets/compose_bar.dart';
@@ -23,15 +24,26 @@ class FeedScreen extends StatefulWidget {
   FeedScreen.vault(VaultKey vault, {super.key})
     : label = vault.label,
       pollInterval = AppConfig.pollInterval,
+      liveLabel = null,
+      onOwnerLabel = null,
       _open = ((sessions) => sessions.open(vault));
 
   /// Публичная доска у читателя: только чтение, без входа в облако.
-  FeedScreen.board(ReaderKey board, {super.key})
-    : label = board.label,
-      pollInterval = AppConfig.boardPollInterval,
-      _open = ((sessions) async => sessions.openAsReader(board));
+  ///
+  /// [liveLabel] — текущее название доски (оно может смениться, пока лента
+  /// открыта), [onOwnerLabel] — владелец прислал новое название.
+  FeedScreen.board(
+    ReaderKey board, {
+    super.key,
+    this.liveLabel,
+    this.onOwnerLabel,
+  }) : label = board.label,
+       pollInterval = AppConfig.boardPollInterval,
+       _open = ((sessions) async => sessions.openAsReader(board));
 
   final String label;
+  final String Function(BuildContext context)? liveLabel;
+  final void Function(String ownerLabel)? onOwnerLabel;
   final Duration pollInterval;
   final Future<PostRepository> Function(VaultSessionFactory) _open;
 
@@ -44,8 +56,10 @@ class _FeedScreenState extends State<FeedScreen> {
     context.read<VaultSessionFactory>(),
   );
 
-  String get _title =>
-      widget.label.isEmpty ? context.l10n.vaultFallbackTitle : widget.label;
+  String get _title {
+    final label = widget.liveLabel?.call(context) ?? widget.label;
+    return label.isEmpty ? context.l10n.vaultFallbackTitle : label;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,17 +82,27 @@ class _FeedScreenState extends State<FeedScreen> {
           );
         }
         return ChangeNotifierProvider(
-          create: (context) => FeedController(
-            repository,
-            files: context.read<FileTransferService>(),
-            media: context.read<MediaPicker>(),
-            share: context.read<ShareSender>(),
-            pollInterval: widget.pollInterval,
-            exportTexts: ExportTexts(
-              textFileName: context.l10n.exportTextFileName,
-              fileNote: context.l10n.exportFileNote,
-            ),
-          )..start(),
+          create: (context) {
+            final feed = FeedController(
+              repository,
+              files: context.read<FileTransferService>(),
+              media: context.read<MediaPicker>(),
+              share: context.read<ShareSender>(),
+              pollInterval: widget.pollInterval,
+              exportTexts: ExportTexts(
+                textFileName: context.l10n.exportTextFileName,
+                fileNote: context.l10n.exportFileNote,
+              ),
+            )..start();
+            final onOwnerLabel = widget.onOwnerLabel;
+            if (onOwnerLabel != null && repository is PublicBoardRepository) {
+              feed.addListener(() {
+                final ownerLabel = repository.ownerLabel;
+                if (ownerLabel != null) onOwnerLabel(ownerLabel);
+              });
+            }
+            return feed;
+          },
           child: _FeedView(title: _title),
         );
       },
