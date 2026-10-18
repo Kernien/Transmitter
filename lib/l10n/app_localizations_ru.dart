@@ -354,6 +354,12 @@ class AppLocalizationsRu extends AppLocalizations {
       'На устройстве нет приложения, которое открывает такие файлы';
 
   @override
+  String get fullscreen => 'На весь экран';
+
+  @override
+  String get exitFullscreen => 'Выйти из полноэкранного режима';
+
+  @override
   String get play => 'Воспроизвести';
 
   @override

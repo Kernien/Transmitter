@@ -354,6 +354,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'There is no app on this device that can open this file';
 
   @override
+  String get fullscreen => 'Full screen';
+
+  @override
+  String get exitFullscreen => 'Exit full screen';
+
+  @override
   String get play => 'Play';
 
   @override

@@ -686,6 +686,18 @@ abstract class AppLocalizations {
   /// **'There is no app on this device that can open this file'**
   String get errNoAppToOpen;
 
+  /// No description provided for @fullscreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Full screen'**
+  String get fullscreen;
+
+  /// No description provided for @exitFullscreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit full screen'**
+  String get exitFullscreen;
+
   /// No description provided for @play.
   ///
   /// In en, this message translates to:

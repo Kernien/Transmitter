@@ -126,6 +126,8 @@
   "documentUnreadable": "Can't read this document — save the file and open it in another app",
   "openWith": "Open in another app",
   "errNoAppToOpen": "There is no app on this device that can open this file",
+  "fullscreen": "Full screen",
+  "exitFullscreen": "Exit full screen",
   "play": "Play",
   "pause": "Pause",
   "playbackFailed": "This file can't be played here — open it in another app",
