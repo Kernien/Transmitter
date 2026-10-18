@@ -33,6 +33,7 @@ enum ErrorCode {
   cloudSharingNotAllowed, // provider — нет права на публичные ссылки
   // Файлы, шифрование, ключи.
   fileTooLarge, // maxBytes
+  noAppToOpen,
   decryptionFailed,
   keyNotTransmitter,
   keyCorrupted,

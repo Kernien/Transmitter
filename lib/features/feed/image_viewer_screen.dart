@@ -34,6 +34,12 @@ class ImageViewerScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         title: Text(attachment.fileName, overflow: TextOverflow.ellipsis),
         actions: [
+          if (feed.canOpenExternally)
+            IconButton(
+              tooltip: l.openWith,
+              icon: const Icon(Icons.open_in_new),
+              onPressed: () => feed.openExternally(post),
+            ),
           if (feed.canShare)
             IconButton(
               tooltip: l.share,

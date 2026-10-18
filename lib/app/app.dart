@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/device/device_identity.dart';
+import '../core/files/external_opener.dart';
 import '../core/files/file_transfer_service.dart';
 import '../core/files/media_picker.dart';
 import '../core/share/incoming_share.dart';
@@ -25,6 +26,7 @@ class TransmitterApp extends StatelessWidget {
     required this.sessions,
     required this.files,
     this.media = const NoMediaPicker(),
+    this.opener = const NoExternalOpener(),
     required this.incomingShares,
     required this.shareSender,
   });
@@ -36,6 +38,7 @@ class TransmitterApp extends StatelessWidget {
   final VaultSessionFactory sessions;
   final FileTransferService files;
   final MediaPicker media;
+  final ExternalOpener opener;
   final IncomingShareSource incomingShares;
   final ShareSender shareSender;
 
@@ -50,6 +53,7 @@ class TransmitterApp extends StatelessWidget {
         Provider.value(value: sessions),
         Provider<FileTransferService>.value(value: files),
         Provider<MediaPicker>.value(value: media),
+        Provider<ExternalOpener>.value(value: opener),
         Provider<IncomingShareSource>.value(value: incomingShares),
         Provider<ShareSender>.value(value: shareSender),
       ],

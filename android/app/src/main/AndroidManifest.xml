@@ -47,6 +47,16 @@
             <!-- Ссылки обрабатывает app_links, а не навигатор Flutter. -->
             <meta-data android:name="flutter_deeplinking_enabled" android:value="false"/>
         </activity>
+        <!-- «Открыть в другом приложении» (FileOpener.kt). -->
+        <provider
+            android:name=".OpenFileProvider"
+            android:authorities="${applicationId}.open"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/open_file_paths" />
+        </provider>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../core/errors/app_error.dart';
+import '../../core/files/external_opener.dart';
 import '../../core/files/file_transfer_service.dart';
 import '../../core/files/media_picker.dart';
 import '../../core/share/outgoing_share.dart';
@@ -20,6 +21,7 @@ class FeedController extends ChangeNotifier {
     required this._files,
     required this._pollInterval,
     this._media = const NoMediaPicker(),
+    this._opener = const NoExternalOpener(),
     this._share = const DisabledShareSender(),
     this._clock = DateTime.now,
     ExportTexts exportTexts = ExportTexts.english,
@@ -36,6 +38,7 @@ class FeedController extends ChangeNotifier {
   final PostRepository _repository;
   final FileTransferService _files;
   final MediaPicker _media;
+  final ExternalOpener _opener;
   final ShareSender _share;
   final Duration _pollInterval;
   final Clock _clock;
@@ -250,6 +253,30 @@ class FeedController extends ChangeNotifier {
 
   /// Можно ли выбрать фото или видео в Галерее (на телефоне).
   bool get canAttachMedia => _media.isAvailable;
+
+  /// Можно ли открыть файл в другом приложении (на устройствах — да).
+  bool get canOpenExternally => _opener.isAvailable;
+
+  /// Открывает файл поста программой по умолчанию (или на выбор).
+  Future<void> openExternally(Post post) async {
+    final attachment = post.attachment;
+    if (attachment == null || _saving.contains(post.id)) return;
+    _saving.add(post.id);
+    _notify();
+    try {
+      await _opener.open(
+        fileName: attachment.fileName,
+        bytes: await previews.load(attachment),
+        mimeType: attachment.mimeType,
+      );
+      _error = null;
+    } catch (e) {
+      _error = e;
+    } finally {
+      _saving.remove(post.id);
+      _notify();
+    }
+  }
 
   /// Как [attachFile], но фото или видео выбирается в Галерее.
   Future<bool> attachMedia({String caption = ''}) => _attach(

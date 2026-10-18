@@ -347,6 +347,13 @@ class AppLocalizationsRu extends AppLocalizations {
       'Не удалось прочитать документ — сохраните файл и откройте его в другой программе';
 
   @override
+  String get openWith => 'Открыть в другом приложении';
+
+  @override
+  String get errNoAppToOpen =>
+      'На устройстве нет приложения, которое открывает такие файлы';
+
+  @override
   String get monospaceFont => 'Моноширинный шрифт';
 
   @override

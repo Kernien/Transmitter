@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -13,6 +15,7 @@ import 'core/device/platform_device_name_suggester.dart';
 import 'core/files/android_gallery_picker.dart';
 import 'core/files/file_picker_transfer_service.dart';
 import 'core/files/media_picker.dart';
+import 'core/files/platform_external_opener.dart';
 import 'core/persistence/platform_blob_cache.dart';
 import 'core/persistence/platform_key_value_store.dart';
 import 'core/share/android_incoming_share_source.dart';
@@ -90,6 +93,9 @@ Future<void> main() async {
   );
   await Future.wait([connections.load(), vaults.load(), device.load()]);
 
+  final externalOpener = createPlatformExternalOpener();
+  unawaited(externalOpener.cleanUp());
+
   runApp(
     TransmitterApp(
       connections: connections,
@@ -115,6 +121,8 @@ Future<void> main() async {
       ),
       // На телефоне фото удобнее выбирать в Галерее, чем в файлах.
       media: isAndroid ? const AndroidGalleryPicker() : const NoMediaPicker(),
+      // «Открыть в другом приложении»; копии прошлых открытий удаляются.
+      opener: externalOpener,
       incomingShares: isAndroid
           ? AndroidIncomingShareSource(
               maxFileSize: VaultKey.absoluteMaxFileSize,

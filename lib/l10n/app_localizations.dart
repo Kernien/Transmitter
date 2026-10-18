@@ -674,6 +674,18 @@ abstract class AppLocalizations {
   /// **'Can\'t read this document — save the file and open it in another app'**
   String get documentUnreadable;
 
+  /// No description provided for @openWith.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in another app'**
+  String get openWith;
+
+  /// No description provided for @errNoAppToOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'There is no app on this device that can open this file'**
+  String get errNoAppToOpen;
+
   /// No description provided for @monospaceFont.
   ///
   /// In en, this message translates to:

@@ -10,7 +10,16 @@ import '../attachment_previews.dart';
 import '../image_viewer_screen.dart';
 import '../text_viewer_screen.dart';
 
-enum _PostAction { select, note, share, save, copy, selectText, delete }
+enum _PostAction {
+  select,
+  note,
+  share,
+  save,
+  openWith,
+  copy,
+  selectText,
+  delete,
+}
 
 /// Один пост в ленте. Нажатие открывает ссылку или сохраняет файл, долгое
 /// нажатие выделяет пост (см. режим выделения в FeedController), остальные
@@ -22,12 +31,14 @@ class PostTile extends StatelessWidget {
 
   List<_PostAction> _actions({
     required bool canShare,
+    required bool canOpen,
     required bool readOnly,
   }) => [
     _PostAction.select,
     if (!readOnly) _PostAction.note,
     if (canShare) _PostAction.share,
     if (post.attachment != null) _PostAction.save,
+    if (post.attachment != null && canOpen) _PostAction.openWith,
     if (post.text.isNotEmpty) _PostAction.copy,
     if (post.text.isNotEmpty || post.note != null) _PostAction.selectText,
     if (!readOnly) _PostAction.delete,
@@ -118,6 +129,9 @@ class PostTile extends StatelessWidget {
                                 canShare: context
                                     .read<FeedController>()
                                     .canShare,
+                                canOpen: context
+                                    .read<FeedController>()
+                                    .canOpenExternally,
                                 readOnly: context
                                     .read<FeedController>()
                                     .isReadOnly,
@@ -181,6 +195,8 @@ class PostTile extends StatelessWidget {
         if (text != null) await feed.setNote(post, text);
       case _PostAction.share:
         await feed.sharePost(post);
+      case _PostAction.openWith:
+        await feed.openExternally(post);
       case _PostAction.save:
         await _save(context, post);
       case _PostAction.selectText:
@@ -249,6 +265,7 @@ class _ActionLabel extends StatelessWidget {
       ),
       _PostAction.share => (Icons.share, l.share),
       _PostAction.save => (Icons.download, l.actionSaveFile),
+      _PostAction.openWith => (Icons.open_in_new, l.openWith),
       _PostAction.copy => (Icons.copy, l.actionCopyText),
       _PostAction.selectText => (Icons.text_fields, l.actionSelectText),
       _PostAction.delete => (Icons.delete_outline, l.actionDeleteEverywhere),

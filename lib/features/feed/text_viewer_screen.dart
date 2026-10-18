@@ -92,6 +92,12 @@ class _TextViewerScreenState extends State<TextViewerScreen> {
       appBar: AppBar(
         title: Text(_attachment.fileName, overflow: TextOverflow.ellipsis),
         actions: [
+          if (feed.canOpenExternally)
+            IconButton(
+              tooltip: l.openWith,
+              icon: const Icon(Icons.open_in_new),
+              onPressed: () => feed.openExternally(widget.post),
+            ),
           if (feed.canShare)
             IconButton(
               tooltip: l.share,

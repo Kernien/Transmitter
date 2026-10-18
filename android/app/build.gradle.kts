@@ -65,3 +65,8 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // FileProvider для «Открыть в другом приложении».
+    implementation("androidx.core:core:1.13.1")
+}

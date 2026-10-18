@@ -72,6 +72,7 @@ extension AppLocalizationsX on AppLocalizations {
         sizeLimitOf(args['maxBytes'] as int? ?? 0),
       ),
       ErrorCode.decryptionFailed => errDecryptionFailed,
+      ErrorCode.noAppToOpen => errNoAppToOpen,
       ErrorCode.keyNotTransmitter => errKeyNotTransmitter,
       ErrorCode.keyCorrupted => errKeyCorrupted,
       ErrorCode.boardSignatureInvalid => errBoardSignatureInvalid,

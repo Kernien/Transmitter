@@ -12,6 +12,7 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         val messenger = flutterEngine.dartExecutor.binaryMessenger
         DeviceInfoChannel(this, messenger)
+        FileOpener(this, messenger)
         galleryPicker = GalleryPicker(this, messenger)
         shareReceiver = ShareReceiver(this, messenger).also {
             it.handle(intent)

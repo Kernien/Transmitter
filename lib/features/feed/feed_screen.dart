@@ -6,6 +6,7 @@ import '../../app/app_config.dart';
 import '../../app/l10n.dart';
 import '../../app/vault_session_factory.dart';
 import '../../app/widgets/content_width.dart';
+import '../../core/files/external_opener.dart';
 import '../../core/files/file_transfer_service.dart';
 import '../../core/files/media_picker.dart';
 import '../../core/share/outgoing_share.dart';
@@ -87,6 +88,7 @@ class _FeedScreenState extends State<FeedScreen> {
               repository,
               files: context.read<FileTransferService>(),
               media: context.read<MediaPicker>(),
+              opener: context.read<ExternalOpener>(),
               share: context.read<ShareSender>(),
               pollInterval: widget.pollInterval,
               exportTexts: ExportTexts(

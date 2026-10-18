@@ -347,6 +347,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Can\'t read this document — save the file and open it in another app';
 
   @override
+  String get openWith => 'Open in another app';
+
+  @override
+  String get errNoAppToOpen =>
+      'There is no app on this device that can open this file';
+
+  @override
   String get monospaceFont => 'Monospace font';
 
   @override
