@@ -8,6 +8,7 @@ import '../../../domain/post.dart';
 import '../feed_controller.dart';
 import '../attachment_previews.dart';
 import '../image_viewer_screen.dart';
+import '../media_player_screen.dart';
 import '../text_viewer_screen.dart';
 
 enum _PostAction {
@@ -79,6 +80,12 @@ class PostTile extends StatelessWidget {
                     context.read<FeedController>(),
                     post,
                   ),
+                // Видео и музыка — встроенный плеер; где его нет (Linux) —
+                // другое приложение.
+                PostKind.file
+                    when (post.attachment?.isVideo ?? false) ||
+                        (post.attachment?.isAudio ?? false) =>
+                  () => _play(context),
                 PostKind.file => () => _perform(context, _PostAction.save),
                 PostKind.text => null,
               },
@@ -209,6 +216,17 @@ class PostTile extends StatelessWidget {
         messenger.showSnackBar(SnackBar(content: Text(l.copied)));
       case _PostAction.delete:
         if (await _confirmDelete(context)) await feed.delete(post);
+    }
+  }
+
+  void _play(BuildContext context) {
+    final feed = context.read<FeedController>();
+    if (MediaPlayerScreen.isSupported) {
+      MediaPlayerScreen.open(context, feed, post);
+    } else if (feed.canOpenExternally) {
+      feed.openExternally(post);
+    } else {
+      _save(context, post);
     }
   }
 
@@ -532,6 +550,10 @@ class _FileContent extends StatelessWidget {
                   ? Icons.image_outlined
                   : attachment.isReadable
                   ? Icons.description_outlined
+                  : attachment.isVideo
+                  ? Icons.movie_outlined
+                  : attachment.isAudio
+                  ? Icons.audiotrack_outlined
                   : Icons.insert_drive_file_outlined,
               color: theme.colorScheme.primary,
             ),

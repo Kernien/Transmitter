@@ -354,6 +354,16 @@ class AppLocalizationsRu extends AppLocalizations {
       'На устройстве нет приложения, которое открывает такие файлы';
 
   @override
+  String get play => 'Воспроизвести';
+
+  @override
+  String get pause => 'Пауза';
+
+  @override
+  String get playbackFailed =>
+      'Этот файл здесь не воспроизвести — откройте его в другом приложении';
+
+  @override
   String get monospaceFont => 'Моноширинный шрифт';
 
   @override

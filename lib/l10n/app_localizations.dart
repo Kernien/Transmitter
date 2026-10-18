@@ -686,6 +686,24 @@ abstract class AppLocalizations {
   /// **'There is no app on this device that can open this file'**
   String get errNoAppToOpen;
 
+  /// No description provided for @play.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get play;
+
+  /// No description provided for @pause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get pause;
+
+  /// No description provided for @playbackFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'This file can\'t be played here — open it in another app'**
+  String get playbackFailed;
+
   /// No description provided for @monospaceFont.
   ///
   /// In en, this message translates to:

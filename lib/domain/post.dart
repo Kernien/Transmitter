@@ -65,6 +65,23 @@ class Attachment {
       mimeType ==
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
+  static const _videoExtensions = {
+    'mp4', 'm4v', 'mov', 'webm', 'mkv', 'avi', '3gp', 'wmv', 'mpg', 'mpeg', //
+  };
+  static const _audioExtensions = {
+    'mp3', 'm4a', 'aac', 'ogg', 'oga', 'opus', 'flac', 'wav', 'wma', 'amr', //
+  };
+
+  /// Видео — играет встроенный плеер (или другое приложение).
+  bool get isVideo =>
+      _videoExtensions.contains(_extension) ||
+      (mimeType?.startsWith('video/') ?? false);
+
+  /// Музыка и голосовые — играет встроенный плеер (или другое приложение).
+  bool get isAudio =>
+      _audioExtensions.contains(_extension) ||
+      (mimeType?.startsWith('audio/') ?? false);
+
   /// Можно прочитать прямо в приложении: текст, Markdown или .docx.
   bool get isReadable => isText || isDocx;
 

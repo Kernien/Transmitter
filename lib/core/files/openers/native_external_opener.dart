@@ -55,13 +55,17 @@ class NativeExternalOpener implements ExternalOpener {
     }
   }
 
+  /// Заодно — копии для встроенного плеера (`…/play/`), если приложение
+  /// закрылось, не успев их убрать.
   @override
   Future<void> cleanUp() async {
-    try {
-      final root = await _root();
-      if (await root.exists()) await root.delete(recursive: true);
-    } on Object {
-      // Файл ещё открыт в другой программе — удалим в следующий раз.
+    final temp = (await getTemporaryDirectory()).path;
+    for (final dir in [await _root(), Directory('$temp/play')]) {
+      try {
+        if (await dir.exists()) await dir.delete(recursive: true);
+      } on Object {
+        // Файл ещё открыт в другой программе — удалим в следующий раз.
+      }
     }
   }
 

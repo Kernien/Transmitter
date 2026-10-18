@@ -354,6 +354,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'There is no app on this device that can open this file';
 
   @override
+  String get play => 'Play';
+
+  @override
+  String get pause => 'Pause';
+
+  @override
+  String get playbackFailed =>
+      'This file can\'t be played here — open it in another app';
+
+  @override
   String get monospaceFont => 'Monospace font';
 
   @override
