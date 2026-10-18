@@ -1,5 +1,6 @@
 import 'dart:io';
-import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart';
 
 import 'blob_cache.dart';
 
@@ -23,6 +24,12 @@ class _CacheRoot {
 
   /// Подрезает кеш до лимита: первыми уходят файлы, которые открывали
   /// давнее всего. Записи, комментарии и описи досок не трогаются.
+  /// Файл открыли: идущий проход уборки мог взять старое время открытия —
+  /// после него пройдём ещё раз.
+  void touched() {
+    if (_trimming != null) _trimAgain = true;
+  }
+
   void scheduleTrim() {
     if (_trimming != null) {
       _trimAgain = true;
@@ -43,13 +50,19 @@ class _CacheRoot {
   }
 
   Future<void> trim() async {
+    // Лимит и время открытия берём в начале прохода: если их поменяют во
+    // время уборки, следующий проход (_trimAgain) увидит свежие данные.
+    final limit = limitBytes;
     final files = [
       for (final file in await attachmentFiles())
         (file: file, stat: await file.stat()),
     ]..sort((a, b) => a.stat.modified.compareTo(b.stat.modified));
     var total = files.fold<int>(0, (sum, f) => sum + f.stat.size);
     for (final entry in files) {
-      if (total <= limitBytes) break;
+      if (total <= limit) break;
+      // Файл открыли, пока шла уборка, — он свежий, не трогаем.
+      final now = await entry.file.stat();
+      if (now.modified != entry.stat.modified) continue;
       await entry.file.delete();
       total -= entry.stat.size;
     }
@@ -78,6 +91,7 @@ class FileBlobCache implements DeviceCache {
       final file = _file(key);
       final bytes = await file.readAsBytes();
       if (isAttachmentCacheKey(key)) {
+        _root.touched();
         // Отметка «открывали недавно» — такой файл уйдёт из кеша последним.
         try {
           await file.setLastModified(DateTime.now());
@@ -119,6 +133,14 @@ class FileBlobCache implements DeviceCache {
 
   @override
   bool get isPersistent => true;
+
+  /// Завершение фоновой уборки кеша (для тестов).
+  @visibleForTesting
+  Future<void> get idle async {
+    while (_root._trimming != null) {
+      await _root._trimming;
+    }
+  }
 
   @override
   int get limitBytes => _root.limitBytes;

@@ -17,8 +17,7 @@ void main() {
   tearDown(() => dir.delete(recursive: true));
 
   /// Даём фоновой уборке закончиться.
-  Future<void> settle() =>
-      Future<void>.delayed(const Duration(milliseconds: 200));
+  Future<void> settle() => cache.idle;
 
   Future<void> putFile(
     BlobCache scope,
