@@ -364,6 +364,24 @@ class AppLocalizationsEn extends AppLocalizations {
       'This file can\'t be played here — open it in another app';
 
   @override
+  String get storageTitle => 'Storage on this device';
+
+  @override
+  String get storageIntro =>
+      'Opened files are kept on the device (encrypted) so they open instantly and without internet. When space runs out, the ones opened longest ago go first. Items themselves are always kept.';
+
+  @override
+  String storageUsed(String size) {
+    return 'Used: $size';
+  }
+
+  @override
+  String get storageLimit => 'Limit for files';
+
+  @override
+  String get storageClear => 'Clear files';
+
+  @override
   String get monospaceFont => 'Monospace font';
 
   @override

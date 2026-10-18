@@ -119,22 +119,19 @@ class PublicBoardRepository implements PostRepository {
   @override
   Future<Uint8List> downloadAttachment(Attachment attachment) async {
     final key = attachmentCacheKey(attachment.id);
-    final cacheable = attachment.size <= attachmentCacheLimit;
-    if (cacheable) {
-      final cached = await _blobs.read(key);
-      if (cached != null) {
-        try {
-          return await _cipher.decrypt(cached);
-        } on DecryptionException {
-          await _blobs.delete(key);
-        }
+    final cached = await _blobs.read(key);
+    if (cached != null) {
+      try {
+        return await _cipher.decrypt(cached);
+      } on DecryptionException {
+        await _blobs.delete(key);
       }
     }
     final locator = _files[attachment.id];
     if (locator == null) throw StorageNotFoundException(attachment.fileName);
     final encrypted = await _reader.download(locator);
     final bytes = await _cipher.decrypt(encrypted);
-    if (cacheable) await _blobs.write(key, encrypted);
+    await _blobs.write(key, encrypted);
     return bytes;
   }
 

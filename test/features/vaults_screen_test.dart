@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:transmitter/app/cache_settings.dart';
+import 'package:transmitter/core/persistence/blob_cache.dart';
 import 'package:transmitter/core/device/device_identity.dart';
 import 'package:transmitter/core/persistence/key_value_store.dart';
 import 'package:transmitter/core/storage/cloud_connection_service.dart';
@@ -29,6 +31,9 @@ void main() {
             create: (_) => VaultsController(VaultKeyStore(store)),
           ),
           ChangeNotifierProvider.value(value: device),
+          ChangeNotifierProvider(
+            create: (_) => CacheSettings(const NoBlobCache(), store),
+          ),
         ],
         child: const MaterialApp(
           locale: Locale('ru'),

@@ -279,9 +279,7 @@ class EncryptedCloudPostRepository implements PostRepository {
     }
     final encrypted = await _cipher.encrypt(bytes);
     await _storage.upload(_attachmentPath(attachment), encrypted);
-    if (bytes.length <= attachmentCacheLimit) {
-      await _blobs.write(attachmentCacheKey(attachment.id), encrypted);
-    }
+    await _blobs.write(attachmentCacheKey(attachment.id), encrypted);
     return _publish(
       _newPost(
         kind: PostKind.file,
@@ -294,20 +292,17 @@ class EncryptedCloudPostRepository implements PostRepository {
   @override
   Future<Uint8List> downloadAttachment(Attachment attachment) async {
     final key = attachmentCacheKey(attachment.id);
-    final cacheable = attachment.size <= attachmentCacheLimit;
-    if (cacheable) {
-      final cached = await _blobs.read(key);
-      if (cached != null) {
-        try {
-          return await _cipher.decrypt(cached);
-        } on DecryptionException {
-          await _blobs.delete(key);
-        }
+    final cached = await _blobs.read(key);
+    if (cached != null) {
+      try {
+        return await _cipher.decrypt(cached);
+      } on DecryptionException {
+        await _blobs.delete(key);
       }
     }
     final encrypted = await _storage.download(_attachmentPath(attachment));
     final bytes = await _cipher.decrypt(encrypted);
-    if (cacheable) await _blobs.write(key, encrypted);
+    await _blobs.write(key, encrypted);
     return bytes;
   }
 

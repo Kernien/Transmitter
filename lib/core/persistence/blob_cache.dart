@@ -17,15 +17,38 @@ abstract interface class BlobCache {
   BlobCache scope(String name);
 }
 
-/// Вложения кешируются на устройстве, только если не больше этого размера:
-/// фото и небольшие документы — да, большие файлы — нет.
-const int attachmentCacheLimit = 10 * 1024 * 1024;
+/// Лимит на сохранённые файлы по умолчанию (как в Telegram: открытые файлы
+/// хранятся, пока не кончится выделенное место).
+const int defaultFileCacheLimit = 1024 * 1024 * 1024;
 
 /// Ключ кеша для вложения.
 String attachmentCacheKey(String attachmentId) => 'att-$attachmentId.bin';
 
+bool isAttachmentCacheKey(String key) =>
+    key.startsWith('att-') && key.endsWith('.bin');
+
+/// Место на устройстве под сохранённые файлы: лимит, занятый объём, уборка.
+/// Записи, комментарии и описи досок занимают мало и в лимит не входят.
+abstract interface class CacheStorage {
+  /// Сохранённые файлы сверх лимита удаляются — сначала давно не открытые.
+  int get limitBytes;
+  set limitBytes(int value);
+
+  /// Сколько занимает весь кеш на устройстве.
+  Future<int> usedBytes();
+
+  /// Удаляет все сохранённые файлы (записи остаются).
+  Future<void> clearFiles();
+}
+
+/// Корень кеша на устройстве: и хранилище, и место под файлы.
+abstract interface class DeviceCache implements BlobCache, CacheStorage {
+  /// Есть ли кеш на диске (в вебе — нет).
+  bool get isPersistent;
+}
+
 /// Без кеша на диске (веб): всё хранится только в памяти сессии.
-class NoBlobCache implements BlobCache {
+class NoBlobCache implements DeviceCache {
   const NoBlobCache();
 
   @override
@@ -39,6 +62,21 @@ class NoBlobCache implements BlobCache {
 
   @override
   BlobCache scope(String name) => this;
+
+  @override
+  bool get isPersistent => false;
+
+  @override
+  int get limitBytes => 0;
+
+  @override
+  set limitBytes(int value) {}
+
+  @override
+  Future<int> usedBytes() async => 0;
+
+  @override
+  Future<void> clearFiles() async {}
 }
 
 /// Кеш в памяти — для тестов.

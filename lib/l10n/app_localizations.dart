@@ -704,6 +704,36 @@ abstract class AppLocalizations {
   /// **'This file can\'t be played here — open it in another app'**
   String get playbackFailed;
 
+  /// No description provided for @storageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage on this device'**
+  String get storageTitle;
+
+  /// No description provided for @storageIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Opened files are kept on the device (encrypted) so they open instantly and without internet. When space runs out, the ones opened longest ago go first. Items themselves are always kept.'**
+  String get storageIntro;
+
+  /// No description provided for @storageUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Used: {size}'**
+  String storageUsed(String size);
+
+  /// No description provided for @storageLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Limit for files'**
+  String get storageLimit;
+
+  /// No description provided for @storageClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear files'**
+  String get storageClear;
+
   /// No description provided for @monospaceFont.
   ///
   /// In en, this message translates to:

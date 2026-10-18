@@ -3,11 +3,71 @@ import 'dart:typed_data';
 
 import 'blob_cache.dart';
 
-/// Кеш в папке на диске: ключ — имя файла.
-class FileBlobCache implements BlobCache {
-  FileBlobCache(this.directory);
+/// Общее для всех областей кеша: папка-корень и лимит на сохранённые файлы.
+class _CacheRoot {
+  _CacheRoot(this.directory);
 
   final Directory directory;
+  int limitBytes = defaultFileCacheLimit;
+  Future<void>? _trimming;
+  bool _trimAgain = false;
+
+  /// Сохранённые файлы (вложения) во всех областях.
+  Future<List<File>> attachmentFiles() async {
+    if (!await directory.exists()) return [];
+    return [
+      await for (final entity in directory.list(recursive: true))
+        if (entity is File && isAttachmentCacheKey(_name(entity))) entity,
+    ];
+  }
+
+  /// Подрезает кеш до лимита: первыми уходят файлы, которые открывали
+  /// давнее всего. Записи, комментарии и описи досок не трогаются.
+  void scheduleTrim() {
+    if (_trimming != null) {
+      _trimAgain = true;
+      return;
+    }
+    _trimming = _trimLoop().whenComplete(() => _trimming = null);
+  }
+
+  Future<void> _trimLoop() async {
+    do {
+      _trimAgain = false;
+      try {
+        await trim();
+      } on FileSystemException {
+        // Файл занят — попробуем при следующей записи.
+      }
+    } while (_trimAgain);
+  }
+
+  Future<void> trim() async {
+    final files = [
+      for (final file in await attachmentFiles())
+        (file: file, stat: await file.stat()),
+    ]..sort((a, b) => a.stat.modified.compareTo(b.stat.modified));
+    var total = files.fold<int>(0, (sum, f) => sum + f.stat.size);
+    for (final entry in files) {
+      if (total <= limitBytes) break;
+      await entry.file.delete();
+      total -= entry.stat.size;
+    }
+  }
+
+  static String _name(File file) => file.uri.pathSegments.last;
+}
+
+/// Кеш в папке на диске: ключ — имя файла. Корневой кеш ([FileBlobCache.new])
+/// держит лимит на сохранённые файлы ([CacheStorage]); области ([scope]) —
+/// подпапки для баз и досок с общим лимитом.
+class FileBlobCache implements DeviceCache {
+  FileBlobCache(Directory directory) : this._(directory, _CacheRoot(directory));
+
+  FileBlobCache._(this.directory, this._root);
+
+  final Directory directory;
+  final _CacheRoot _root;
   bool _ready = false;
 
   File _file(String key) => File('${directory.path}/$key');
@@ -15,7 +75,17 @@ class FileBlobCache implements BlobCache {
   @override
   Future<Uint8List?> read(String key) async {
     try {
-      return await _file(key).readAsBytes();
+      final file = _file(key);
+      final bytes = await file.readAsBytes();
+      if (isAttachmentCacheKey(key)) {
+        // Отметка «открывали недавно» — такой файл уйдёт из кеша последним.
+        try {
+          await file.setLastModified(DateTime.now());
+        } on FileSystemException {
+          // Не страшно.
+        }
+      }
+      return bytes;
     } on FileSystemException {
       return null;
     }
@@ -31,6 +101,7 @@ class FileBlobCache implements BlobCache {
     final temp = _file('$key.tmp');
     await temp.writeAsBytes(bytes, flush: true);
     await temp.rename(_file(key).path);
+    if (isAttachmentCacheKey(key)) _root.scheduleTrim();
   }
 
   @override
@@ -44,5 +115,38 @@ class FileBlobCache implements BlobCache {
 
   @override
   BlobCache scope(String name) =>
-      FileBlobCache(Directory('${directory.path}/$name'));
+      FileBlobCache._(Directory('${directory.path}/$name'), _root);
+
+  @override
+  bool get isPersistent => true;
+
+  @override
+  int get limitBytes => _root.limitBytes;
+
+  @override
+  set limitBytes(int value) {
+    _root.limitBytes = value;
+    _root.scheduleTrim();
+  }
+
+  @override
+  Future<int> usedBytes() async {
+    if (!await _root.directory.exists()) return 0;
+    var total = 0;
+    await for (final entity in _root.directory.list(recursive: true)) {
+      if (entity is File) total += await entity.length();
+    }
+    return total;
+  }
+
+  @override
+  Future<void> clearFiles() async {
+    for (final file in await _root.attachmentFiles()) {
+      try {
+        await file.delete();
+      } on FileSystemException {
+        // Занят — останется до следующей уборки.
+      }
+    }
+  }
 }

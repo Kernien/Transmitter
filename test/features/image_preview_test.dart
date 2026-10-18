@@ -126,19 +126,25 @@ void main() {
       expect(cloud.downloads, 1);
     });
 
-    test('большие файлы не кешируются', () async {
-      final big = Uint8List(attachmentCacheLimit + 1);
-      final r = EncryptedCloudPostRepository(
-        storage: cloud,
-        vaultId: 'v',
-        cipher: AesGcmCipher(List<int>.filled(32, 2)),
-        deviceName: 'A',
-        blobs: disk,
-        maxFileSize: 100 * 1024 * 1024,
-      );
-      await r.sendFile(fileName: 'big.zip', bytes: big);
-      expect(disk.entries.keys.where((k) => k.startsWith('att-')), isEmpty);
-    });
+    test(
+      'большие файлы тоже сохраняются (лимит — общий, на устройстве)',
+      () async {
+        final big = Uint8List(20 * 1024 * 1024);
+        final r = EncryptedCloudPostRepository(
+          storage: cloud,
+          vaultId: 'v',
+          cipher: AesGcmCipher(List<int>.filled(32, 2)),
+          deviceName: 'A',
+          blobs: disk,
+          maxFileSize: 100 * 1024 * 1024,
+        );
+        await r.sendFile(fileName: 'big.zip', bytes: big);
+        expect(
+          disk.entries.keys.where((k) => k.startsWith('att-')),
+          hasLength(1),
+        );
+      },
+    );
 
     test('удалённая запись забирает фото из кеша', () async {
       final mine = repo();

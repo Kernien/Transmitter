@@ -364,6 +364,24 @@ class AppLocalizationsRu extends AppLocalizations {
       'Этот файл здесь не воспроизвести — откройте его в другом приложении';
 
   @override
+  String get storageTitle => 'Место на устройстве';
+
+  @override
+  String get storageIntro =>
+      'Открытые файлы хранятся на устройстве (зашифрованными), чтобы открываться сразу и без интернета. Когда место заканчивается, первыми удаляются давно не открытые. Сами записи остаются всегда.';
+
+  @override
+  String storageUsed(String size) {
+    return 'Занято: $size';
+  }
+
+  @override
+  String get storageLimit => 'Лимит для файлов';
+
+  @override
+  String get storageClear => 'Очистить файлы';
+
+  @override
   String get monospaceFont => 'Моноширинный шрифт';
 
   @override

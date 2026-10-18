@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 
 import 'app/app.dart';
 import 'app/app_config.dart';
+import 'app/cache_settings.dart';
 import 'app/language_controller.dart';
 import 'app/vault_session_factory.dart';
 import 'core/auth/auth_browser.dart';
@@ -49,6 +50,10 @@ Future<void> main() async {
   // виджетов — страница входа в браузере, подсказки имени устройства,
   // диалог сохранения — берутся из него в момент показа.
   final language = LanguageController(secureStore);
+  // Записи и открытые файлы на устройстве (зашифрованные), с лимитом.
+  final deviceCache = await createPlatformBlobCache();
+  final cacheSettings = CacheSettings(deviceCache, secureStore);
+  await cacheSettings.load();
   await language.load();
   AuthPageTexts authTexts() {
     final l = language.current;
@@ -105,7 +110,7 @@ Future<void> main() async {
         connections: connections,
         deviceName: () => device.name,
         // Записи на устройстве: лента открывается сразу, даже без сети.
-        cache: await createPlatformBlobCache(),
+        cache: deviceCache,
         // Публичные доски читаются по ссылкам, без входа в облако.
         readers: {
           CloudProviderId.dropbox: DropboxPublicReader(httpClient),
@@ -116,6 +121,7 @@ Future<void> main() async {
         },
       ),
       language: language,
+      cacheSettings: cacheSettings,
       files: FilePickerTransferService(
         saveDialogTitle: () => language.current.actionSaveFile,
       ),

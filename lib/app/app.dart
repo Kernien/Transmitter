@@ -13,6 +13,7 @@ import '../features/share_target/incoming_share_listener.dart';
 import '../features/vaults/vaults_controller.dart';
 import '../features/vaults/vaults_screen.dart';
 import '../l10n/app_localizations.dart';
+import 'cache_settings.dart';
 import 'language_controller.dart';
 import 'vault_session_factory.dart';
 
@@ -23,6 +24,7 @@ class TransmitterApp extends StatelessWidget {
     required this.vaults,
     required this.device,
     required this.language,
+    required this.cacheSettings,
     required this.sessions,
     required this.files,
     this.media = const NoMediaPicker(),
@@ -35,6 +37,7 @@ class TransmitterApp extends StatelessWidget {
   final VaultsController vaults;
   final DeviceIdentity device;
   final LanguageController language;
+  final CacheSettings cacheSettings;
   final VaultSessionFactory sessions;
   final FileTransferService files;
   final MediaPicker media;
@@ -50,6 +53,7 @@ class TransmitterApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: vaults),
         ChangeNotifierProvider.value(value: device),
         ChangeNotifierProvider.value(value: language),
+        ChangeNotifierProvider.value(value: cacheSettings),
         Provider.value(value: sessions),
         Provider<FileTransferService>.value(value: files),
         Provider<MediaPicker>.value(value: media),
