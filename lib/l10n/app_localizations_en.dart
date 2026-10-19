@@ -370,6 +370,38 @@ class AppLocalizationsEn extends AppLocalizations {
       'This file can\'t be played here — open it in another app';
 
   @override
+  String get settings => 'Settings';
+
+  @override
+  String get theme => 'Appearance';
+
+  @override
+  String get themeSystem => 'As in the system';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get themeOcean => 'Ocean';
+
+  @override
+  String get themeForest => 'Forest';
+
+  @override
+  String get themeSunset => 'Sunset';
+
+  @override
+  String get themeNight => 'Night (black)';
+
+  @override
+  String storageLimitValue(String size) {
+    return 'Limit: $size';
+  }
+
+  @override
   String get storageTitle => 'Storage on this device';
 
   @override

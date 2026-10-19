@@ -8,6 +8,7 @@ import 'app/app.dart';
 import 'app/app_config.dart';
 import 'app/cache_settings.dart';
 import 'app/language_controller.dart';
+import 'app/theme_controller.dart';
 import 'app/vault_session_factory.dart';
 import 'core/auth/auth_browser.dart';
 import 'core/auth/platform_auth_browser.dart';
@@ -55,6 +56,9 @@ Future<void> main() async {
   final cacheSettings = CacheSettings(deviceCache, secureStore);
   await cacheSettings.load();
   await language.load();
+  // Оформление (как в системе или пресет) — как язык, на устройстве.
+  final theme = ThemeController(secureStore);
+  await theme.load();
   AuthPageTexts authTexts() {
     final l = language.current;
     return AuthPageTexts(
@@ -122,6 +126,7 @@ Future<void> main() async {
       ),
       language: language,
       cacheSettings: cacheSettings,
+      theme: theme,
       files: FilePickerTransferService(
         saveDialogTitle: () => language.current.actionSaveFile,
       ),

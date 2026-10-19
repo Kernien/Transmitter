@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../app/cache_settings.dart';
 import '../../app/l10n.dart';
 import '../../app/widgets/content_width.dart';
 import '../../app/vault_session_factory.dart';
@@ -13,8 +12,7 @@ import '../cloud_connect/clouds_screen.dart';
 import '../cloud_connect/connect_cloud_screen.dart';
 import '../device/device_name_dialog.dart';
 import '../feed/feed_screen.dart';
-import '../settings/language_dialog.dart';
-import '../settings/storage_dialog.dart';
+import '../settings/settings_sheet.dart';
 import 'board_access_sheet.dart';
 import 'create_vault_dialog.dart';
 import 'import_vault_screen.dart';
@@ -36,17 +34,12 @@ class VaultsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Transmitter'),
         actions: [
+          // Оформление, язык и место на устройстве — в «Настройках».
           IconButton(
-            tooltip: l.language,
-            icon: const Icon(Icons.translate),
-            onPressed: () => showLanguageDialog(context),
+            tooltip: l.settings,
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => showSettingsSheet(context),
           ),
-          if (context.read<CacheSettings>().isAvailable)
-            IconButton(
-              tooltip: l.storageTitle,
-              icon: const Icon(Icons.sd_storage_outlined),
-              onPressed: () => showStorageDialog(context),
-            ),
           IconButton(
             tooltip: l.deviceNameTooltip(context.watch<DeviceIdentity>().name),
             icon: const Icon(Icons.badge_outlined),

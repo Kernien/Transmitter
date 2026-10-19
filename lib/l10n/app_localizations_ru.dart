@@ -370,6 +370,38 @@ class AppLocalizationsRu extends AppLocalizations {
       'Этот файл здесь не воспроизвести — откройте его в другом приложении';
 
   @override
+  String get settings => 'Настройки';
+
+  @override
+  String get theme => 'Оформление';
+
+  @override
+  String get themeSystem => 'Как в системе';
+
+  @override
+  String get themeLight => 'Светлая';
+
+  @override
+  String get themeDark => 'Тёмная';
+
+  @override
+  String get themeOcean => 'Океан';
+
+  @override
+  String get themeForest => 'Лес';
+
+  @override
+  String get themeSunset => 'Закат';
+
+  @override
+  String get themeNight => 'Ночь (чёрная)';
+
+  @override
+  String storageLimitValue(String size) {
+    return 'Лимит: $size';
+  }
+
+  @override
   String get storageTitle => 'Место на устройстве';
 
   @override

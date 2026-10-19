@@ -15,6 +15,7 @@ import '../features/vaults/vaults_screen.dart';
 import '../l10n/app_localizations.dart';
 import 'cache_settings.dart';
 import 'language_controller.dart';
+import 'theme_controller.dart';
 import 'vault_session_factory.dart';
 
 class TransmitterApp extends StatelessWidget {
@@ -25,6 +26,7 @@ class TransmitterApp extends StatelessWidget {
     required this.device,
     required this.language,
     required this.cacheSettings,
+    required this.theme,
     required this.sessions,
     required this.files,
     this.media = const NoMediaPicker(),
@@ -38,6 +40,7 @@ class TransmitterApp extends StatelessWidget {
   final DeviceIdentity device;
   final LanguageController language;
   final CacheSettings cacheSettings;
+  final ThemeController theme;
   final VaultSessionFactory sessions;
   final FileTransferService files;
   final MediaPicker media;
@@ -54,6 +57,7 @@ class TransmitterApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: device),
         ChangeNotifierProvider.value(value: language),
         ChangeNotifierProvider.value(value: cacheSettings),
+        ChangeNotifierProvider.value(value: theme),
         Provider.value(value: sessions),
         Provider<FileTransferService>.value(value: files),
         Provider<MediaPicker>.value(value: media),
@@ -61,8 +65,8 @@ class TransmitterApp extends StatelessWidget {
         Provider<IncomingShareSource>.value(value: incomingShares),
         Provider<ShareSender>.value(value: shareSender),
       ],
-      child: Consumer<LanguageController>(
-        builder: (context, language, _) => MaterialApp(
+      child: Consumer2<LanguageController, ThemeController>(
+        builder: (context, language, theme, _) => MaterialApp(
           title: 'Transmitter',
           // Язык: выбранный в приложении или (null) как в системе — русский
           // или английский, для остальных языков английский. Тексты —
@@ -71,12 +75,10 @@ class TransmitterApp extends StatelessWidget {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           debugShowCheckedModeBanner: false,
-          theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
-          darkTheme: ThemeData(
-            colorSchemeSeed: Colors.indigo,
-            brightness: Brightness.dark,
-            useMaterial3: true,
-          ),
+          // Оформление: как в системе или выбранный пресет.
+          theme: theme.light,
+          darkTheme: theme.dark,
+          themeMode: theme.mode,
           home: const IncomingShareListener(
             child: DeviceNamePrompt(child: VaultsScreen()),
           ),
