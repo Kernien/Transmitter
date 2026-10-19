@@ -17,8 +17,8 @@ right on the device: the cloud only ever sees meaningless bytes.
 | 🐧 **Linux** | AppImage — a single file, no installation; tested on Steam Deck |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — nothing to install |
 
-Version **0.10.0**. The interface is in **English and Russian** — it follows the
-system language, or pick one with the 🌐 button.
+Version **0.11.0**. The interface is in **English and Russian** — it follows the
+system language, or pick one in ⚙ *Settings*.
 
 ## Why
 
@@ -57,6 +57,9 @@ browser.
   “Redmi 10 · work”, “Laptop”.
 - **English and Russian.** The language follows the system or is chosen in the
   app — handy if you're learning a language.
+- **Choose the look.** Light or dark theme, as in the system, or a color
+  preset: *Ocean*, *Forest*, *Sunset*, *Night (black)* — the black background
+  saves battery on OLED screens.
 - **Photos right in the feed.** Previews for items with pictures and a
   full-screen viewer with zoom. Large photos (over 10 MB) load on request.
 - **Documents right in the app.** Text files (`.txt`, `.csv`, `.json`, `.log`,
@@ -68,7 +71,8 @@ browser.
   Linux and anything Transmitter doesn't show itself.
 - **Fast, even offline.** Items are kept on the device (encrypted, just like
   in the cloud): the feed opens instantly and shows what's saved without a
-  connection.
+  connection. Opened files are kept on the device too (limit in ⚙ *Settings* →
+  *Storage on this device*, 1 GB by default).
 - **Public boards.** Open any vault read-only and share it with anyone: with
   a reader key, items can be viewed, copied and downloaded, but not changed.
   Readers don't need a cloud account.
@@ -96,9 +100,9 @@ browser.
 ### Android
 
 1. Download the APK from [**Releases**](https://github.com/Kernien/Transmitter/releases):
-   - `Transmitter-0.10.0-android-arm64.apk` — for most phones from recent
+   - `Transmitter-0.11.0-android-arm64.apk` — for most phones from recent
      years;
-   - `Transmitter-0.10.0-android-armv7.apk` — for older or budget models, if
+   - `Transmitter-0.11.0-android-armv7.apk` — for older or budget models, if
      the first one doesn't install.
 2. Open the file on your phone. Android will ask to allow installs from this
    source (your browser or file manager) — allow it.
@@ -109,19 +113,19 @@ the cloud in the work profile also needs a browser there — clone one as well.
 
 ### Windows
 
-1. Download `Transmitter-0.10.0-windows-setup.exe` from [**Releases**](https://github.com/Kernien/Transmitter/releases)
+1. Download `Transmitter-0.11.0-windows-setup.exe` from [**Releases**](https://github.com/Kernien/Transmitter/releases)
    and run it. It installs for your user only — no administrator rights
    needed — and adds Transmitter to the Start menu. Uninstall it in
    **Settings → Apps**; your keys and cloud sign-ins are kept.
 2. On first launch Windows may say “Windows protected your PC” — the app has
    no paid code-signing certificate. Click **More info → Run anyway**.
 
-Prefer no installation? `Transmitter-0.10.0-windows-x64.zip` is a portable
+Prefer no installation? `Transmitter-0.11.0-windows-x64.zip` is a portable
 version: unpack it anywhere and run `transmitter.exe`.
 
 ### Linux and Steam Deck
 
-1. Download `Transmitter-0.10.0-linux-x86_64.AppImage` from [**Releases**](https://github.com/Kernien/Transmitter/releases).
+1. Download `Transmitter-0.11.0-linux-x86_64.AppImage` from [**Releases**](https://github.com/Kernien/Transmitter/releases).
 2. Make the file executable — in the file manager, right-click →
    **Properties → Permissions → Is executable** (or
    `chmod +x Transmitter-*.AppImage`) — and run it.
@@ -133,7 +137,7 @@ Desktop). To launch Transmitter from Game Mode as well, right-click the file →
 There is no QR scanner on Linux — paste the key as a string. Keys and cloud
 sign-ins are stored in `~/.local/share/app.transmitter.transmitter`
 (accessible only to your user). There is also
-`Transmitter-0.10.0-linux-x64.tar.gz`: extract it and run `transmitter`.
+`Transmitter-0.11.0-linux-x64.tar.gz`: extract it and run `transmitter`.
 
 ### Browser
 
@@ -200,8 +204,9 @@ open.
 ### 5. Manage
 
 - **Several vaults:** create another key — it gets its own feed.
-- **Language:** the 🌐 icon on the main screen — *As in the system*, Русский or
-  English. The choice is stored on each device separately.
+- **Settings:** the ⚙ icon on the main screen — *Appearance*, *Language*
+  (*As in the system*, Русский or English) and *Storage on this device* (not
+  in the browser). The choice is stored on each device separately.
 - **Device name:** the 🪪 icon on the main screen. On first launch Transmitter
   suggests a name itself.
 - **Clouds:** the ☁ icon on the main screen — sign in to or out of a cloud on
@@ -259,7 +264,6 @@ to change the vault. Reader keys open in Transmitter 0.7.0 and later.
 
 ## What's next
 
-- choosing the look: theme, color, background;
 - the MEGA cloud;
 - an iPhone version.
 

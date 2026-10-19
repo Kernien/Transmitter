@@ -14,6 +14,7 @@ WORK="$HOME/transmitter-build"
 FLUTTER="${FLUTTER:-$HOME/flutter/bin/flutter}"
 APP_ID="app.transmitter.transmitter"
 APPIMAGETOOL="$HOME/.cache/transmitter/appimagetool-x86_64.AppImage"
+RUNTIME="$HOME/.cache/transmitter/runtime-x86_64"
 
 version=$(sed -n 's/^version:[[:space:]]*\([0-9.]*\).*/\1/p' "$SRC/pubspec.yaml")
 echo "== Transmitter $version для Linux"
@@ -65,8 +66,16 @@ if [ ! -x "$APPIMAGETOOL" ]; then
     https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
   chmod +x "$APPIMAGETOOL"
 fi
+# Runtime AppImage тоже держим в кеше: иначе appimagetool скачивает его
+# при каждой сборке и падает, если GitHub не ответил.
+if [ ! -s "$RUNTIME" ]; then
+  curl -fsSL --retry 5 --retry-all-errors -o "$RUNTIME.part" \
+    https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64
+  mv "$RUNTIME.part" "$RUNTIME"
+fi
 out="$dist/Transmitter-$version-linux-x86_64.AppImage"
-ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 "$APPIMAGETOOL" --no-appstream "$appdir" "$out" >/dev/null
+ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 "$APPIMAGETOOL" --no-appstream \
+  --runtime-file "$RUNTIME" "$appdir" "$out" >/dev/null
 chmod +x "$out"
 
 echo "== Готово: $dist"

@@ -18,10 +18,10 @@ Bytes.
 | 🐧 **Linux** | AppImage — eine einzige Datei ohne Installation; getestet auf dem Steam Deck |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — keine Installation nötig |
 
-Version **0.10.0**.
+Version **0.11.0**.
 
 > **Sprache der Oberfläche.** Die App gibt es auf Englisch und Russisch; auf
-> einem deutschen System ist sie auf Englisch (umschalten mit der 🌐-Taste).
+> einem deutschen System ist sie auf Englisch (umschalten unter ⚙ „Settings“).
 > In dieser Anleitung stehen die Schaltflächen auf Deutsch, dahinter in
 > Klammern die englische Beschriftung aus der App, z. B. **Neuer Schlüssel**
 > („New key“).
@@ -65,6 +65,9 @@ Computer und Browser.
   „Redmi 10 · work“, „Laptop“.
 - **Englisch und Russisch.** Die Sprache folgt dem System oder wird in der App
   gewählt.
+- **Erscheinungsbild nach Wahl.** Helles oder dunkles Design, wie im System,
+  oder eine Farbvorlage: Ozean, Wald, Sonnenuntergang, Nacht (schwarz) — der
+  schwarze Hintergrund schont den Akku bei OLED-Bildschirmen.
 - **Fotos direkt im Verlauf.** Vorschauen bei Einträgen mit Bildern und eine
   Vollbildansicht mit Zoom. Große Fotos (über 10 MB) werden auf Knopfdruck
   geladen.
@@ -79,7 +82,9 @@ Computer und Browser.
   selbst anzeigt.
 - **Schnell, auch offline.** Einträge werden auf dem Gerät gespeichert
   (verschlüsselt, wie in der Cloud): Der Verlauf öffnet sich sofort und zeigt
-  ohne Verbindung das Gespeicherte.
+  ohne Verbindung das Gespeicherte. Geöffnete Dateien bleiben ebenfalls auf dem
+  Gerät (Limit unter ⚙ „Settings“ → „Storage on this device“, standardmäßig
+  1 GB).
 - **Öffentliche Boards.** Öffne einen beliebigen Tresor nur zum Lesen und
   teile ihn mit anderen: Mit einem Leseschlüssel lassen sich Einträge ansehen,
   kopieren und herunterladen, aber nicht ändern. Leser brauchen kein
@@ -109,9 +114,9 @@ Computer und Browser.
 ### Android
 
 1. Lade die APK unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter:
-   - `Transmitter-0.10.0-android-arm64.apk` — für die meisten Handys der
+   - `Transmitter-0.11.0-android-arm64.apk` — für die meisten Handys der
      letzten Jahre;
-   - `Transmitter-0.10.0-android-armv7.apk` — für ältere oder günstige
+   - `Transmitter-0.11.0-android-armv7.apk` — für ältere oder günstige
      Modelle, falls sich die erste nicht installieren lässt.
 2. Öffne die Datei auf dem Handy. Android fragt, ob Installationen aus dieser
    Quelle (Browser oder Dateimanager) erlaubt sind — erlaube es.
@@ -123,7 +128,7 @@ klone ihn ebenfalls.
 
 ### Windows
 
-1. Lade `Transmitter-0.10.0-windows-setup.exe` unter [**Releases**](https://github.com/Kernien/Transmitter/releases)
+1. Lade `Transmitter-0.11.0-windows-setup.exe` unter [**Releases**](https://github.com/Kernien/Transmitter/releases)
    herunter und starte es. Die Installation gilt nur für deinen Benutzer —
    ohne Administratorrechte — und legt Transmitter im Startmenü an.
    Deinstallieren unter **Einstellungen → Apps**; Schlüssel und
@@ -133,12 +138,12 @@ klone ihn ebenfalls.
    Signaturzertifikat. Klicke auf **Weitere Informationen → Trotzdem
    ausführen**.
 
-Lieber ohne Installation? `Transmitter-0.10.0-windows-x64.zip` ist eine
+Lieber ohne Installation? `Transmitter-0.11.0-windows-x64.zip` ist eine
 portable Version: irgendwo entpacken und `transmitter.exe` starten.
 
 ### Linux und Steam Deck
 
-1. Lade `Transmitter-0.10.0-linux-x86_64.AppImage` unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter.
+1. Lade `Transmitter-0.11.0-linux-x86_64.AppImage` unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter.
 2. Mache die Datei ausführbar — im Dateimanager per Rechtsklick →
    **Eigenschaften → Berechtigungen → Ausführbar** (oder
    `chmod +x Transmitter-*.AppImage`) — und starte sie.
@@ -151,7 +156,7 @@ Bibliothek unter den Nicht-Steam-Spielen.
 Unter Linux gibt es keinen QR-Scanner — füge den Schlüssel als Text ein.
 Schlüssel und Cloud-Anmeldungen liegen in
 `~/.local/share/app.transmitter.transmitter` (nur für deinen Benutzer
-lesbar). Außerdem gibt es `Transmitter-0.10.0-linux-x64.tar.gz`: entpacken und
+lesbar). Außerdem gibt es `Transmitter-0.11.0-linux-x64.tar.gz`: entpacken und
 `transmitter` starten.
 
 ### Browser
@@ -228,9 +233,10 @@ der Verlauf geöffnet ist.
 
 - **Mehrere Tresore:** Lege einen weiteren Schlüssel an — er bekommt einen
   eigenen Verlauf.
-- **Sprache:** das 🌐-Symbol auf dem Startbildschirm — wie im System
-  („As in the system“), Русский oder English. Die Wahl gilt für jedes Gerät
-  einzeln.
+- **Einstellungen:** das ⚙-Symbol auf dem Startbildschirm („Settings“) —
+  Erscheinungsbild („Appearance“), Sprache („Language“: wie im System,
+  Русский oder English) und Speicher auf dem Gerät („Storage on this device“,
+  nicht im Browser). Die Wahl gilt für jedes Gerät einzeln.
 - **Gerätename:** das 🪪-Symbol auf dem Startbildschirm. Beim ersten Start
   schlägt Transmitter selbst einen Namen vor.
 - **Clouds:** das ☁-Symbol auf dem Startbildschirm — auf diesem Gerät bei
@@ -292,7 +298,6 @@ Transmitter 0.7.0.
 
 ## Wie es weitergeht
 
-- Erscheinungsbild wählen: Design, Farbe, Hintergrund;
 - die Cloud MEGA;
 - eine Version für das iPhone.
 
