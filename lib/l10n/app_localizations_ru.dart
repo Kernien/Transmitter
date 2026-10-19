@@ -194,6 +194,29 @@ class AppLocalizationsRu extends AppLocalizations {
       'Завершите вход в открывшемся окне браузера…';
 
   @override
+  String passwordSignInExplanation(String provider) {
+    return 'Войдите почтой и паролем от аккаунта $provider. Пароль не сохраняется: приложение хранит только сеанс входа. У $provider нет доступа «только к одной папке», поэтому технически приложение видит весь диск, но работает только с папкой «Transmitter». Всё содержимое шифруется до отправки.';
+  }
+
+  @override
+  String get emailLabel => 'Почта';
+
+  @override
+  String get passwordLabel => 'Пароль';
+
+  @override
+  String get showPassword => 'Показать пароль';
+
+  @override
+  String get hidePassword => 'Скрыть пароль';
+
+  @override
+  String get secondFactorCodeLabel => 'Код двухфакторной аутентификации';
+
+  @override
+  String get signingIn => 'Вход…';
+
+  @override
   String signInTo(String provider) {
     return 'Войти в $provider';
   }
@@ -540,6 +563,22 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String errAuthTokenFailed(String provider, String details) {
     return 'Не удалось получить токен $provider ($details)';
+  }
+
+  @override
+  String get errCloudWrongPassword => 'Неверная почта или пароль';
+
+  @override
+  String get errCloudSecondFactorRequired =>
+      'Введите код из приложения-аутентификатора';
+
+  @override
+  String get errCloudSecondFactorWrong =>
+      'Неверный код — проверьте приложение-аутентификатор и попробуйте снова';
+
+  @override
+  String errCloudAccountBlocked(String provider) {
+    return 'Аккаунт $provider заблокирован — проверьте его на сайте $provider';
   }
 
   @override

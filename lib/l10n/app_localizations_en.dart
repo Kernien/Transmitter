@@ -194,6 +194,29 @@ class AppLocalizationsEn extends AppLocalizations {
       'Finish signing in in the browser window…';
 
   @override
+  String passwordSignInExplanation(String provider) {
+    return 'Sign in with your $provider email and password. The password isn\'t stored: the app keeps only the sign-in session. $provider has no access limited to one folder, so technically the app could see your whole drive, but it only works with the Transmitter folder. Everything is encrypted before it\'s sent.';
+  }
+
+  @override
+  String get emailLabel => 'Email';
+
+  @override
+  String get passwordLabel => 'Password';
+
+  @override
+  String get showPassword => 'Show password';
+
+  @override
+  String get hidePassword => 'Hide password';
+
+  @override
+  String get secondFactorCodeLabel => 'Two-factor authentication code';
+
+  @override
+  String get signingIn => 'Signing in…';
+
+  @override
   String signInTo(String provider) {
     return 'Sign in to $provider';
   }
@@ -540,6 +563,22 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String errAuthTokenFailed(String provider, String details) {
     return 'Couldn\'t get a $provider token ($details)';
+  }
+
+  @override
+  String get errCloudWrongPassword => 'Wrong email or password';
+
+  @override
+  String get errCloudSecondFactorRequired =>
+      'Enter the code from your authenticator app';
+
+  @override
+  String get errCloudSecondFactorWrong =>
+      'Wrong code — check the authenticator app and try again';
+
+  @override
+  String errCloudAccountBlocked(String provider) {
+    return 'The $provider account is blocked — check it on the $provider website';
   }
 
   @override

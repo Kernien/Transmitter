@@ -19,6 +19,10 @@ enum ErrorCode {
   authNoCode, // provider
   authTokenFailed, // provider, details
   authNoOfflineAccess, // provider
+  cloudWrongPassword,
+  cloudSecondFactorRequired,
+  cloudSecondFactorWrong,
+  cloudAccountBlocked, // provider
   // Работа с облаком.
   cloudNotConnected,
   cloudSignInAgain,

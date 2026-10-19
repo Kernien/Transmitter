@@ -416,6 +416,48 @@ abstract class AppLocalizations {
   /// **'Finish signing in in the browser window…'**
   String get finishSignInInBrowser;
 
+  /// No description provided for @passwordSignInExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with your {provider} email and password. The password isn\'t stored: the app keeps only the sign-in session. {provider} has no access limited to one folder, so technically the app could see your whole drive, but it only works with the Transmitter folder. Everything is encrypted before it\'s sent.'**
+  String passwordSignInExplanation(String provider);
+
+  /// No description provided for @emailLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get emailLabel;
+
+  /// No description provided for @passwordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get passwordLabel;
+
+  /// No description provided for @showPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Show password'**
+  String get showPassword;
+
+  /// No description provided for @hidePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide password'**
+  String get hidePassword;
+
+  /// No description provided for @secondFactorCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Two-factor authentication code'**
+  String get secondFactorCodeLabel;
+
+  /// No description provided for @signingIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing in…'**
+  String get signingIn;
+
   /// No description provided for @signInTo.
   ///
   /// In en, this message translates to:
@@ -997,6 +1039,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t get a {provider} token ({details})'**
   String errAuthTokenFailed(String provider, String details);
+
+  /// No description provided for @errCloudWrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong email or password'**
+  String get errCloudWrongPassword;
+
+  /// No description provided for @errCloudSecondFactorRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the code from your authenticator app'**
+  String get errCloudSecondFactorRequired;
+
+  /// No description provided for @errCloudSecondFactorWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong code — check the authenticator app and try again'**
+  String get errCloudSecondFactorWrong;
+
+  /// No description provided for @errCloudAccountBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'The {provider} account is blocked — check it on the {provider} website'**
+  String errCloudAccountBlocked(String provider);
 
   /// No description provided for @errAuthNoOfflineAccess.
   ///

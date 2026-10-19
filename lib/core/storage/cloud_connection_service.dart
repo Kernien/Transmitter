@@ -44,9 +44,36 @@ class CloudConnectionService extends ChangeNotifier {
   /// Проводит вход, проверяет доступ пробным запросом и сохраняет данные.
   ///
   /// Вызывайте прямо из обработчика нажатия (см. [CloudProviderAdapter.signIn]).
-  Future<void> connect(CloudProviderId id) async {
+  Future<void> connect(CloudProviderId id) {
     final adapter = _registry.adapterFor(id);
-    var credentials = await adapter.signIn();
+    return _finishConnect(id, adapter, adapter.signIn());
+  }
+
+  /// Вход по почте и паролю (см. [PasswordCloudAdapter]).
+  Future<void> connectWithPassword(
+    CloudProviderId id, {
+    required String email,
+    required String password,
+    String? secondFactorCode,
+  }) {
+    final adapter = _registry.adapterFor(id) as PasswordCloudAdapter;
+    return _finishConnect(
+      id,
+      adapter,
+      adapter.signInWithPassword(
+        email: email,
+        password: password,
+        secondFactorCode: secondFactorCode,
+      ),
+    );
+  }
+
+  Future<void> _finishConnect(
+    CloudProviderId id,
+    CloudProviderAdapter adapter,
+    Future<String> signIn,
+  ) async {
+    var credentials = await signIn;
     final storage = adapter.createStorage(
       credentials,
       onCredentialsChanged: (updated) async => credentials = updated,

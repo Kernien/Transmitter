@@ -63,6 +63,13 @@ class StorageAuthException extends StorageException {
   ]);
 }
 
+/// Для входа нужен код двухфакторной аутентификации: интерфейс показывает
+/// поле для кода и повторяет вход.
+class SecondFactorRequiredException extends StorageAuthException {
+  const SecondFactorRequiredException()
+    : super(ErrorCode.cloudSecondFactorRequired);
+}
+
 class StorageNotFoundException extends StorageException {
   StorageNotFoundException(String path)
     : super(ErrorCode.cloudFileNotFound, {'path': path});

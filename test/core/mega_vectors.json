@@ -1,0 +1,90 @@
+{
+ "aes": {
+  "key": "7e000000000000400000000000004000",
+  "data": "40800000004000000000000000000000408080800000000040000000000000004000400000000000000000003800400038000000400000000000003800000000",
+  "ecb": "d5a8c5f1bff9041c756911ec471f3c45bfb2555383dbd1fc201c02a8c977f6bc60444569bc802a621da09fd62547873a63e623ad4bac83034f4b7547e47cd5ba",
+  "cbc": "d5a8c5f1bff9041c756911ec471f3c4534cd32dedd6d6a6d38189ffa1101ac6faabc24402f413bbc43b29673b6485870082a86abb4dffb70dfdb28499475376c"
+ },
+ "v1": {
+  "password": "Пароль-v1 longer than 16 bytes",
+  "email": "user.v1@example.com",
+  "passwordKey": "9b8b2dfbb54f2d8eeadf6f6cb8060942",
+  "userHash": "jTmqGIe8igM"
+ },
+ "v2": {
+  "password": "Secret пароль 2",
+  "salt": "AAAAQAAAADgAAAAAAAAAAABAAAAAAABAAECAgAAAAEA",
+  "passwordKey": "57a89e87a74d1ee166d8f099f14f3f2f",
+  "userHash": "2dgYTmuHliSuZOcfxl8tKA"
+ },
+ "files": [
+  {
+   "size": 0,
+   "key": "00000038000000000000000038000000",
+   "nonce": "0000000000004000",
+   "plainSha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "dataSha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "mac": "17c5094db86e0532"
+  },
+  {
+   "size": 5,
+   "key": "40000000000000000040000000000000",
+   "nonce": "0000004000003800",
+   "plainSha": "e4a1f94a3293668300ec33ca4d3c8b0fae4d53e71b703857d8f284db5da7e039",
+   "dataSha": "e26023469d09382904ac070ca6e0336add747fe63104e00cfad38247de447296",
+   "mac": "b0063a98a2a6ee49"
+  },
+  {
+   "size": 16,
+   "key": "004080c0000000000040000000400000",
+   "nonce": "0040000000000000",
+   "plainSha": "e8b08e9361ac06032f032ba148447ca9f5949242faf5d05b83fabda9847bdb53",
+   "dataSha": "f1cef26f97d57868b7f26e55f23c94da456da0be96ff0cce003a36db94f40374",
+   "mac": "907fe64f356179f9"
+  },
+  {
+   "size": 131072,
+   "key": "00000000000000004000408000000000",
+   "nonce": "0000000000000000",
+   "plainSha": "b092d699d0bf56a4f179ee34d97ad70d40496fbaea1ff134c5fa3f776f823790",
+   "dataSha": "afa71a5aa8c1c90e7a3c83535d40d5d69074a797cbdb0a93f94523ff8ea0d4c5",
+   "mac": "86dfdad15290a35d"
+  },
+  {
+   "size": 131075,
+   "key": "00000000004000000000400000400000",
+   "nonce": "0000000000000000",
+   "plainSha": "d11dad93e9e7c0913dfe88df7363e7bc4739f6aa52d96ebc3e8ced14562cddfd",
+   "dataSha": "a8e81078be6265200f690b2ba7ee964507e8e2fa0b4b684a5ded8e4ff6de0a72",
+   "mac": "6a664516109073e2"
+  },
+  {
+   "size": 1000000,
+   "key": "00000000400000380000000000000040",
+   "nonce": "80c0000000000000",
+   "plainSha": "cadcc1ca75a2f8c28428bca6dcac9ae7295bf6e0c2df968ffd8c172908ca0b2f",
+   "dataSha": "10b86db44324f25e1cc935dff7f53a6c4908c1c282babd3453b2b608b0b2dc2c",
+   "mac": "4ee9ec2f0400f485"
+  },
+  {
+   "size": 6291463,
+   "key": "0000400000004080c000000000400000",
+   "nonce": "0040808000000000",
+   "plainSha": "3abd0eb9d9f296eec779a1e227e78695811cc993552c2338459b74cf0f9620cb",
+   "dataSha": "eba76926b05454ce9fdf1bf77b36653bd30ed48f539cf3578e67212c66024a99",
+   "mac": "122b5e4a2f01831b"
+  }
+ ],
+ "attributes": {
+  "key": "40000000000040000000004000000040",
+  "name": "Имя файла.bin",
+  "encrypted": "CSUZg4BNwFMOQSqeWCT3COLxSvrz9ikDuS78FbMN2PxhcXksFigWcb8NV99A2OTz"
+ },
+ "session": {
+  "masterKey": "80000000000000000000000000000040",
+  "privk": "OE5vsTNGXKx0_C2p8F-DiE0n0sLm3-YXCipfCaNfcnhvjFUN6zqVX0HR4LF9Ihbvwqgd0xEfXdrdPSNZbPht0c8z-fMcHK83VeYzAEfM1G6nxjGWFWqn_jmF3M9r5qeyMjBdP_gMYN3InbaPubxdYZt_4MBwlyAwPLL5Dtib8AgZcVAyCdxJrnOkRw2Qfu4fVaRBP9UMXt8fDdtYO5M66HhpnWtuEFWn5efb32qSk4JfUq02G6uZcElhRrv1UnngHujdog6nXRUHI_F4-Fc1MINv98YHE-2SgTUdDPCPe1KdwPgEdMINtCVo-z2q3bEjf3aoOQBvTUFsZFDlg1E6H5C3UX7dyQmeL3ocCnCh8EK3WBAXlnABvxCZL-UNCxatZUPfcU4UF8W0p5ECqvn7M7b0sg2FnCmc8Tif0nW7wWe6bv7HgJhXYql4c8LJUc2OCrtfq4g-rwft5sWUq9cFT9eeTYZ9kRzdK6Cq5i5NV3UeQIxx410lBCRmUFTbRaX-NfXukKidxHYUbKQkgjhHGImdTq1f5vAD-44VX9GWaxQynpO72qAUU2IIP2BVhzkuwt0FdkNNAIaOc5BhODNzv7chUGj0VSO3zpbu5V87Deqp7cv1PUzwb9tzUqf1uJlCypt_BHtsTAkxPxBaf7sq0D01NMPxwQlNLRv0Gur_kutp_d1yjcjdwz6J38M1HM4qiC4nNSlOxby7Set3zSHxUILb8EvEhbG8CW2HZtiGQK9UVYv0HICiaIl2hbIzWMGRb3SLiDOzoFK5k7VGi1nxCt1VfC4hdh4cHvKVgHx190Dy-VotvszEZOFCIG6PthQuwfiU3zjXYxodokxg0ZnwvbhovL6tLqP9I5kHxHoLjYk",
+  "csid": "B_sFQhrFIWxnUZ47osY5g4Hiw8ro2PMVMD7Iq8o_1_9I4x5HyLvQB9ainnq6HQNJruZSFizWT4Soyv4irB3wFaiNd-3Hgc-B6bfSgkf1WWa0X5FRxiFcDjgEbJkyQI2ytVcW4iwh2vtkhjPNY-t3cDpKjhZJ9xVZtpj1pmeLiJL_rbcK1_yhIYtvebtLHX9gICPfteoBGstriAnMEwpYsS973KjxDhGzOxiZmYrm3Y06fFkm4YlAxWnpG_KUiidVBAkC3ysdkRp9_3tJR0J6wUwAwlCeehx8kyfg-QptQSh3zFm0HAQkSJd2Oulhks03d2pYbeCu1VvRERgmQrLfQ2UH",
+  "sid": "AYAAAAA4IAAAAAAAAAAAAABAAAAAAAAAQABAgAAAAEAAAAAAAAAAQABAeA",
+  "k": "LjaikD4swgh7uVV-tBSH7g"
+ }
+}

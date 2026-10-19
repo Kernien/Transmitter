@@ -28,6 +28,17 @@ abstract interface class CloudProviderAdapter {
   });
 }
 
+/// Облако со входом по почте и паролю прямо в приложении, без браузера.
+/// [signIn] у такого облака не используется.
+abstract interface class PasswordCloudAdapter implements CloudProviderAdapter {
+  /// Бросает [SecondFactorRequiredException], если нужен код 2FA.
+  Future<String> signInWithPassword({
+    required String email,
+    required String password,
+    String? secondFactorCode,
+  });
+}
+
 /// Набор доступных облаков. Облака, которых нет в реестре, показываются в
 /// интерфейсе как «скоро».
 class CloudProviderRegistry {
