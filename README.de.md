@@ -7,7 +7,7 @@ Registrierung, ohne fremde Server, mit Ende-zu-Ende-Verschlüsselung.**
 
 Einen Link auf dem Handy kopieren — ein paar Sekunden später ist er auf dem
 Computer. Ein Dokument im Büro ins Fenster ziehen — es wartet schon auf dem
-Handy. Alles liegt in **deiner eigenen Cloud** (Dropbox oder Google Drive) und
+Handy. Alles liegt in **deiner eigenen Cloud** (Dropbox, Google Drive oder MEGA) und
 wird direkt auf dem Gerät verschlüsselt: Die Cloud sieht nur bedeutungslose
 Bytes.
 
@@ -18,7 +18,7 @@ Bytes.
 | 🐧 **Linux** | AppImage — eine einzige Datei ohne Installation; getestet auf dem Steam Deck |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — keine Installation nötig |
 
-Version **0.11.0**.
+Version **0.12.0**.
 
 > **Sprache der Oberfläche.** Die App gibt es auf Englisch und Russisch; auf
 > einem deutschen System ist sie auf Englisch (umschalten unter ⚙ „Settings“).
@@ -98,7 +98,9 @@ Computer und Browser.
   vor dem Senden verschlüsselt und nur auf deinen Geräten entschlüsselt.
 - **Kein eigener Server.** Deine Daten liegen nur in deiner Cloud, in einem
   eigenen Ordner: `Apps/<App-Name>` in Dropbox oder `Transmitter` in Google
-  Drive. Andere Dateien sieht Transmitter nicht. Mehr dazu in der
+  Drive bzw. MEGA. In Dropbox und Google Drive sieht Transmitter keine anderen
+  Dateien; MEGA kennt keinen Zugriff auf nur einen Ordner, die App arbeitet
+  aber nur mit ihrem eigenen. Mehr dazu in der
   [Datenschutzerklärung](https://kernien.github.io/transmitter-web/privacy.html).
 - **Der Schlüssel ist Adresse und Passwort zugleich.** Jedes Gerät mit dem
   Schlüssel eines Tresors kann darin lesen und schreiben. Gib Schlüssel nur an
@@ -114,9 +116,9 @@ Computer und Browser.
 ### Android
 
 1. Lade die APK unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter:
-   - `Transmitter-0.11.0-android-arm64.apk` — für die meisten Handys der
+   - `Transmitter-0.12.0-android-arm64.apk` — für die meisten Handys der
      letzten Jahre;
-   - `Transmitter-0.11.0-android-armv7.apk` — für ältere oder günstige
+   - `Transmitter-0.12.0-android-armv7.apk` — für ältere oder günstige
      Modelle, falls sich die erste nicht installieren lässt.
 2. Öffne die Datei auf dem Handy. Android fragt, ob Installationen aus dieser
    Quelle (Browser oder Dateimanager) erlaubt sind — erlaube es.
@@ -128,7 +130,7 @@ klone ihn ebenfalls.
 
 ### Windows
 
-1. Lade `Transmitter-0.11.0-windows-setup.exe` unter [**Releases**](https://github.com/Kernien/Transmitter/releases)
+1. Lade `Transmitter-0.12.0-windows-setup.exe` unter [**Releases**](https://github.com/Kernien/Transmitter/releases)
    herunter und starte es. Die Installation gilt nur für deinen Benutzer —
    ohne Administratorrechte — und legt Transmitter im Startmenü an.
    Deinstallieren unter **Einstellungen → Apps**; Schlüssel und
@@ -138,12 +140,12 @@ klone ihn ebenfalls.
    Signaturzertifikat. Klicke auf **Weitere Informationen → Trotzdem
    ausführen**.
 
-Lieber ohne Installation? `Transmitter-0.11.0-windows-x64.zip` ist eine
+Lieber ohne Installation? `Transmitter-0.12.0-windows-x64.zip` ist eine
 portable Version: irgendwo entpacken und `transmitter.exe` starten.
 
 ### Linux und Steam Deck
 
-1. Lade `Transmitter-0.11.0-linux-x86_64.AppImage` unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter.
+1. Lade `Transmitter-0.12.0-linux-x86_64.AppImage` unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter.
 2. Mache die Datei ausführbar — im Dateimanager per Rechtsklick →
    **Eigenschaften → Berechtigungen → Ausführbar** (oder
    `chmod +x Transmitter-*.AppImage`) — und starte sie.
@@ -156,7 +158,7 @@ Bibliothek unter den Nicht-Steam-Spielen.
 Unter Linux gibt es keinen QR-Scanner — füge den Schlüssel als Text ein.
 Schlüssel und Cloud-Anmeldungen liegen in
 `~/.local/share/app.transmitter.transmitter` (nur für deinen Benutzer
-lesbar). Außerdem gibt es `Transmitter-0.11.0-linux-x64.tar.gz`: entpacken und
+lesbar). Außerdem gibt es `Transmitter-0.12.0-linux-x64.tar.gz`: entpacken und
 `transmitter` starten.
 
 ### Browser
@@ -171,14 +173,17 @@ Cloud-Anmeldung werden in diesem Browser gespeichert.
 ### 1. Erstes Gerät: Tresor anlegen
 
 1. Tippe auf **Neuer Schlüssel** („New key“), gib einen Namen ein (z. B.
-   „Privat ↔ Arbeit“) und wähle die Cloud (**Dropbox** oder **Google
-   Drive**) und die **maximale Dateigröße** („Maximum file size“; später nicht
+   „Privat ↔ Arbeit“) und wähle die Cloud (**Dropbox**, **Google
+   Drive** oder **MEGA**) und die **maximale Dateigröße** („Maximum file size“; später nicht
    änderbar) → **Erstellen** („Create“).
 2. Der QR-Code des Schlüssels erscheint — du kannst ihn schließen, er ist
    jederzeit über das ⋮-Menü erreichbar.
 3. Tippe auf den neuen Tresor → **Bei Dropbox anmelden** („Sign in to
    Dropbox“, bzw. Google Drive). Melde dich an und erlaube den Zugriff — der
-   Verlauf öffnet sich.
+   Verlauf öffnet sich. Bei MEGA meldest du dich mit E-Mail und Passwort
+   direkt in der App an (und mit einem Code, falls die
+   Zwei-Faktor-Authentifizierung aktiv ist); das Passwort wird nicht
+   gespeichert.
 
 ### 2. Weitere Geräte: denselben Tresor verbinden
 
@@ -247,8 +252,9 @@ der Verlauf geöffnet ist.
 
 ### 6. Öffentliche Boards: mit anderen teilen
 
-Jeder Tresor lässt sich **nur zum Lesen** öffnen — zum Beispiel, um eine
-Sammlung von Links oder Fotos mit Freunden oder Kollegen zu teilen.
+Jeder Tresor in Dropbox oder Google Drive lässt sich **nur zum Lesen**
+öffnen — zum Beispiel, um eine Sammlung von Links oder Fotos mit Freunden oder
+Kollegen zu teilen. Für MEGA gibt es öffentliche Boards noch nicht.
 
 **Besitzer:**
 
@@ -298,7 +304,7 @@ Transmitter 0.7.0.
 
 ## Wie es weitergeht
 
-- die Cloud MEGA;
+- öffentliche Boards für MEGA;
 - eine Version für das iPhone.
 
 ---

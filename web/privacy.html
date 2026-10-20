@@ -27,8 +27,8 @@
 
 <p>Transmitter — приложение для передачи ссылок и небольших файлов между
 <strong>своими</strong> устройствами. У приложения нет собственного сервера:
-данные хранятся только в облачном хранилище самого пользователя (Dropbox или
-Google Drive) и шифруются на устройстве до отправки.</p>
+данные хранятся только в облачном хранилище самого пользователя (Dropbox,
+Google Drive или MEGA) и шифруются на устройстве до отправки.</p>
 
 <h2>Какие данные обрабатываются</h2>
 <ul>
@@ -59,6 +59,13 @@ Google, соответствует <a href="https://developers.google.com/terms/
 <p>Приложение работает только с папкой «Приложения/&lt;имя приложения&gt;» в
 вашем Dropbox и не имеет доступа к остальным файлам.</p>
 
+<h2>Доступ к MEGA</h2>
+<p>Вход в MEGA выполняется почтой и паролем прямо в приложении. Пароль не
+сохраняется и никуда, кроме серверов MEGA, не отправляется; на устройстве
+хранится только сеанс входа. У MEGA нет доступа «только к одной папке», поэтому
+технически сеанс даёт доступ ко всему диску, но приложение работает только с
+папкой «Transmitter» в корне облачного диска.</p>
+
 <h2>Удаление данных</h2>
 <ul>
   <li>Записи удаляются в приложении («Удалить для всех устройств», «Очистить
@@ -66,7 +73,8 @@ Google, соответствует <a href="https://developers.google.com/terms/
   <li>Доступ приложения к облаку можно отозвать: в Transmitter (☁ → «Выйти»),
     а также в настройках аккаунта Google
     (<a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>)
-    или Dropbox (Настройки → Подключённые приложения).</li>
+    или Dropbox (Настройки → Подключённые приложения). Сеансы MEGA можно
+    завершить в настройках MEGA (Настройки → Безопасность → Сеансы).</li>
   <li>Удаление приложения удаляет с устройства ключи и токены.</li>
 </ul>
 
@@ -85,7 +93,7 @@ Google, соответствует <a href="https://developers.google.com/terms/
 
 <p>Transmitter is an app for moving links and small files between
 <strong>your own</strong> devices. It has no server of its own: data is stored
-only in the user's own cloud storage (Dropbox or Google Drive) and is encrypted
+only in the user's own cloud storage (Dropbox, Google Drive or MEGA) and is encrypted
 on the device before it is sent.</p>
 
 <h2>What data is processed</h2>
@@ -114,6 +122,13 @@ API Services User Data Policy</a>, including the Limited Use requirements.</p>
 <p>The app works only with the “Apps/&lt;app name&gt;” folder in your Dropbox
 and has no access to your other files.</p>
 
+<h2>MEGA access</h2>
+<p>You sign in to MEGA with your email and password right in the app. The
+password isn't stored and isn't sent anywhere except MEGA's servers; only the
+sign-in session is kept on the device. MEGA has no single-folder access, so
+technically the session covers your whole drive, but the app only works with
+the “Transmitter” folder at the root of your Cloud Drive.</p>
+
 <h2>Deleting data</h2>
 <ul>
   <li>Delete items in the app (“Delete on all devices”, “Clear feed”) or delete
@@ -121,7 +136,8 @@ and has no access to your other files.</p>
   <li>Revoke the app's cloud access in Transmitter (☁ → Sign out), in your
     Google account settings
     (<a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>)
-    or in Dropbox (Settings → Connected apps).</li>
+    or in Dropbox (Settings → Connected apps). MEGA sessions can be ended in
+    MEGA's settings (Settings → Security → Sessions).</li>
   <li>Uninstalling the app removes keys and tokens from the device.</li>
 </ul>
 
