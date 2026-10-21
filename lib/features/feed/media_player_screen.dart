@@ -3,21 +3,23 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:video_player/video_player.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 
 import '../../app/l10n.dart';
 import '../../domain/post.dart';
 import 'feed_controller.dart';
 import 'player/playable_source.dart';
 
-/// Видео и музыка прямо в приложении — системным проигрывателем (Android,
-/// Windows, браузер). Если формат не поддерживается, предлагается открыть
-/// файл в другом приложении.
+/// Видео и музыка прямо в приложении — плеером media_kit (libmpv: почти любые
+/// форматы, в том числе .avi и .mkv; в браузере — плеер браузера). Если файл
+/// не играет, предлагается открыть его в другом приложении.
 ///
-/// Пока видео играет, экран не гаснет. «На весь экран» прячет заголовок
-/// (на телефоне — и системные панели, горизонтальное видео поворачивается);
-/// кнопки во время воспроизведения прячутся сами и появляются по нажатию.
+/// Пока видео играет, экран не гаснет; свёрнутое приложение ставит видео на
+/// паузу, а музыка играет дальше (и при выключенном экране). «На весь экран»
+/// прячет заголовок (на телефоне — и системные панели, горизонтальное видео
+/// поворачивается); кнопки во время воспроизведения прячутся сами и
+/// появляются по нажатию.
 class MediaPlayerScreen extends StatefulWidget {
   const MediaPlayerScreen({super.key, required this.feed, required this.post});
 
@@ -25,11 +27,17 @@ class MediaPlayerScreen extends StatefulWidget {
   final Post post;
 
   /// Встроенный плеер есть на Android, Windows и в браузере; на Linux —
-  /// только «Открыть в другом приложении».
+  /// только «Открыть в другом приложении» (libmpv пришлось бы класть в
+  /// AppImage).
   static bool get isSupported =>
       kIsWeb ||
       defaultTargetPlatform == TargetPlatform.android ||
       defaultTargetPlatform == TargetPlatform.windows;
+
+  /// Вызывается один раз при запуске приложения (в `main.dart`).
+  static void initialize() {
+    if (isSupported) MediaKit.ensureInitialized();
+  }
 
   static Future<void> open(
     BuildContext context,
@@ -50,17 +58,21 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
 
   late final Attachment _attachment = widget.post.attachment!;
   PlayableSource? _source;
-  VideoPlayerController? _player;
+  Player? _player;
+  VideoController? _video;
+  final List<StreamSubscription<Object?>> _subscriptions = [];
   Object? _error;
   bool _disposed = false;
+
+  /// Файл открылся: известна длительность.
+  bool _loaded = false;
+  bool _hasPicture = false;
 
   bool _fullscreen = false;
   bool _controlsVisible = true;
   Timer? _hideTimer;
-  bool _awake = false;
 
-  bool get _isVideo =>
-      _attachment.isVideo && (_player?.value.size ?? Size.zero) != Size.zero;
+  bool get _isVideo => _attachment.isVideo && _hasPicture;
 
   @override
   void initState() {
@@ -81,29 +93,40 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
         return;
       }
       _source = source;
-      final player = source.controller();
-      await player.initialize();
-      if (_disposed) {
-        await player.dispose();
-        return;
-      }
-      player.addListener(_onPlayerChanged);
-      await player.play();
-      setState(() => _player = player);
-      _scheduleHide();
+      final player = Player();
+      _player = player;
+      // Вывод картинки подключается до открытия файла, иначе первые кадры
+      // теряются. Для музыки он не нужен.
+      if (_attachment.isVideo) _video = VideoController(player);
+      final stream = player.stream;
+      _subscriptions.addAll([
+        stream.playing.listen(_onPlayingChanged),
+        stream.duration.listen((d) {
+          if (d > Duration.zero && !_loaded && mounted) {
+            setState(() => _loaded = true);
+            _scheduleHide();
+          }
+        }),
+        stream.width.listen((w) {
+          final picture = (w ?? 0) > 0;
+          if (picture != _hasPicture && mounted) {
+            setState(() => _hasPicture = picture);
+            _scheduleHide();
+          }
+        }),
+        // Ошибка до начала воспроизведения — файл не открылся.
+        stream.error.listen((e) {
+          if (!_loaded && mounted) setState(() => _error = e);
+        }),
+      ]);
+      await player.open(source.media());
+      if (mounted) setState(() {});
     } catch (e) {
       if (!_disposed) setState(() => _error = e);
     }
   }
 
-  /// Экран не гаснет только пока видео действительно играет.
-  void _onPlayerChanged() {
-    final playing = _player?.value.isPlaying ?? false;
-    final keepAwake = playing && _attachment.isVideo;
-    if (keepAwake != _awake) {
-      _awake = keepAwake;
-      WakelockPlus.toggle(enable: keepAwake);
-    }
+  void _onPlayingChanged(bool playing) {
     if (!playing && !_controlsVisible && mounted) {
       setState(() => _controlsVisible = true);
     }
@@ -118,7 +141,7 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     _hideTimer?.cancel();
     if (!_isVideo) return;
     _hideTimer = Timer(_hideDelay, () {
-      if (mounted && (_player?.value.isPlaying ?? false)) {
+      if (mounted && (_player?.state.playing ?? false)) {
         setState(() => _controlsVisible = false);
       }
     });
@@ -130,7 +153,8 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
     if (value) {
       await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-      final landscape = (_player?.value.aspectRatio ?? 1) > 1;
+      final state = _player?.state;
+      final landscape = (state?.width ?? 1) > (state?.height ?? 1);
       await SystemChrome.setPreferredOrientations(
         landscape
             ? [
@@ -153,7 +177,6 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
   void dispose() {
     _disposed = true;
     _hideTimer?.cancel();
-    if (_awake) WakelockPlus.disable();
     if (_fullscreen &&
         !kIsWeb &&
         defaultTargetPlatform == TargetPlatform.android) {
@@ -161,8 +184,10 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
     }
     final player = _player;
     final source = _source;
-    player?.removeListener(_onPlayerChanged);
     () async {
+      for (final s in _subscriptions) {
+        await s.cancel();
+      }
       await player?.dispose();
       await source?.dispose();
     }();
@@ -249,8 +274,16 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       );
     }
     final player = _player;
-    if (player == null) {
-      return const Center(child: CircularProgressIndicator());
+    final video = _video;
+    if (player == null || !_loaded) {
+      return Stack(
+        children: [
+          // Картинка должна быть в дереве с самого начала: так media_kit
+          // узнаёт её размер.
+          if (video != null) Positioned.fill(child: _picture(video)),
+          const Center(child: CircularProgressIndicator()),
+        ],
+      );
     }
     return Stack(
       children: [
@@ -262,19 +295,16 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
                 ? (_controlsVisible
                       ? () => setState(() => _controlsVisible = false)
                       : _showControls)
-                : () => player.value.isPlaying ? player.pause() : player.play(),
-            child: Center(
-              child: _isVideo
-                  ? AspectRatio(
-                      aspectRatio: player.value.aspectRatio,
-                      child: VideoPlayer(player),
-                    )
-                  : const Icon(
+                : player.playOrPause,
+            child: video != null && _isVideo
+                ? _picture(video)
+                : const Center(
+                    child: Icon(
                       Icons.music_note,
                       size: 120,
                       color: Colors.white54,
                     ),
-            ),
+                  ),
           ),
         ),
         Positioned(
@@ -300,6 +330,10 @@ class _MediaPlayerScreenState extends State<MediaPlayerScreen> {
       ],
     );
   }
+
+  /// Картинка видео. Пока играет, экран не гаснет; в фоне — пауза.
+  static Widget _picture(VideoController video) =>
+      Video(controller: video, controls: NoVideoControls);
 }
 
 /// Пуск/пауза, перемотка, время, «На весь экран».
@@ -311,7 +345,7 @@ class _Controls extends StatelessWidget {
     required this.onInteraction,
   });
 
-  final VideoPlayerController player;
+  final Player player;
   final bool fullscreen;
   final VoidCallback? onFullscreen;
 
@@ -327,6 +361,7 @@ class _Controls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    final stream = player.stream;
     return DecoratedBox(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -337,62 +372,79 @@ class _Controls extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: ValueListenableBuilder(
-          valueListenable: player,
-          builder: (context, value, _) {
-            final total = value.duration.inMilliseconds.toDouble();
-            final position = value.position.inMilliseconds
-                .clamp(0, value.duration.inMilliseconds)
-                .toDouble();
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
-              child: Row(
-                children: [
-                  IconButton(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
+          child: Row(
+            children: [
+              StreamBuilder(
+                stream: stream.playing,
+                initialData: player.state.playing,
+                builder: (context, snapshot) {
+                  final playing = snapshot.data ?? false;
+                  return IconButton(
                     color: Colors.white,
                     iconSize: 36,
-                    tooltip: value.isPlaying ? l.pause : l.play,
-                    icon: Icon(
-                      value.isPlaying ? Icons.pause : Icons.play_arrow,
-                    ),
+                    tooltip: playing ? l.pause : l.play,
+                    icon: Icon(playing ? Icons.pause : Icons.play_arrow),
                     onPressed: () {
-                      value.isPlaying ? player.pause() : player.play();
+                      player.playOrPause();
                       onInteraction();
                     },
-                  ),
-                  Text(
-                    _time(value.position),
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                  Expanded(
-                    child: Slider(
-                      value: total > 0 ? position : 0,
-                      max: total > 0 ? total : 1,
-                      onChanged: total > 0
-                          ? (ms) {
-                              player.seekTo(Duration(milliseconds: ms.round()));
-                              onInteraction();
-                            }
-                          : null,
-                    ),
-                  ),
-                  Text(
-                    _time(value.duration),
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                  if (onFullscreen != null)
-                    IconButton(
-                      color: Colors.white,
-                      tooltip: fullscreen ? l.exitFullscreen : l.fullscreen,
-                      icon: Icon(
-                        fullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
-                      ),
-                      onPressed: onFullscreen,
-                    ),
-                ],
+                  );
+                },
               ),
-            );
-          },
+              Expanded(
+                child: StreamBuilder(
+                  stream: stream.position,
+                  initialData: player.state.position,
+                  builder: (context, snapshot) {
+                    final duration = player.state.duration;
+                    final position = snapshot.data ?? Duration.zero;
+                    final total = duration.inMilliseconds.toDouble();
+                    return Row(
+                      children: [
+                        Text(
+                          _time(position),
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        Expanded(
+                          child: Slider(
+                            value: total > 0
+                                ? position.inMilliseconds
+                                      .clamp(0, duration.inMilliseconds)
+                                      .toDouble()
+                                : 0,
+                            max: total > 0 ? total : 1,
+                            onChanged: total > 0
+                                ? (ms) {
+                                    player.seek(
+                                      Duration(milliseconds: ms.round()),
+                                    );
+                                    onInteraction();
+                                  }
+                                : null,
+                          ),
+                        ),
+                        Text(
+                          _time(duration),
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              if (onFullscreen != null)
+                IconButton(
+                  color: Colors.white,
+                  tooltip: fullscreen ? l.exitFullscreen : l.fullscreen,
+                  icon: Icon(
+                    fullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                  ),
+                  onPressed: onFullscreen,
+                ),
+            ],
+          ),
         ),
       ),
     );

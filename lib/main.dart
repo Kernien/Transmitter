@@ -34,12 +34,14 @@ import 'core/storage/providers/mega/mega_adapter.dart';
 import 'core/vault/vault_key.dart';
 import 'core/vault/reader_key_store.dart';
 import 'core/vault/vault_key_store.dart';
+import 'features/feed/media_player_screen.dart';
 import 'features/vaults/vaults_controller.dart';
 
 /// Точка сборки зависимостей. Конкретные реализации создаются только здесь,
 /// остальной код получает их через интерфейсы.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  MediaPlayerScreen.initialize();
 
   // Ключи баз и токены облаков. Идентификатор — как у приложения на
   // Android и Linux (папка данных на Linux).

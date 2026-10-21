@@ -78,6 +78,16 @@ flutter test        # все тесты: должны проходить пер�
 flutter analyze     # статический анализ
 ```
 
+Шифрование AES-GCM — BoringSSL через пакет `webcrypto`. Для `flutter test`
+его библиотеку нужно один раз собрать в `.dart_tool/webcrypto/` (и заново
+после `flutter clean`); на Windows для этого и для сборки приложения нужны
+CMake из Visual Studio Build Tools и NASM (`winget install NASM.NASM`):
+
+```powershell
+$env:Path += ";$env:LOCALAPPDATA\bin\NASM;C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin"
+dart run webcrypto:setup
+```
+
 Ключи облаков: публичные — в `config/dev.json` (в git), секретные — в
 `config/secrets.json` (не в git; если его нет, создайте файл с `{}`).
 Передаются при запуске:
@@ -250,6 +260,9 @@ Dropbox. Для личного использования этого доста�
 | Положение и размер окна на Windows и Linux; название доски у читателей; понятная ошибка без сети | ✅ (0.8.0) |
 | Чтение документов: текстовые файлы (UTF-8/UTF-16/Windows-1251), Markdown с оформлением, .docx | ✅ (0.9.0) |
 | Плеер видео и музыки (video_player; Windows — video_player_win; Linux — другим приложением), на весь экран, экран не гаснет | ✅ (0.10.0) |
+| Плеер на media_kit (libmpv: .avi, .mkv, .wmv…; Android и Windows), музыка не встаёт на паузу при выключенном экране | ✅ (0.13.0) |
+| Шифрование на BoringSSL (webcrypto): файлы из кеша открываются в десятки раз быстрее | ✅ (0.13.0) |
+| Тёмные темы редакторов: Dracula, Nord, One Dark, Solarized Dark, Gruvbox, Catppuccin Mocha | ✅ (0.13.0) |
 | «Открыть в другом приложении» (Android — FileProvider, ПК — программа по умолчанию) | ✅ (0.10.0) |
 | Все открытые файлы на устройстве, лимит 500 МБ–5 ГБ (по умолчанию 1 ГБ), «Место на устройстве» | ✅ (0.10.0) |
 | Оформление: как в системе, светлая, тёмная и пресеты «Океан», «Лес», «Закат», «Ночь (чёрная)»; ⚙ «Настройки» (оформление, язык, место) | ✅ (0.11.0) |
@@ -331,6 +344,9 @@ Dropbox. Для личного использования этого доста�
      текст с заголовками, списками и таблицами ().
      PDF и .doc — не делаем (PDF: +5–8 МБ движка, решено 2026-10-17).
    - аудио и видео ✅ (0.10.0) — встроенный плеер (`media_player_screen.dart`);
+     с 0.13.0 — media_kit (libmpv) на Android и Windows. Linux пока
+     открывает видео другим приложением: для встроенного плеера нужен
+     libmpv-dev при сборке и libmpv внутри AppImage.
 
    Файлы до 100 МБ расшифровываются в память целиком, так что отдельная
    потоковая расшифровка не нужна.

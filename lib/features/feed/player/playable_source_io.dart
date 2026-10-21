@@ -3,7 +3,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:path_provider/path_provider.dart';
-import 'package:video_player/video_player.dart';
+import 'package:media_kit/media_kit.dart';
 
 import 'playable_source_stub.dart' show PlayableSource;
 
@@ -35,7 +35,7 @@ class _FileSource implements PlayableSource {
   final File _file;
 
   @override
-  VideoPlayerController controller() => VideoPlayerController.file(_file);
+  Media media() => Media(_file.path);
 
   @override
   Future<void> dispose() async {

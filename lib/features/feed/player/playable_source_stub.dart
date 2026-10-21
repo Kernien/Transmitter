@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 
-import 'package:video_player/video_player.dart';
+import 'package:media_kit/media_kit.dart';
 
 /// Расшифрованный файл, готовый для плеера. [dispose] убирает его следы.
 abstract interface class PlayableSource {
-  VideoPlayerController controller();
+  Media media();
 
   Future<void> dispose();
 }

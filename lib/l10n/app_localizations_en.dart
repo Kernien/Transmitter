@@ -420,6 +420,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themeNight => 'Night (black)';
 
   @override
+  String get themeDracula => 'Dracula';
+
+  @override
+  String get themeNord => 'Nord';
+
+  @override
+  String get themeOneDark => 'One Dark';
+
+  @override
+  String get themeSolarized => 'Solarized Dark';
+
+  @override
+  String get themeGruvbox => 'Gruvbox';
+
+  @override
+  String get themeCatppuccin => 'Catppuccin Mocha';
+
+  @override
   String storageLimitValue(String size) {
     return 'Limit: $size';
   }

@@ -812,6 +812,42 @@ abstract class AppLocalizations {
   /// **'Night (black)'**
   String get themeNight;
 
+  /// No description provided for @themeDracula.
+  ///
+  /// In en, this message translates to:
+  /// **'Dracula'**
+  String get themeDracula;
+
+  /// No description provided for @themeNord.
+  ///
+  /// In en, this message translates to:
+  /// **'Nord'**
+  String get themeNord;
+
+  /// No description provided for @themeOneDark.
+  ///
+  /// In en, this message translates to:
+  /// **'One Dark'**
+  String get themeOneDark;
+
+  /// No description provided for @themeSolarized.
+  ///
+  /// In en, this message translates to:
+  /// **'Solarized Dark'**
+  String get themeSolarized;
+
+  /// No description provided for @themeGruvbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Gruvbox'**
+  String get themeGruvbox;
+
+  /// No description provided for @themeCatppuccin.
+  ///
+  /// In en, this message translates to:
+  /// **'Catppuccin Mocha'**
+  String get themeCatppuccin;
+
   /// No description provided for @storageLimitValue.
   ///
   /// In en, this message translates to:

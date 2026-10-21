@@ -1,7 +1,7 @@
 import 'dart:js_interop';
 import 'dart:typed_data';
 
-import 'package:video_player/video_player.dart';
+import 'package:media_kit/media_kit.dart';
 import 'package:web/web.dart' as web;
 
 import 'playable_source_stub.dart' show PlayableSource;
@@ -27,8 +27,7 @@ class _BlobSource implements PlayableSource {
   final String _url;
 
   @override
-  VideoPlayerController controller() =>
-      VideoPlayerController.networkUrl(Uri.parse(_url));
+  Media media() => Media(_url);
 
   @override
   Future<void> dispose() async => web.URL.revokeObjectURL(_url);

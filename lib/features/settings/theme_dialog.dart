@@ -13,6 +13,12 @@ String themeName(AppLocalizations l, AppTheme theme) => switch (theme) {
   AppTheme.forest => l.themeForest,
   AppTheme.sunset => l.themeSunset,
   AppTheme.night => l.themeNight,
+  AppTheme.dracula => l.themeDracula,
+  AppTheme.nord => l.themeNord,
+  AppTheme.oneDark => l.themeOneDark,
+  AppTheme.solarized => l.themeSolarized,
+  AppTheme.gruvbox => l.themeGruvbox,
+  AppTheme.catppuccin => l.themeCatppuccin,
 };
 
 /// Выбор оформления: как в системе или один из пресетов (с образцом цвета).

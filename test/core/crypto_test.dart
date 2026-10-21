@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:cryptography/cryptography.dart'
+    show AesGcm, SecretBox, SecretKey;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:transmitter/core/crypto/aes_gcm_cipher.dart';
 import 'package:transmitter/core/crypto/cipher.dart';
@@ -60,6 +62,23 @@ void main() {
         );
       },
     );
+
+    // Формат не изменился при переходе с пакета cryptography на webcrypto:
+    // данные пользователей, зашифрованные раньше, читаются, и наоборот.
+    test('совместим с прежней реализацией (cryptography)', () async {
+      final legacy = AesGcm.with256bits();
+      final plain = utf8.encode('старая запись');
+      final old = await legacy.encrypt(plain, secretKey: SecretKey(key));
+      expect(await cipher.decrypt(old.concatenation()), plain);
+
+      final fresh = await cipher.encrypt(plain);
+      final box = SecretBox.fromConcatenation(
+        fresh,
+        nonceLength: 12,
+        macLength: 16,
+      );
+      expect(await legacy.decrypt(box, secretKey: SecretKey(key)), plain);
+    });
 
     test('слишком короткие данные дают DecryptionException', () {
       expect(

@@ -42,6 +42,31 @@ void main() {
     expect(primaries.length, greaterThanOrEqualTo(5));
   });
 
+  test('темы редакторов: родные фон и акцент, всегда тёмные', () {
+    final dracula = AppTheme.dracula.data(Brightness.light).colorScheme;
+    expect(dracula.brightness, Brightness.dark);
+    expect(dracula.surface, const Color(0xFF282A36));
+    expect(dracula.primary, const Color(0xFFBD93F9));
+    expect(dracula.onSurface, const Color(0xFFF8F8F2));
+
+    final palettes = [
+      for (final t in AppTheme.values)
+        if (t.palette != null) t,
+    ];
+    expect(palettes, hasLength(6));
+    for (final t in palettes) {
+      expect(t.brightness, Brightness.dark, reason: t.name);
+      final scheme = t.data(Brightness.light).colorScheme;
+      // Текст и кнопки читаются на фоне (контраст не меньше 4.5:1).
+      expect(_contrast(scheme.onSurface, scheme.surface), greaterThan(4.5));
+      expect(_contrast(scheme.onPrimary, scheme.primary), greaterThan(4.5));
+    }
+    // Фоны у всех тем разные.
+    expect({
+      for (final t in palettes) t.data(Brightness.dark).colorScheme.surface,
+    }, hasLength(6));
+  });
+
   testWidgets('«Настройки» → «Оформление» → пресет', (tester) async {
     final store = InMemoryKeyValueStore();
     final theme = ThemeController(store);
@@ -82,4 +107,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(theme.theme, AppTheme.night);
   });
+}
+
+/// Контраст двух цветов по WCAG.
+double _contrast(Color a, Color b) {
+  final la = a.computeLuminance(), lb = b.computeLuminance();
+  final (hi, lo) = la > lb ? (la, lb) : (lb, la);
+  return (hi + 0.05) / (lo + 0.05);
 }

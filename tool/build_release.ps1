@@ -16,6 +16,9 @@ if (-not (Test-Path android/key.properties)) {
 }
 # Секреты (config/secrets.json) не в git; если файла нет — создаём пустой.
 if (-not (Test-Path config/secrets.json)) { Set-Content config/secrets.json '{}' -Encoding ascii }
+# BoringSSL (пакет webcrypto) собирается под Windows с NASM.
+$nasm = "$env:LOCALAPPDATA\bin\NASM"
+if (Test-Path $nasm) { $env:Path = "$nasm;$env:Path" }
 $define = @('--dart-define-from-file=config/dev.json', '--dart-define-from-file=config/secrets.json')
 
 Invoke-Step 'Тесты' { flutter test }
