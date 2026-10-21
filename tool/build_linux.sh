@@ -30,6 +30,9 @@ cd "$WORK"
 
 echo "== Тесты"
 "$FLUTTER" pub get >/dev/null
+# BoringSSL (пакет webcrypto) для тестов: собирается один раз в .dart_tool.
+[ -f .dart_tool/webcrypto/libwebcrypto.so ] ||
+  "$(dirname "$FLUTTER")/dart" run webcrypto:setup
 "$FLUTTER" test
 
 echo "== Сборка"
