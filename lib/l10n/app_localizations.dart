@@ -1142,6 +1142,12 @@ abstract class AppLocalizations {
   /// **'{provider} is temporarily limiting requests, try again later'**
   String errCloudRateLimited(String provider);
 
+  /// No description provided for @errCloudStorageStalled.
+  ///
+  /// In en, this message translates to:
+  /// **'{provider}\'s storage server isn\'t responding. If the rest of the internet works, your provider may be blocking it — try a VPN'**
+  String errCloudStorageStalled(String provider);
+
   /// No description provided for @errCloudQuota.
   ///
   /// In en, this message translates to:

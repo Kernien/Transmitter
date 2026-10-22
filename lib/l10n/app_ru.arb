@@ -186,6 +186,7 @@
   "errCloudWebSessionExpired": "Вход в {provider} в браузере действует около часа — войдите снова (☁ → {provider})",
   "errCloudTokenRefreshFailed": "Не удалось обновить токен {provider} ({details})",
   "errCloudRateLimited": "{provider} временно ограничил запросы, попробуйте позже",
+  "errCloudStorageStalled": "Сервер хранения {provider} не отвечает. Если остальной интернет работает, его может блокировать провайдер — попробуйте через VPN",
   "errCloudQuota": "В облаке закончилось место",
   "errCloudFileNotFound": "Файл уже удалён из облака",
   "errCloudNoUploadUrl": "{provider} не вернул адрес для загрузки файла",

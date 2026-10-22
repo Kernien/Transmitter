@@ -226,6 +226,8 @@
   "@errCloudTokenRefreshFailed": { "placeholders": { "provider": { "type": "String" }, "details": { "type": "String" } } },
   "errCloudRateLimited": "{provider} is temporarily limiting requests, try again later",
   "@errCloudRateLimited": { "placeholders": { "provider": { "type": "String" } } },
+  "errCloudStorageStalled": "{provider}'s storage server isn't responding. If the rest of the internet works, your provider may be blocking it — try a VPN",
+  "@errCloudStorageStalled": { "placeholders": { "provider": { "type": "String" } } },
   "errCloudQuota": "The cloud is out of space",
   "errCloudFileNotFound": "The file has already been deleted from the cloud",
   "errCloudNoUploadUrl": "{provider} didn't return an upload address",

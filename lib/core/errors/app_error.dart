@@ -30,6 +30,7 @@ enum ErrorCode {
   cloudWebSessionExpired, // provider
   cloudTokenRefreshFailed, // provider, details
   cloudRateLimited, // provider
+  cloudStorageStalled, // provider — сервер хранения не отдаёт данные
   cloudQuota,
   cloudFileNotFound, // path
   cloudNoUploadUrl, // provider

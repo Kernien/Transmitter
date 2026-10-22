@@ -631,6 +631,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String errCloudStorageStalled(String provider) {
+    return '$provider\'s storage server isn\'t responding. If the rest of the internet works, your provider may be blocking it — try a VPN';
+  }
+
+  @override
   String get errCloudQuota => 'The cloud is out of space';
 
   @override

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -492,6 +493,66 @@ void main() {
         storageOn(server).listFiles(''),
         throwsA(isA<StorageAuthException>()),
       );
+    });
+  });
+
+  group('скачивание с сервера хранения', () {
+    MegaApi apiWith(MockClientStreamHandler handler) => MegaApi(
+      MockClient.streaming(handler),
+      retryDelay: Duration.zero,
+      stallTimeout: const Duration(milliseconds: 100),
+    );
+
+    test('сервер не отвечает — ошибка, а не вечная загрузка', () async {
+      final api = apiWith((_, _) => Completer<http.StreamedResponse>().future);
+      await expectLater(
+        api.downloadBytes('https://gfs.example/file'),
+        throwsA(
+          isA<StorageException>().having(
+            (e) => e.code,
+            "code",
+            ErrorCode.cloudStorageStalled,
+          ),
+        ),
+      );
+    });
+
+    test('данные перестали идти посередине — ошибка', () async {
+      final api = apiWith((_, _) async {
+        final stalled = StreamController<List<int>>()..add([1, 2, 3]);
+        return http.StreamedResponse(stalled.stream, 200);
+      });
+      await expectLater(
+        api.downloadBytes('https://gfs.example/file'),
+        throwsA(
+          isA<StorageException>().having(
+            (e) => e.code,
+            "code",
+            ErrorCode.cloudStorageStalled,
+          ),
+        ),
+      );
+    });
+
+    test('медленная, но непрерывная передача доходит до конца', () async {
+      final api = apiWith((_, _) async {
+        // 8 кусков по 30 мс — дольше тайм-аута, но без пауз больше него.
+        final chunks = Stream.periodic(
+          const Duration(milliseconds: 30),
+          (i) => [i],
+        ).take(8);
+        return http.StreamedResponse(chunks, 200);
+      });
+      expect(await api.downloadBytes('https://gfs.example/file'), [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+      ]);
     });
   });
 

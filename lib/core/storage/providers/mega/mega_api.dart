@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../../../errors/app_error.dart';
+import '../../cloud_storage.dart';
 import 'mega_crypto.dart';
 
 /// Ошибка API MEGA: отрицательный код из ответа сервера.
@@ -42,6 +45,7 @@ class MegaApi {
     this.folder,
     this.gateway = defaultGateway,
     @visibleForTesting this.retryDelay = const Duration(seconds: 1),
+    @visibleForTesting this.stallTimeout = const Duration(seconds: 30),
   });
 
   static const String defaultGateway = 'https://g.api.mega.co.nz/';
@@ -50,6 +54,9 @@ class MegaApi {
   final http.Client _client;
   final String gateway;
   final Duration retryDelay;
+
+  /// Сколько ждать ответа или новых данных при скачивании файла.
+  final Duration stallTimeout;
 
   /// Сеанс после входа; без него доступны только команды входа.
   String? sid;
@@ -157,17 +164,31 @@ class MegaApi {
   }
 
   /// Скачивает зашифрованный файл по временному адресу из команды `g`.
+  ///
+  /// Если сервер [stallTimeout] не присылает ни ответа, ни новых данных,
+  /// бросается ошибка [ErrorCode.cloudStorageStalled] (без повторов): так
+  /// бывает, когда серверы хранения MEGA блокирует провайдер — соединение
+  /// открывается, а данные не идут. Общее время не ограничено: большой файл
+  /// качается сколько нужно.
   Future<Uint8List> downloadBytes(String url) async {
     for (var attempt = 0; ; attempt++) {
       try {
-        final response = await _client.get(Uri.parse(url));
+        final response = await _client
+            .send(http.Request('GET', Uri.parse(url)))
+            .timeout(stallTimeout);
         if (response.statusCode != 200) {
           throw http.ClientException(
             'MEGA download HTTP ${response.statusCode}',
             response.request?.url,
           );
         }
-        return response.bodyBytes;
+        final body = BytesBuilder(copy: false);
+        await response.stream.timeout(stallTimeout).forEach(body.add);
+        return body.takeBytes();
+      } on TimeoutException {
+        throw const StorageException(ErrorCode.cloudStorageStalled, {
+          'provider': 'MEGA',
+        });
       } on http.ClientException {
         if (attempt >= 2) rethrow;
         await Future<void>.delayed(retryDelay * pow(2, attempt));

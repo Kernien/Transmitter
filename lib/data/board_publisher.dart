@@ -231,10 +231,7 @@ class BoardPublisher {
     _state = null;
     // Ссылка закрывается явно: в MEGA это ссылка на папку, и удаление описи
     // её не закрыло бы.
-    await _sharing.unpublish(
-      _manifestPath(current),
-      current.manifestLocator,
-    );
+    await _sharing.unpublish(_manifestPath(current), current.manifestLocator);
     await _storage.delete(_manifestPath(current));
     for (final entry in current.fileLocators.entries) {
       await _sharing.unpublish(_attachmentPath(entry.key), entry.value);

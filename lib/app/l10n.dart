@@ -64,6 +64,7 @@ extension AppLocalizationsX on AppLocalizations {
         arg('details'),
       ),
       ErrorCode.cloudRateLimited => errCloudRateLimited(provider),
+      ErrorCode.cloudStorageStalled => errCloudStorageStalled(provider),
       ErrorCode.cloudQuota => errCloudQuota,
       ErrorCode.cloudFileNotFound => errCloudFileNotFound,
       ErrorCode.cloudNoUploadUrl => errCloudNoUploadUrl(provider),

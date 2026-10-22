@@ -631,6 +631,11 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String errCloudStorageStalled(String provider) {
+    return 'Сервер хранения $provider не отвечает. Если остальной интернет работает, его может блокировать провайдер — попробуйте через VPN';
+  }
+
+  @override
   String get errCloudQuota => 'В облаке закончилось место';
 
   @override
