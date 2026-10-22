@@ -31,6 +31,7 @@ import 'core/storage/providers/dropbox/dropbox_public_reader.dart';
 import 'core/storage/providers/google_drive/google_drive_adapter.dart';
 import 'core/storage/providers/google_drive/google_public_reader.dart';
 import 'core/storage/providers/mega/mega_adapter.dart';
+import 'core/storage/providers/mega/mega_public_reader.dart';
 import 'core/vault/vault_key.dart';
 import 'core/vault/reader_key_store.dart';
 import 'core/vault/vault_key_store.dart';
@@ -127,6 +128,7 @@ Future<void> main() async {
             client: httpClient,
             apiKey: AppConfig.googleApiKey,
           ),
+          CloudProviderId.mega: MegaPublicReader(httpClient),
         },
       ),
       language: language,

@@ -5,6 +5,8 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:transmitter/core/crypto/aes_gcm_cipher.dart';
+import 'package:transmitter/core/crypto/board_signature.dart';
 import 'package:transmitter/core/errors/app_error.dart';
 import 'package:transmitter/core/persistence/key_value_store.dart';
 import 'package:transmitter/core/storage/cloud_connection_service.dart';
@@ -14,8 +16,15 @@ import 'package:transmitter/core/storage/cloud_storage.dart';
 import 'package:transmitter/core/storage/providers/mega/mega_adapter.dart';
 import 'package:transmitter/core/storage/providers/mega/mega_api.dart';
 import 'package:transmitter/core/storage/providers/mega/mega_crypto.dart';
+import 'package:transmitter/core/storage/providers/mega/mega_links.dart';
+import 'package:transmitter/core/storage/providers/mega/mega_public_reader.dart';
 import 'package:transmitter/core/storage/providers/mega/mega_session.dart';
 import 'package:transmitter/core/storage/providers/mega/mega_storage.dart';
+import 'package:transmitter/core/vault/reader_key.dart';
+import 'package:transmitter/data/board_manifest_codec.dart';
+import 'package:transmitter/data/board_publisher.dart';
+import 'package:transmitter/data/encrypted_cloud_post_repository.dart';
+import 'package:transmitter/domain/board_snapshot.dart';
 
 final Map<String, dynamic> vectors = jsonDecode(
   File('test/core/mega_vectors.json').readAsStringSync(),
@@ -39,6 +48,13 @@ class FakeMega {
   final Map<int, ({int size, BytesBuilder data})> uploads = {};
   final List<String> commands = [];
 
+  /// Папки с общим ключом для ссылок (`EXP`) и публичные дескрипторы узлов.
+  final Set<String> exported = {};
+  final Map<String, String> publicHandles = {};
+
+  /// Ключи узлов для читателей: узел → (общая папка → ключ).
+  final Map<String, Map<String, String>> readerKeys = {};
+
   String? requiredMfa;
   bool sessionExpired = false;
   int againResponses = 0;
@@ -53,7 +69,12 @@ class FakeMega {
       final command =
           (jsonDecode(request.body) as List).single as Map<String, dynamic>;
       commands.add(command['a'] as String);
-      return _json([_command(command, url.queryParameters['sid'])]);
+      final folderLink = url.queryParameters['n'];
+      return _json([
+        folderLink != null
+            ? _readerCommand(command, folderLink)
+            : _command(command, url.queryParameters['sid']),
+      ]);
     }
     if (url.host == 'g.api.mega.co.nz' && url.path == '/sc') {
       final from = int.parse(url.queryParameters['sn']!);
@@ -109,15 +130,28 @@ class FakeMega {
       case 'ug':
         return {'u': userHandle};
       case 'f':
-        return {'f': nodes.values.toList(), 'sn': '${actions.length}'};
+        return {
+          'f': nodes.values.toList(),
+          's': [
+            for (final h in exported) {'h': h, 'u': 'EXP', 'r': 0, 'ts': 1},
+          ],
+          'ph': [
+            for (final MapEntry(:key, :value) in publicHandles.entries)
+              {'h': key, 'ph': value, 'ts': 1},
+          ],
+          'sn': '${actions.length}',
+        };
       case 'u':
         final id = _counter++;
         uploads[id] = (size: c['s'] as int, data: BytesBuilder());
         return {'p': 'https://upload.example/$id'};
       case 'p':
         final added = <Map<String, Object?>>[];
+        // В cr новые узлы называются так же, как в запросе (поле h).
+        final created = <String, String>{};
         for (final n in (c['n'] as List).cast<Map<String, dynamic>>()) {
           final handle = 'H${(_counter++).toString().padLeft(7, '0')}';
+          created[n['h'] as String] = handle;
           final isFile = n['t'] == 0;
           final node = <String, Object?>{
             'h': handle,
@@ -132,6 +166,9 @@ class FakeMega {
           nodes[handle] = node;
           added.add(node);
         }
+        if (c['cr'] case final List cr) {
+          _applyReaderKeys(cr, (ref) => created[ref]!);
+        }
         actions.add({
           'a': 't',
           't': {'f': added},
@@ -144,8 +181,99 @@ class FakeMega {
       case 'd':
         if (nodes.remove(c['n']) == null) return MegaApiException.eNoEnt;
         nodes.removeWhere((_, n) => n['p'] == c['n']);
+        exported.remove(c['n']);
+        publicHandles.remove(c['n']);
         actions.add({'a': 'd', 'n': c['n']});
         return 0;
+      case 's2':
+        final folder = c['n'] as String;
+        final share = (c['s'] as List).single as Map;
+        expect(share['u'], 'EXP');
+        // Как настоящий сервер: старый формат с ok/ha отвергается (EAGAIN).
+        if (c.containsKey('ok') || c.containsKey('ha')) {
+          return MegaApiException.eAgain;
+        }
+        if (share['r'] == '') {
+          exported.remove(folder);
+        } else {
+          exported.add(folder);
+        }
+        // cr внутри s2 настоящий сервер пропускает: ключи — только через k.
+        actions.add({'a': 's', 'n': folder, 'u': 'EXP', 'r': share['r']});
+        return {
+          'r': [0],
+        };
+      case 'k':
+        _applyReaderKeys(c['cr'] as List, (ref) => ref);
+        return 0;
+      case 'l':
+        final handle = c['n'] as String;
+        if (!nodes.containsKey(handle)) return MegaApiException.eNoEnt;
+        if (c['d'] == 1) {
+          publicHandles.remove(handle);
+          actions.add({'a': 'ph', 'h': handle, 'd': 1});
+          return 0;
+        }
+        final ph = publicHandles[handle] ??=
+            'P${(_counter++).toString().padLeft(7, '0')}';
+        actions.add({'a': 'ph', 'h': handle, 'ph': ph});
+        return ph;
+    }
+    return -2; // EARGS
+  }
+
+  /// `cr`: [общие папки, узлы, тройки (папка, узел, ключ)].
+  void _applyReaderKeys(List cr, String Function(String ref) resolve) {
+    final shares = (cr[0] as List).cast<String>();
+    final refs = (cr[1] as List).cast<String>();
+    final triples = cr[2] as List;
+    for (var i = 0; i < triples.length; i += 3) {
+      final node = resolve(refs[triples[i + 1] as int]);
+      (readerKeys[node] ??= {})[shares[triples[i] as int]] =
+          triples[i + 2] as String;
+    }
+  }
+
+  /// Команды читателя ссылки на папку (без сеанса).
+  Object? _readerCommand(Map<String, dynamic> c, String link) {
+    final folder = publicHandles.entries
+        .where((e) => e.value == link && exported.contains(e.key))
+        .firstOrNull
+        ?.key;
+    if (folder == null) return MegaApiException.eNoEnt;
+    bool inside(String? handle) {
+      for (
+        var h = handle;
+        h != null && h.isNotEmpty;
+        h = nodes[h]?['p'] as String?
+      ) {
+        if (h == folder) return true;
+      }
+      return false;
+    }
+
+    switch (c['a']) {
+      case 'f':
+        return {
+          'f': [
+            for (final node in nodes.values)
+              if (inside(node['h'] as String))
+                {
+                  ...node,
+                  // Читатель видит только ключ для своей папки.
+                  'k': switch (readerKeys[node['h']]?[folder]) {
+                    final key? => '$folder:$key',
+                    null => '',
+                  },
+                },
+          ],
+        };
+      case 'g':
+        final node = nodes[c['n']];
+        if (node == null || !inside(c['n'] as String)) {
+          return MegaApiException.eNoEnt;
+        }
+        return {'g': 'https://download.example/${c['n']}', 's': node['s']};
     }
     return -2; // EARGS
   }
@@ -364,6 +492,158 @@ void main() {
         storageOn(server).listFiles(''),
         throwsA(isA<StorageAuthException>()),
       );
+    });
+  });
+
+  group('публичные доски', () {
+    MegaPublicReader readerOf(FakeMega server) =>
+        MegaPublicReader(server.client, listingTtl: Duration.zero);
+
+    test('адрес: ссылка на папку и имя файла', () {
+      final link = MegaFolderLink(
+        publicHandle: 'abcDEF12',
+        shareKey: Uint8List.fromList(List.generate(16, (i) => i)),
+        fileName: 'x.board',
+      );
+      expect(link.encode(), startsWith('https://mega.nz/folder/abcDEF12#'));
+      final parsed = MegaFolderLink.parse(link.encode())!;
+      expect(parsed.publicHandle, 'abcDEF12');
+      expect(parsed.shareKey, link.shareKey);
+      expect(parsed.fileName, 'x.board');
+      expect(MegaFolderLink.parse('https://www.dropbox.com/scl/x'), isNull);
+      expect(MegaFolderLink.parse('https://mega.nz/folder/abc#AAAA/x'), isNull);
+      expect(MegaFolderLink.parse('https://mega.nz/folder/abc#AAAA'), isNull);
+    });
+
+    test('ключ папки одинаков на всех устройствах и разный у папок', () async {
+      final master = credentials().masterKey;
+      final a = await MegaFolderLink.deriveShareKey(master, 'FOLDER01');
+      expect(await MegaFolderLink.deriveShareKey(master, 'FOLDER01'), a);
+      expect(a, hasLength(16));
+      expect(await MegaFolderLink.deriveShareKey(master, 'FOLDER02'), isNot(a));
+    });
+
+    test('ссылка на папку переживает перезапись файла', () async {
+      final server = FakeMega();
+      final storage = storageOn(server);
+      await storage.upload('v/board/m.board', bytesOf(10));
+      final locator = await storage.publish('v/board/m.board');
+      final reader = readerOf(server);
+      expect(await reader.download(locator), bytesOf(10));
+
+      // MEGA при перезаписи создаёт новый узел — ссылка на папку та же.
+      await storage.upload('v/board/m.board', bytesOf(30));
+      expect(await reader.download(locator), bytesOf(30));
+      expect(await storage.publish('v/board/m.board'), locator);
+      expect(server.commands.where((c) => c == 's2'), hasLength(1));
+    });
+
+    test(
+      'второе устройство узнаёт о ссылке и даёт читателю ключи новых файлов',
+      () async {
+        final server = FakeMega();
+        final phone = storageOn(server);
+        final laptop = storageOn(server);
+        await phone.upload('v/files/a.bin', bytesOf(5));
+        // Ноутбук загрузил дерево, когда ссылки ещё не было.
+        expect(await laptop.listFiles('v/files'), hasLength(1));
+        final first = MegaFolderLink.parse(
+          await phone.publish('v/files/a.bin'),
+        )!;
+
+        await laptop.upload('v/files/b.bin', bytesOf(7));
+        final second = MegaFolderLink(
+          publicHandle: first.publicHandle,
+          shareKey: first.shareKey,
+          fileName: 'b.bin',
+        ).encode();
+        // Ключ для читателя ушёл вместе с загрузкой, до publish.
+        expect(await readerOf(server).download(second), bytesOf(7));
+        expect(await laptop.publish('v/files/b.bin'), second);
+      },
+    );
+
+    test('закрытая ссылка не читается, новая — другая', () async {
+      final server = FakeMega();
+      final storage = storageOn(server);
+      await storage.upload('v/board/m.board', bytesOf(10));
+      final locator = await storage.publish('v/board/m.board');
+
+      await storage.unpublish('v/board/m.board', locator);
+      await storage.unpublish('v/board/m.board', locator);
+      expect(server.exported, isEmpty);
+      expect(server.publicHandles, isEmpty);
+      await expectLater(
+        readerOf(server).download(locator),
+        throwsA(isA<StorageNotFoundException>()),
+      );
+
+      final reopened = await storage.publish('v/board/m.board');
+      expect(reopened, isNot(locator));
+      await expectLater(
+        readerOf(server).download(locator),
+        throwsA(isA<StorageNotFoundException>()),
+      );
+    });
+
+    test('доска на MEGA: читатель видит записи и файлы, закрытие', () async {
+      final server = FakeMega();
+      final storage = storageOn(server);
+      final encryptionKey = List<int>.generate(32, (i) => i + 9);
+      final signer = await BoardSigner.fromSeed(List<int>.filled(32, 3));
+      final repository = EncryptedCloudPostRepository(
+        storage: storage,
+        vaultId: 'vault1',
+        cipher: AesGcmCipher(encryptionKey),
+        deviceName: 'Телефон',
+      );
+      final publisher = BoardPublisher(
+        storage: storage,
+        sharing: storage,
+        vaultId: 'vault1',
+        cipher: AesGcmCipher(encryptionKey),
+        encryptionKey: encryptionKey,
+        signer: signer,
+        provider: CloudProviderId.mega,
+        loadPosts: repository.fetchPosts,
+      );
+      final reader = readerOf(server);
+      Future<BoardSnapshot> read(ReaderKey key) async =>
+          BoardManifestCodec(AesGcmCipher(key.encryptionKey)).decode(
+            await reader.download(key.locator),
+            BoardVerifier(key.ownerPublicKey),
+          );
+
+      await repository.sendText('первая');
+      final file = await repository.sendFile(
+        fileName: 'фото.jpg',
+        bytes: Uint8List.fromList([1, 2, 3]),
+      );
+      final key = await publisher.open(label: 'Доска');
+      expect(key.provider, CloudProviderId.mega);
+      var board = await read(key);
+      expect(board.posts, hasLength(2));
+      final encrypted = await reader.download(
+        board.fileLocators[file.attachment!.id]!,
+      );
+      expect(await AesGcmCipher(encryptionKey).decrypt(encrypted), [1, 2, 3]);
+
+      // Опись перезаписывается — ключ читателя тот же.
+      await repository.sendText('вторая');
+      await publisher.sync(await repository.fetchPosts());
+      board = await read(key);
+      expect(board.posts.map((p) => p.text), contains('вторая'));
+
+      await publisher.close();
+      await expectLater(
+        reader.download(key.locator),
+        throwsA(isA<StorageNotFoundException>()),
+      );
+      await expectLater(
+        reader.download(board.fileLocators[file.attachment!.id]!),
+        throwsA(isA<StorageNotFoundException>()),
+      );
+      expect(server.exported, isEmpty);
     });
   });
 }

@@ -233,6 +233,12 @@ class FeedController extends ChangeNotifier {
       _error = _repository.backgroundError;
     } catch (e) {
       _error = e;
+      // Владелец закрыл доску: старые записи не показываем — их файлы уже
+      // не открыть. При других ошибках (нет сети) лента остаётся.
+      if (e is CodedError && e.code == ErrorCode.boardClosed) {
+        _posts = const [];
+        _selected.clear();
+      }
     } finally {
       _refreshing = false;
       _initialLoad = false;

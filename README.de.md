@@ -18,7 +18,7 @@ Bytes.
 | 🐧 **Linux** | AppImage — eine einzige Datei ohne Installation; getestet auf dem Steam Deck |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — keine Installation nötig |
 
-Version **0.13.0**.
+Version **0.14.0**.
 
 > **Sprache der Oberfläche.** Die App gibt es auf Englisch und Russisch; auf
 > einem deutschen System ist sie auf Englisch (umschalten unter ⚙ „Settings“).
@@ -119,9 +119,9 @@ Computer und Browser.
 ### Android
 
 1. Lade die APK unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter:
-   - `Transmitter-0.13.0-android-arm64.apk` — für die meisten Handys der
+   - `Transmitter-0.14.0-android-arm64.apk` — für die meisten Handys der
      letzten Jahre;
-   - `Transmitter-0.13.0-android-armv7.apk` — für ältere oder günstige
+   - `Transmitter-0.14.0-android-armv7.apk` — für ältere oder günstige
      Modelle, falls sich die erste nicht installieren lässt.
 2. Öffne die Datei auf dem Handy. Android fragt, ob Installationen aus dieser
    Quelle (Browser oder Dateimanager) erlaubt sind — erlaube es.
@@ -133,7 +133,7 @@ klone ihn ebenfalls.
 
 ### Windows
 
-1. Lade `Transmitter-0.13.0-windows-setup.exe` unter [**Releases**](https://github.com/Kernien/Transmitter/releases)
+1. Lade `Transmitter-0.14.0-windows-setup.exe` unter [**Releases**](https://github.com/Kernien/Transmitter/releases)
    herunter und starte es. Die Installation gilt nur für deinen Benutzer —
    ohne Administratorrechte — und legt Transmitter im Startmenü an.
    Deinstallieren unter **Einstellungen → Apps**; Schlüssel und
@@ -143,12 +143,12 @@ klone ihn ebenfalls.
    Signaturzertifikat. Klicke auf **Weitere Informationen → Trotzdem
    ausführen**.
 
-Lieber ohne Installation? `Transmitter-0.13.0-windows-x64.zip` ist eine
+Lieber ohne Installation? `Transmitter-0.14.0-windows-x64.zip` ist eine
 portable Version: irgendwo entpacken und `transmitter.exe` starten.
 
 ### Linux und Steam Deck
 
-1. Lade `Transmitter-0.13.0-linux-x86_64.AppImage` unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter.
+1. Lade `Transmitter-0.14.0-linux-x86_64.AppImage` unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter.
 2. Mache die Datei ausführbar — im Dateimanager per Rechtsklick →
    **Eigenschaften → Berechtigungen → Ausführbar** (oder
    `chmod +x Transmitter-*.AppImage`) — und starte sie.
@@ -161,7 +161,7 @@ Bibliothek unter den Nicht-Steam-Spielen.
 Unter Linux gibt es keinen QR-Scanner — füge den Schlüssel als Text ein.
 Schlüssel und Cloud-Anmeldungen liegen in
 `~/.local/share/app.transmitter.transmitter` (nur für deinen Benutzer
-lesbar). Außerdem gibt es `Transmitter-0.13.0-linux-x64.tar.gz`: entpacken und
+lesbar). Außerdem gibt es `Transmitter-0.14.0-linux-x64.tar.gz`: entpacken und
 `transmitter` starten.
 
 ### Browser
@@ -255,9 +255,9 @@ der Verlauf geöffnet ist.
 
 ### 6. Öffentliche Boards: mit anderen teilen
 
-Jeder Tresor in Dropbox oder Google Drive lässt sich **nur zum Lesen**
-öffnen — zum Beispiel, um eine Sammlung von Links oder Fotos mit Freunden oder
-Kollegen zu teilen. Für MEGA gibt es öffentliche Boards noch nicht.
+Jeder Tresor (in Dropbox, Google Drive oder MEGA) lässt sich **nur zum
+Lesen** öffnen — zum Beispiel, um eine Sammlung von Links oder Fotos mit
+Freunden oder Kollegen zu teilen.
 
 **Besitzer:**
 
@@ -307,7 +307,6 @@ Transmitter 0.7.0.
 
 ## Wie es weitergeht
 
-- öffentliche Boards für MEGA;
 - eine Version für das iPhone.
 
 ---

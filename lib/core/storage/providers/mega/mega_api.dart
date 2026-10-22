@@ -39,6 +39,7 @@ class MegaApi {
   MegaApi(
     this._client, {
     this.sid,
+    this.folder,
     this.gateway = defaultGateway,
     @visibleForTesting this.retryDelay = const Duration(seconds: 1),
   });
@@ -53,6 +54,10 @@ class MegaApi {
   /// Сеанс после входа; без него доступны только команды входа.
   String? sid;
 
+  /// Публичный дескриптор папки: запросы от имени читателя ссылки на неё
+  /// (без входа).
+  final String? folder;
+
   int _sequence = Random().nextInt(0x7fffffff);
 
   /// Выполняет команду и возвращает её результат (объект, число, строку).
@@ -61,7 +66,7 @@ class MegaApi {
     final id = _sequence++;
     String? hashcash;
     for (var attempt = 0; ; attempt++) {
-      final query = {'id': '$id', 'sid': ?sid};
+      final query = {'id': '$id', 'sid': ?sid, 'n': ?folder};
       final response = await _client.post(
         Uri.parse('${gateway}cs').replace(queryParameters: query),
         headers: {'Content-Type': 'application/json', 'X-Hashcash': ?hashcash},

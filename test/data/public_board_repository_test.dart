@@ -10,7 +10,9 @@ import 'package:transmitter/data/board_publisher.dart';
 import 'package:transmitter/data/encrypted_cloud_post_repository.dart';
 import 'package:transmitter/data/public_board_repository.dart';
 import 'package:transmitter/data/publishing_post_repository.dart';
+import 'package:transmitter/features/feed/feed_controller.dart';
 
+import '../support/fake_file_transfer_service.dart';
 import '../support/sharing_cloud.dart';
 
 /// Сквозной сценарий: владелец открывает доступ, читатель читает только
@@ -83,6 +85,25 @@ void main() {
     final key = await publisher().open(label: 'Доска');
     await publisher().close();
     expect(reader(key).fetchPosts(), throwsA(isA<BoardClosedException>()));
+  });
+
+  test('лента читателя после закрытия пустеет и сообщает об этом', () async {
+    final owner = PublishingPostRepository(ownerRepository(), publisher());
+    await owner.sendText('на доске');
+    final key = await publisher().open(label: 'Доска');
+    final feed = FeedController(
+      reader(key),
+      files: FakeFileTransferService(),
+      pollInterval: const Duration(hours: 1),
+    );
+    await feed.refresh();
+    expect(feed.posts.single.text, 'на доске');
+
+    await publisher().close();
+    await feed.refresh();
+    expect(feed.posts, isEmpty);
+    expect(feed.error, isA<BoardClosedException>());
+    feed.dispose();
   });
 
   test('подменённую опись читатель отклоняет', () async {

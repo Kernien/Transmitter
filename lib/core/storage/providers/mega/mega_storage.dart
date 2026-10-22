@@ -4,9 +4,11 @@ import 'package:flutter/foundation.dart';
 
 import '../../../errors/app_error.dart';
 import '../../cloud_storage.dart';
+import '../../public_sharing.dart';
 import 'mega_aes.dart';
 import 'mega_api.dart';
 import 'mega_crypto.dart';
+import 'mega_links.dart';
 import 'mega_session.dart';
 
 /// Хранилище в MEGA: папка «Transmitter» в корне облачного диска.
@@ -14,7 +16,12 @@ import 'mega_session.dart';
 /// У MEGA нет запросов «файлы в папке»: дерево узлов загружается целиком
 /// (`f`), а дальше обновляется по журналу изменений (`/sc`). Имена узлов
 /// зашифрованы и расшифровываются только для нужных папок.
-class MegaStorage implements CloudStorage {
+///
+/// Для публичных досок открывается по ссылке папка с файлом
+/// ([MegaFolderLink]): у папки появляется общий ключ, и ключ каждого файла
+/// в ней передаётся ещё и зашифрованным этим ключом (`cr`) — так читатель
+/// расшифрует файлы, а перезапись не ломает ссылку.
+class MegaStorage implements CloudStorage, PublicSharing {
   MegaStorage({
     required this._api,
     required MegaCredentials credentials,
@@ -46,6 +53,15 @@ class MegaStorage implements CloudStorage {
   String? _sn;
   DateTime? _lastSync;
   Future<void>? _syncing;
+
+  /// Папки, открытые по ссылке (общий ключ `EXP`), и публичные дескрипторы
+  /// узлов.
+  final Set<String> _exported = {};
+  final Map<String, String> _publicHandles = {};
+  final Map<String, Uint8List> _shareKeys = {};
+
+  /// Журнал сообщил об изменении ссылок — дерево загрузим заново.
+  bool _sharingChanged = false;
 
   /// Изменения дерева (создание папок, загрузка) — по одному, чтобы не
   /// появлялись папки-двойники.
@@ -91,7 +107,7 @@ class MegaStorage implements CloudStorage {
         'provider': 'MEGA',
       });
     }
-    final completion = await _uploadPieces(url, encrypted.data);
+    final completion = MegaCrypto.b64(await _uploadPieces(url, encrypted.data));
 
     final fileKey = MegaCrypto.packFileKey(key, nonce, encrypted.mac);
     final result = await _request({
@@ -99,12 +115,13 @@ class MegaStorage implements CloudStorage {
       't': parent,
       'n': [
         {
-          'h': MegaCrypto.b64(completion),
+          'h': completion,
           't': 0,
           'a': MegaCrypto.encryptAttributes({'n': name}, key),
           'k': MegaCrypto.b64(_master.encryptEcb(fileKey)),
         },
       ],
+      'cr': ?await _keysForReaders(parent, completion, fileKey),
     });
     final added = _addNodes(result);
     // Перезапись: прежние версии с тем же именем удаляются.
@@ -160,6 +177,160 @@ class MegaStorage implements CloudStorage {
       await _deleteNode(node.handle);
     }
   });
+
+  // ----------------------------------------------------- Публичные ссылки
+
+  /// Открывает по ссылке папку с файлом [path] (если ещё не открыта) и
+  /// возвращает адрес файла в ней.
+  @override
+  Future<String> publish(String path) => _serial(() async {
+    var node = await _findFile(path);
+    if (node == null) {
+      await _sync(force: true);
+      node = await _findFile(path);
+    }
+    final key = node == null ? null : _nodeKey(node);
+    if (node == null || key == null) throw StorageNotFoundException(path);
+    final folder = node.parent!;
+    final shareKey = await _shareKey(folder);
+    final share = MegaAes(shareKey);
+    if (_exported.contains(folder)) {
+      // Файл могло загрузить устройство, ещё не знавшее, что папка открыта:
+      // ключ для читателей передаётся ещё раз (повтор безвреден).
+      await _request({
+        'a': 'k',
+        'cr': [
+          [folder],
+          [node.handle],
+          [0, 0, MegaCrypto.b64(share.encryptEcb(key))],
+        ],
+      }, path: path);
+    } else {
+      final keyed = [
+        for (final n in _subtree(folder))
+          if (_nodeKey(n) case final nodeKey?) (handle: n.handle, key: nodeKey),
+      ];
+      final keys = [
+        [folder],
+        [for (final n in keyed) n.handle],
+        [
+          for (var i = 0; i < keyed.length; i++) ...[
+            0,
+            i,
+            MegaCrypto.b64(share.encryptEcb(keyed[i].key)),
+          ],
+        ],
+      ];
+      // Прежний формат с ok/ha (как в megajs) сервер теперь отвергает, а cr
+      // внутри s2 молча пропускает — ключи для читателя уходят отдельно (k).
+      await _request({
+        'a': 's2',
+        'n': folder,
+        's': [
+          {'u': 'EXP', 'r': 0},
+        ],
+        'cr': keys,
+      }, path: path);
+      await _request({'a': 'k', 'cr': keys}, path: path);
+      _exported.add(folder);
+    }
+    var publicHandle = _publicHandles[folder];
+    if (publicHandle == null) {
+      final result = await _request({'a': 'l', 'n': folder}, path: path);
+      if (result is! String) throw StorageException.request('MEGA', 'l');
+      _publicHandles[folder] = publicHandle = result;
+    }
+    return MegaFolderLink(
+      publicHandle: publicHandle,
+      shareKey: shareKey,
+      fileName: _nameOf(node)!,
+    ).encode();
+  });
+
+  /// Закрывает ссылку на папку с файлом: перестают открываться все файлы
+  /// папки (у доски так и задумано — закрывается вся доска).
+  @override
+  Future<void> unpublish(String path, String locator) => _serial(() async {
+    final link = MegaFolderLink.parse(locator);
+    if (link == null) return;
+    await _sync(force: true);
+    final folder =
+        _publicHandles.entries
+            .where((e) => e.value == link.publicHandle)
+            .firstOrNull
+            ?.key ??
+        await _folderHandle(_split(path).$1, create: false);
+    if (folder == null ||
+        !_exported.contains(folder) && !_publicHandles.containsKey(folder)) {
+      return;
+    }
+    for (final command in [
+      {'a': 'l', 'n': folder, 'd': 1},
+      {
+        'a': 's2',
+        'n': folder,
+        's': [
+          {'u': 'EXP', 'r': ''},
+        ],
+      },
+    ]) {
+      try {
+        await _request(command, path: path);
+      } on StorageNotFoundException {
+        // Уже закрыто с другого устройства.
+      }
+    }
+    _exported.remove(folder);
+    _publicHandles.remove(folder);
+  });
+
+  /// Ключ нового узла [node] для читателей ссылок на папки над [parent]
+  /// (`cr`); `null`, если таких ссылок нет.
+  Future<List<Object>?> _keysForReaders(
+    String parent,
+    String node,
+    Uint8List key,
+  ) async {
+    final shares = [
+      for (final handle in _ancestors(parent))
+        if (_exported.contains(handle)) handle,
+    ];
+    if (shares.isEmpty) return null;
+    return [
+      shares,
+      [node],
+      [
+        for (var i = 0; i < shares.length; i++) ...[
+          i,
+          0,
+          MegaCrypto.b64(MegaAes(await _shareKey(shares[i])).encryptEcb(key)),
+        ],
+      ],
+    ];
+  }
+
+  Future<Uint8List> _shareKey(String folder) async => _shareKeys[folder] ??=
+      await MegaFolderLink.deriveShareKey(_credentials.masterKey, folder);
+
+  /// Папка [handle] и все папки над ней.
+  Iterable<String> _ancestors(String handle) sync* {
+    String? current = handle;
+    final seen = <String>{};
+    while (current != null && seen.add(current) && _nodes[current] != null) {
+      yield current;
+      current = _nodes[current]!.parent;
+    }
+  }
+
+  /// Узел [handle] и всё, что в нём лежит.
+  Iterable<_Node> _subtree(String handle) sync* {
+    final node = _nodes[handle];
+    if (node == null) return;
+    yield node;
+    for (final child in [...?_children[handle]]) {
+      yield* _subtree(child);
+    }
+  }
 
   // ------------------------------------------------------------ Дерево
 
@@ -329,6 +500,20 @@ class MegaStorage implements CloudStorage {
     _children.clear();
     _rootHandle = null;
     _addNodes(result);
+    _exported
+      ..clear()
+      ..addAll([
+        for (final share in result['s'] as List? ?? const [])
+          if (share is Map && share['u'] == 'EXP' && share['h'] is String)
+            share['h'] as String,
+      ]);
+    _publicHandles
+      ..clear()
+      ..addAll({
+        for (final link in result['ph'] as List? ?? const [])
+          if (link is Map && link['h'] is String && link['ph'] is String)
+            link['h'] as String: link['ph'] as String,
+      });
     _sn = result['sn'] as String?;
     _lastSync = _clock();
   }
@@ -350,6 +535,13 @@ class MegaStorage implements CloudStorage {
           break;
         }
       }
+      if (_sharingChanged) {
+        // Ссылки открыли или закрыли (возможно, с другого устройства):
+        // списки общих папок и ссылок есть только в полном дереве.
+        _sharingChanged = false;
+        await _loadTree();
+        return;
+      }
       _lastSync = _clock();
     } on MegaApiException catch (e) {
       if (e.code == MegaApiException.eSid) rethrow;
@@ -367,6 +559,8 @@ class MegaStorage implements CloudStorage {
       case 'd': // удаление (или первая половина перемещения)
         final handle = action['n'];
         if (handle is String) _removeNode(handle);
+      case 's' || 'ph': // общий ключ папки или публичная ссылка
+        _sharingChanged = true;
       case 'u': // новые атрибуты (переименование)
         final node = _nodes[action['n']];
         final attributes = action['at'];
@@ -413,6 +607,9 @@ class MegaStorage implements CloudStorage {
   void _removeNode(String handle) {
     final node = _nodes.remove(handle);
     if (node == null) return;
+    // Удалённая папка уносит и свою ссылку.
+    _exported.remove(handle);
+    _publicHandles.remove(handle);
     if (node.parent != null) _children[node.parent]?.remove(handle);
     for (final child in [...?_children.remove(handle)]) {
       _removeNode(child);
