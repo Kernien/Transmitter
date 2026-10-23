@@ -135,7 +135,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get maxFileSizeHelp =>
-      'Applies to all devices with this key.\nIt can\'t be changed later.';
+      'Applies to all devices with this key.\nYou can change it later: ⋮ next to the vault → “File size…”.';
+
+  @override
+  String get fileSizeAction => 'File size…';
+
+  @override
+  String get fileSizeHelp =>
+      'For new files on all devices of this vault. Files already uploaded stay.';
+
+  @override
+  String vaultChangeFailed(String error) {
+    return 'Couldn\'t save: $error';
+  }
 
   @override
   String get scanQr => 'Scan QR code';

@@ -17,6 +17,7 @@ import '../data/encrypted_cloud_post_repository.dart';
 import '../data/post_repository.dart';
 import '../data/public_board_repository.dart';
 import '../data/publishing_post_repository.dart';
+import '../data/vault_settings.dart';
 
 /// Собирает [PostRepository] для выбранного ключа: выводит секреты,
 /// берёт хранилище подключённого облака и настраивает шифрование.
@@ -25,7 +26,10 @@ import '../data/publishing_post_repository.dart';
 /// ленту уже скачанные записи не загружаются заново. Сессия базы
 /// пересоздаётся после нового входа в облако (у старой устаревший токен) и
 /// после смены имени устройства (им подписываются новые записи).
-class VaultSessionFactory {
+///
+/// Здесь же — настройки баз в облаке ([VaultSettingsRemote]): для них нужны
+/// те же ключи и хранилище.
+class VaultSessionFactory implements VaultSettingsRemote {
   VaultSessionFactory({
     required this._connections,
     required this._deviceName,
@@ -111,6 +115,25 @@ class VaultSessionFactory {
       storage,
       secrets,
       _repository(key, storage, secrets),
+    );
+  }
+
+  @override
+  Future<VaultSettings?> loadSettings(VaultKey key) async {
+    if (!_connections.isConnected(key.provider)) return null;
+    return (await _settings(key)).load();
+  }
+
+  @override
+  Future<void> saveSettings(VaultKey key, VaultSettings settings) async =>
+      (await _settings(key)).save(settings);
+
+  Future<VaultSettingsStore> _settings(VaultKey key) async {
+    final secrets = await _derivation.derive(key.secret);
+    return VaultSettingsStore(
+      storage: _connections.storageFor(key.provider),
+      vaultId: secrets.vaultId,
+      cipher: AesGcmCipher(secrets.encryptionKey),
     );
   }
 

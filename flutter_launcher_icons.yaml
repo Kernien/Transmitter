@@ -1,0 +1,26 @@
+# Иконки приложения из assets/branding (исходники — SVG рядом с PNG).
+# Пересобрать после изменения логотипа:
+#   dart run flutter_launcher_icons
+flutter_launcher_icons:
+  image_path: "assets/branding/icon.png"
+
+  android: "ic_launcher"
+  # Адаптивная иконка: фон — цвет, знак — отдельным слоем (Android 8+);
+  # тот же знак — для иконок в цвет темы (Android 13+).
+  adaptive_icon_background: "#3F51B5"
+  adaptive_icon_foreground: "assets/branding/icon-foreground.png"
+  adaptive_icon_monochrome: "assets/branding/icon-foreground.png"
+  min_sdk_android: 21
+
+  ios: false
+
+  web:
+    generate: true
+    image_path: "assets/branding/icon-maskable.png"
+    background_color: "#3F51B5"
+    theme_color: "#3F51B5"
+
+  windows:
+    generate: true
+    image_path: "assets/branding/icon.png"
+    icon_size: 256

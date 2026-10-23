@@ -95,10 +95,6 @@ Future<void> main() async {
   ]);
 
   final connections = CloudConnectionService(registry, secureStore);
-  final vaults = VaultsController(
-    VaultKeyStore(secureStore),
-    readers: ReaderKeyStore(secureStore),
-  );
   final device = DeviceIdentity(
     secureStore,
     createPlatformDeviceNameSuggester(
@@ -106,7 +102,30 @@ Future<void> main() async {
       browserName: () => language.current.deviceBrowserName,
     ),
   );
+  final sessions = VaultSessionFactory(
+    connections: connections,
+    deviceName: () => device.name,
+    // Записи на устройстве: лента открывается сразу, даже без сети.
+    cache: deviceCache,
+    // Публичные доски читаются по ссылкам, без входа в облако.
+    readers: {
+      CloudProviderId.dropbox: DropboxPublicReader(httpClient),
+      CloudProviderId.googleDrive: GooglePublicReader(
+        client: httpClient,
+        apiKey: AppConfig.googleApiKey,
+      ),
+      CloudProviderId.mega: MegaPublicReader(httpClient),
+    },
+  );
+  final vaults = VaultsController(
+    VaultKeyStore(secureStore),
+    readers: ReaderKeyStore(secureStore),
+    // Название и лимит размера файла — общие для всех устройств базы.
+    settings: sessions,
+  );
   await Future.wait([connections.load(), vaults.load(), device.load()]);
+  // Названия и лимиты могли поменять на другом устройстве — в фоне.
+  unawaited(vaults.refreshSettings());
 
   final externalOpener = createPlatformExternalOpener();
   unawaited(externalOpener.cleanUp());
@@ -116,21 +135,7 @@ Future<void> main() async {
       connections: connections,
       vaults: vaults,
       device: device,
-      sessions: VaultSessionFactory(
-        connections: connections,
-        deviceName: () => device.name,
-        // Записи на устройстве: лента открывается сразу, даже без сети.
-        cache: deviceCache,
-        // Публичные доски читаются по ссылкам, без входа в облако.
-        readers: {
-          CloudProviderId.dropbox: DropboxPublicReader(httpClient),
-          CloudProviderId.googleDrive: GooglePublicReader(
-            client: httpClient,
-            apiKey: AppConfig.googleApiKey,
-          ),
-          CloudProviderId.mega: MegaPublicReader(httpClient),
-        },
-      ),
+      sessions: sessions,
       language: language,
       cacheSettings: cacheSettings,
       theme: theme,

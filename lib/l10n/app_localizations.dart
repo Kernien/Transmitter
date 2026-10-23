@@ -317,8 +317,26 @@ abstract class AppLocalizations {
   /// No description provided for @maxFileSizeHelp.
   ///
   /// In en, this message translates to:
-  /// **'Applies to all devices with this key.\nIt can\'t be changed later.'**
+  /// **'Applies to all devices with this key.\nYou can change it later: ⋮ next to the vault → “File size…”.'**
   String get maxFileSizeHelp;
+
+  /// No description provided for @fileSizeAction.
+  ///
+  /// In en, this message translates to:
+  /// **'File size…'**
+  String get fileSizeAction;
+
+  /// No description provided for @fileSizeHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'For new files on all devices of this vault. Files already uploaded stay.'**
+  String get fileSizeHelp;
+
+  /// No description provided for @vaultChangeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save: {error}'**
+  String vaultChangeFailed(String error);
 
   /// No description provided for @scanQr.
   ///

@@ -1,0 +1,12 @@
+<!-- Для веба (maskable) и фона: знак на квадрате без скруглений — форму задаёт система. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <rect width="512" height="512" fill="#3F51B5"/>
+  <defs><mask id="lines"><rect width="512" height="512" fill="#FFFFFF"/><rect x="226" y="222" width="60" height="12" rx="6" fill="#000000"/><rect x="226" y="250" width="60" height="12" rx="6" fill="#000000"/><rect x="226" y="278" width="38" height="12" rx="6" fill="#000000"/></mask></defs>
+  <g fill="none" stroke="#FFFFFF" stroke-width="34" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M115 205 A150 150 0 0 1 397 205"/>
+    <path d="M412.7 147.1 L397 205 L347.9 170.5"/>
+    <path d="M397 307 A150 150 0 0 1 115 307"/>
+    <path d="M99.3 364.9 L115 307 L164.1 341.5"/>
+  </g>
+  <rect x="206" y="192" width="100" height="128" rx="16" fill="#FFFFFF" mask="url(#lines)"/>
+</svg>

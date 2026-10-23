@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -122,8 +124,12 @@ Future<void> openVault(BuildContext context, VaultKey key) async {
     );
     if (connected != true || !context.mounted) return;
   }
+  final vaults = context.read<VaultsController>();
   await Navigator.of(context)
       .push(MaterialPageRoute(builder: (_) => FeedScreen.vault(key)));
+  // Пока лента была открыта, название или лимит могли поменять на другом
+  // устройстве (а облако — только что подключить).
+  unawaited(vaults.refreshSettings(only: key));
 }
 
 /// Открывает публичную доску для чтения — вход в облако не нужен.
@@ -174,6 +180,10 @@ class _VaultTile extends StatelessWidget {
           ),
           PopupMenuItem(value: _VaultAction.rename, child: Text(l.rename)),
           PopupMenuItem(
+            value: _VaultAction.fileSize,
+            child: Text(l.fileSizeAction),
+          ),
+          PopupMenuItem(
             value: _VaultAction.remove,
             child: Text(l.removeFromDevice),
           ),
@@ -191,11 +201,38 @@ class _VaultTile extends StatelessWidget {
         await showBoardAccessSheet(context, vault);
       case _VaultAction.rename:
         final label = await _askLabel(context, vault.label);
-        if (label == null) return;
-        await controller.rename(vault, label);
+        if (label == null || !context.mounted) return;
+        if (!await _saveChange(context, controller.rename(vault, label))) {
+          return;
+        }
         if (context.mounted) await _renameBoard(context, label.trim());
+      case _VaultAction.fileSize:
+        final size = await _askFileSize(context, vault.maxFileSize);
+        if (size == null || size == vault.maxFileSize || !context.mounted) {
+          return;
+        }
+        await _saveChange(context, controller.setMaxFileSize(vault, size));
       case _VaultAction.remove:
         if (await _confirmRemove(context)) await controller.remove(vault);
+    }
+  }
+
+  /// Название и лимит общие для устройств базы и сохраняются в облаке: без
+  /// связи с ним изменение не проходит — показываем почему.
+  static Future<bool> _saveChange(
+    BuildContext context,
+    Future<void> change,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l = context.l10n;
+    try {
+      await change;
+      return true;
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l.vaultChangeFailed(l.describeError(e)))),
+      );
+      return false;
     }
   }
 
@@ -261,7 +298,50 @@ Future<String?> _askLabel(BuildContext context, String current) {
   );
 }
 
-enum _VaultAction { share, board, rename, remove }
+/// Спрашивает новый лимит размера файла.
+Future<int?> _askFileSize(BuildContext context, int current) {
+  final l = context.l10n;
+  return showDialog<int>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(l.maxFileSizeLabel),
+      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Text(l.fileSizeHelp),
+          ),
+          const SizedBox(height: 8),
+          RadioGroup<int>(
+            groupValue: current,
+            onChanged: (size) => Navigator.pop(context, size),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final size in VaultKey.maxFileSizeOptions)
+                  RadioListTile<int>(
+                    value: size,
+                    title: Text(l.sizeLimitOf(size)),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l.cancel),
+        ),
+      ],
+    ),
+  );
+}
+
+enum _VaultAction { share, board, rename, fileSize, remove }
 
 /// Публичная доска, которую на этом устройстве можно только читать.
 class _BoardTile extends StatelessWidget {

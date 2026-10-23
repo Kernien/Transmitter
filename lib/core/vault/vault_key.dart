@@ -63,15 +63,16 @@ class VaultKey {
   /// Название, которое видит пользователь (например, «Работа»).
   final String label;
 
-  /// Максимальный размер файла в этой базе. Задаётся создателем ключа и
-  /// передаётся вместе с ключом, поэтому одинаков на всех устройствах.
+  /// Максимальный размер файла в этой базе. Задаётся при создании,
+  /// передаётся вместе с ключом и меняется через настройки базы в облаке
+  /// (`VaultSettings`), поэтому одинаков на всех устройствах.
   final int maxFileSize;
 
-  VaultKey copyWith({String? label}) => VaultKey(
+  VaultKey copyWith({String? label, int? maxFileSize}) => VaultKey(
     secret: secret,
     provider: provider,
     label: label ?? this.label,
-    maxFileSize: maxFileSize,
+    maxFileSize: maxFileSize ?? this.maxFileSize,
   );
 
   /// Один и тот же ключ, даже если локальные названия различаются.

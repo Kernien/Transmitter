@@ -7,19 +7,27 @@ import '../../core/vault/reader_key_store.dart';
 import '../../core/vault/vault_key.dart';
 import '../../core/vault/vault_key_codec.dart';
 import '../../core/vault/vault_key_store.dart';
+import '../../data/vault_settings.dart';
 
 /// Ключи на этом устройстве: базы (владелец) и публичные доски (читатель).
-/// Создание, импорт, переименование, удаление.
+/// Создание, импорт, переименование, удаление. Название и лимит размера
+/// файла у базы общие для всех её устройств ([VaultSettingsRemote]).
 class VaultsController extends ChangeNotifier {
   VaultsController(
     this._store, {
     this._readers,
+    this._settings,
     this._codec = const VaultKeyCodec(),
     this._readerCodec = const ReaderKeyCodec(),
-  });
+    DateTime Function()? clock,
+  }) : _clock = clock ?? DateTime.now;
 
   final VaultKeyStore _store;
   final ReaderKeyStore? _readers;
+
+  /// Настройки баз в облаке (название, лимит); `null` — только на устройстве.
+  final VaultSettingsRemote? _settings;
+  final DateTime Function() _clock;
   final VaultKeyCodec _codec;
   final ReaderKeyCodec _readerCodec;
 
@@ -83,10 +91,63 @@ class VaultsController extends ChangeNotifier {
 
   String exportBoardCode(ReaderKey key) => _readerCodec.encode(key);
 
-  Future<void> rename(VaultKey key, String label) => _save([
-    for (final k in _vaults)
-      k.sameVaultAs(key) ? k.copyWith(label: label.trim()) : k,
-  ]);
+  /// Новое название базы — на всех её устройствах: сначала в облако, потом
+  /// сюда. Если записать в облако не удалось (например, оно не подключено),
+  /// бросает ошибку облака и ничего не меняет.
+  Future<void> rename(VaultKey key, String label) =>
+      _change(key, (k) => k.copyWith(label: label.trim()));
+
+  /// Новый лимит размера файла — так же, как [rename]. Уже загруженные
+  /// файлы остаются, лимит действует для новых.
+  Future<void> setMaxFileSize(VaultKey key, int maxFileSize) =>
+      _change(key, (k) => k.copyWith(maxFileSize: maxFileSize));
+
+  Future<void> _change(
+    VaultKey key,
+    VaultKey Function(VaultKey current) update,
+  ) async {
+    final next = update(_current(key) ?? key);
+    await _settings?.saveSettings(
+      next,
+      VaultSettings(
+        label: next.label,
+        maxFileSize: next.maxFileSize,
+        updatedAt: _clock().toUtc(),
+      ),
+    );
+    await _replace(next);
+  }
+
+  /// Подтягивает настройки баз из облака: их могли поменять на другом
+  /// устройстве. Базы без подключённого облака и ошибки сети пропускаются.
+  Future<void> refreshSettings({VaultKey? only}) async {
+    final settings = _settings;
+    if (settings == null) return;
+    for (final key in [..._vaults]) {
+      if (only != null && !key.sameVaultAs(only)) continue;
+      final VaultSettings? remote;
+      try {
+        remote = await settings.loadSettings(key);
+      } catch (e) {
+        debugPrint('Vault settings not refreshed: $e');
+        continue;
+      }
+      // Ключ могли удалить или изменить, пока шёл запрос.
+      final current = _current(key);
+      if (remote == null || current == null || !remote.differsFrom(current)) {
+        continue;
+      }
+      await _replace(
+        current.copyWith(label: remote.label, maxFileSize: remote.maxFileSize),
+      );
+    }
+  }
+
+  VaultKey? _current(VaultKey key) =>
+      _vaults.where((k) => k.sameVaultAs(key)).firstOrNull;
+
+  Future<void> _replace(VaultKey next) =>
+      _save([for (final k in _vaults) k.sameVaultAs(next) ? next : k]);
 
   /// Своё название доски: название от владельца его больше не меняет.
   Future<void> renameBoard(ReaderKey key, String label) => _saveBoards(

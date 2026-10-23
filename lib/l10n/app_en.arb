@@ -47,7 +47,11 @@
   "cloudComingSoon": "{provider} (coming soon)",
   "@cloudComingSoon": { "placeholders": { "provider": { "type": "String" } } },
   "maxFileSizeLabel": "Maximum file size",
-  "maxFileSizeHelp": "Applies to all devices with this key.\nIt can't be changed later.",
+  "maxFileSizeHelp": "Applies to all devices with this key.\nYou can change it later: ⋮ next to the vault → “File size…”.",
+  "fileSizeAction": "File size…",
+  "fileSizeHelp": "For new files on all devices of this vault. Files already uploaded stay.",
+  "vaultChangeFailed": "Couldn't save: {error}",
+  "@vaultChangeFailed": { "placeholders": { "error": { "type": "String" } } },
 
   "scanQr": "Scan QR code",
   "orPasteKey": "or paste the key:",

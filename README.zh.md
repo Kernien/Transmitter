@@ -13,7 +13,7 @@
 | 🐧 **Linux** | AppImage——单个文件，无需安装；已在 Steam Deck 上测试 |
 | 🌐 **浏览器** | https://kernien.github.io/transmitter-web/ ——无需安装 |
 
-版本 **0.14.0**。
+版本 **0.15.0**。
 
 > **界面语言。** 应用界面有英语和俄语；在中文系统上显示为英语（可在 ⚙ 设置“Settings”中切换）。本指南中的按钮名称先给出中文，括号内是应用中实际显示的英文，例如 **新建密钥**（“New key”）。
 
@@ -59,27 +59,27 @@
 ### Android
 
 1. 从 [**Releases**](https://github.com/Kernien/Transmitter/releases) 下载 APK：
-   - `Transmitter-0.14.0-android-arm64.apk` ——适用于近几年的大多数手机；
-   - `Transmitter-0.14.0-android-armv7.apk` ——适用于较旧或入门级机型（如果第一个无法安装）。
+   - `Transmitter-0.15.0-android-arm64.apk` ——适用于近几年的大多数手机；
+   - `Transmitter-0.15.0-android-armv7.apk` ——适用于较旧或入门级机型（如果第一个无法安装）。
 2. 在手机上打开该文件。Android 会询问是否允许从此来源（浏览器或文件管理器）安装——请允许。
 
 **工作资料（Shelter）。** 先在个人资料中安装 Transmitter，然后在 Shelter 中选中它，点击 **克隆到工作资料**。在工作资料中登录云盘也需要浏览器——请把浏览器一并克隆过去。
 
 ### Windows
 
-1. 从 [**Releases**](https://github.com/Kernien/Transmitter/releases) 下载 `Transmitter-0.14.0-windows-setup.exe` 并运行。它只为当前用户安装（无需管理员权限），并在开始菜单中添加 Transmitter。可在 **设置 → 应用** 中卸载；密钥和云盘登录状态会保留。
+1. 从 [**Releases**](https://github.com/Kernien/Transmitter/releases) 下载 `Transmitter-0.15.0-windows-setup.exe` 并运行。它只为当前用户安装（无需管理员权限），并在开始菜单中添加 Transmitter。可在 **设置 → 应用** 中卸载；密钥和云盘登录状态会保留。
 2. 首次启动时，Windows 可能提示“Windows 已保护你的电脑”——因为应用没有付费的代码签名证书。点击 **更多信息 → 仍要运行**。
 
-不想安装？`Transmitter-0.14.0-windows-x64.zip` 是便携版：解压到任意位置，运行 `transmitter.exe` 即可。
+不想安装？`Transmitter-0.15.0-windows-x64.zip` 是便携版：解压到任意位置，运行 `transmitter.exe` 即可。
 
 ### Linux 和 Steam Deck
 
-1. 从 [**Releases**](https://github.com/Kernien/Transmitter/releases) 下载 `Transmitter-0.14.0-linux-x86_64.AppImage`。
+1. 从 [**Releases**](https://github.com/Kernien/Transmitter/releases) 下载 `Transmitter-0.15.0-linux-x86_64.AppImage`。
 2. 将文件设为可执行：在文件管理器中右键 → **属性 → 权限 → 可执行**（或运行 `chmod +x Transmitter-*.AppImage`），然后启动。
 
 **Steam Deck：** 以上操作在桌面模式下进行（Steam 键 → 电源 → 切换到桌面）。若想在游戏模式中也能启动 Transmitter，右键点击文件 → **添加到 Steam**，它会出现在库中的非 Steam 游戏里。
 
-Linux 版没有二维码扫描器——请以字符串形式粘贴密钥。密钥和云盘登录信息保存在 `~/.local/share/app.transmitter.transmitter`（仅当前用户可访问）。另有 `Transmitter-0.14.0-linux-x64.tar.gz`：解压后运行 `transmitter` 即可。
+Linux 版没有二维码扫描器——请以字符串形式粘贴密钥。密钥和云盘登录信息保存在 `~/.local/share/app.transmitter.transmitter`（仅当前用户可访问）。另有 `Transmitter-0.15.0-linux-x64.tar.gz`：解压后运行 `transmitter` 即可。
 
 ### 浏览器
 
@@ -91,7 +91,7 @@ Linux 版没有二维码扫描器——请以字符串形式粘贴密钥。密�
 
 ### 1. 第一台设备：创建库
 
-1. 点击 **新建密钥**（“New key”），输入名称（例如“个人 ↔ 工作”），选择云盘（**Dropbox**、**Google Drive** 或 **MEGA**）和 **最大文件大小**（“Maximum file size”，创建后无法更改）→ **创建**（“Create”）。
+1. 点击 **新建密钥**（“New key”），输入名称（例如“个人 ↔ 工作”），选择云盘（**Dropbox**、**Google Drive** 或 **MEGA**）和 **最大文件大小**（“Maximum file size”，之后可在库的 ⋮ → “File size…” 中更改）→ **创建**（“Create”）。
 2. 屏幕上会显示密钥的二维码——可以关闭，之后随时可在 ⋮ 菜单中找到。
 3. 点击新建的库 → **登录 Dropbox**（“Sign in to Dropbox”，或 Google Drive）。登录并允许访问，条目列表随即打开。MEGA 直接在应用中用邮箱和密码登录（如果开启了两步验证，还需输入验证码）；密码不会被保存。
 

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -10,6 +11,9 @@ import 'package:transmitter/core/storage/cloud_storage.dart';
 import 'package:transmitter/core/storage/in_memory_cloud_storage.dart';
 import 'package:transmitter/core/vault/reader_key.dart';
 import 'package:transmitter/core/vault/vault_key.dart';
+import 'package:transmitter/core/vault/vault_key_codec.dart';
+import 'package:transmitter/core/vault/vault_key_store.dart';
+import 'package:transmitter/features/vaults/vaults_controller.dart';
 
 import '../support/sharing_cloud.dart';
 
@@ -125,5 +129,78 @@ void main() {
       identical(boards.openAsReader(board), boards.openAsReader(board)),
       isTrue,
     );
+  });
+
+  group('настройки базы — общие для её устройств', () {
+    /// Устройство: свои ключи на устройстве, общее облако.
+    Future<VaultsController> device() async {
+      final controller = VaultsController(
+        VaultKeyStore(InMemoryKeyValueStore()),
+        settings: sessions,
+      );
+      await controller.load();
+      await controller.importCode(const VaultKeyCodec().encode(key));
+      return controller;
+    }
+
+    test('название и лимит доходят до другого устройства', () async {
+      final phone = await device();
+      final laptop = await device();
+
+      await phone.rename(phone.vaults.single, '  Работа ');
+      await phone.setMaxFileSize(phone.vaults.single, 50 * 1024 * 1024);
+      expect(phone.vaults.single.label, 'Работа');
+      expect(laptop.vaults.single.label, 'База', reason: 'ещё не обновлялся');
+
+      await laptop.refreshSettings();
+      expect(laptop.vaults.single.label, 'Работа');
+      expect(laptop.vaults.single.maxFileSize, 50 * 1024 * 1024);
+      // Новая сессия ленты — уже с новым лимитом.
+      expect(
+        (await sessions.open(laptop.vaults.single)).maxFileSize,
+        50 * 1024 * 1024,
+      );
+
+      // В облаке — один зашифрованный файл рядом с записями.
+      final settings = cloud.files.entries.where(
+        (e) => e.key.endsWith('/settings.bin'),
+      );
+      expect(settings, hasLength(1));
+      expect(
+        utf8.decode(settings.single.value, allowMalformed: true),
+        isNot(contains('Работа')),
+      );
+    });
+
+    test('без настроек в облаке остаётся то, что в ключе', () async {
+      final laptop = await device();
+      await laptop.refreshSettings();
+      expect(laptop.vaults.single, key);
+    });
+
+    test('облако не подключено — изменение не проходит', () async {
+      final phone = await device();
+      await connections.disconnect(CloudProviderId.dropbox);
+      await expectLater(
+        phone.rename(phone.vaults.single, 'Новое'),
+        throwsA(isA<StorageAuthException>()),
+      );
+      expect(phone.vaults.single.label, 'База');
+      // Обновление без облака просто ничего не делает.
+      await phone.refreshSettings();
+      expect(phone.vaults.single.label, 'База');
+    });
+
+    test('повреждённый файл настроек не ломает базу', () async {
+      final phone = await device();
+      await phone.rename(phone.vaults.single, 'Работа');
+      final path = cloud.files.keys.singleWhere(
+        (p) => p.endsWith('/settings.bin'),
+      );
+      cloud.files[path]![20] ^= 0xFF;
+      final laptop = await device();
+      await laptop.refreshSettings();
+      expect(laptop.vaults.single.label, 'База');
+    });
   });
 }
