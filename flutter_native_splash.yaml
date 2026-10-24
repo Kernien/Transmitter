@@ -1,0 +1,18 @@
+# Системный экран запуска (Android, веб) — тот же, что SplashScreen во
+# Flutter: индиго и белый знак по центру. Картинки — из assets/branding,
+# пересобираются вместе с иконками:
+#   powershell -File tool/make_icons.ps1
+flutter_native_splash:
+  color: "#3F51B5"
+  image: assets/branding/splash.png
+
+  # Android 12+ показывает знак в круге поверх фона (системный splash API).
+  android_12:
+    color: "#3F51B5"
+    image: assets/branding/splash-android12.png
+
+  android: true
+  ios: false
+  web: true
+  # Экран не на весь экран: строка состояния остаётся видна.
+  fullscreen: false

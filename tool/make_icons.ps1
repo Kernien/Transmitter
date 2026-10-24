@@ -1,6 +1,7 @@
-﻿# Пересобирает иконки приложения из SVG в assets/branding:
-#   1. SVG → PNG 1024×1024 (Microsoft Edge без окна);
+﻿# Пересобирает иконки и экран запуска приложения из SVG в assets/branding:
+#   1. SVG → PNG (Microsoft Edge без окна);
 #   2. Android (адаптивная + обычная), веб и Windows — flutter_launcher_icons;
+#      экран запуска Android и веба — flutter_native_splash;
 #   3. веб: обычные иконки и favicon — со скруглёнными углами (генератор
 #      берёт одну картинку на всё, а квадратная нужна только maskable);
 #   4. Windows: .ico со всеми размерами 16–256 (генератор кладёт один 256).
@@ -18,12 +19,19 @@ $edge = @(
 if (-not $edge) { throw 'Нужен Microsoft Edge: им SVG отрисовывается в PNG' }
 
 Write-Host '== SVG → PNG' -ForegroundColor Cyan
-foreach ($name in 'icon', 'icon-maskable', 'icon-foreground') {
+# Экран запуска: обычный показывается в 160 dp (640 px — для 4x), на
+# Android 12+ — в круге 288 dp (1152 px).
+$renders = [ordered]@{
+    'icon' = 1024; 'icon-maskable' = 1024; 'icon-foreground' = 1024
+    'splash' = 640; 'splash-android12' = 1152
+}
+foreach ($name in $renders.Keys) {
+    $size = $renders[$name]
     $png = Join-Path $branding "$name.png"
     $url = 'file:///' + ($branding -replace '\\', '/') + "/$name.svg"
     $edgeArgs = @('--headless=new', '--disable-gpu', '--hide-scrollbars',
         '--force-device-scale-factor=1', '--default-background-color=00000000',
-        "--screenshot=$png", '--window-size=1024,1024', $url)
+        "--screenshot=$png", "--window-size=$size,$size", $url)
     $p = Start-Process -FilePath $edge -ArgumentList $edgeArgs -Wait -PassThru -WindowStyle Hidden
     if ($p.ExitCode) { throw "Не удалось отрисовать $name.svg" }
 }
@@ -31,6 +39,10 @@ foreach ($name in 'icon', 'icon-maskable', 'icon-foreground') {
 Write-Host '== flutter_launcher_icons' -ForegroundColor Cyan
 dart run flutter_launcher_icons
 if ($LASTEXITCODE) { throw 'flutter_launcher_icons завершился с ошибкой' }
+
+Write-Host '== flutter_native_splash' -ForegroundColor Cyan
+dart run flutter_native_splash:create
+if ($LASTEXITCODE) { throw 'flutter_native_splash завершился с ошибкой' }
 
 # Картинка size×size из большой PNG — с качественным уменьшением.
 function Resize-Png([string]$Source, [int]$Size) {

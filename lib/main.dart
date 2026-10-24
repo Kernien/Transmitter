@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:http/http.dart' as http;
 
 import 'app/app.dart';
@@ -10,6 +11,7 @@ import 'app/cache_settings.dart';
 import 'app/language_controller.dart';
 import 'app/theme_controller.dart';
 import 'app/vault_session_factory.dart';
+import 'app/widgets/splash_screen.dart';
 import 'core/auth/auth_browser.dart';
 import 'core/auth/platform_auth_browser.dart';
 import 'core/device/device_identity.dart';
@@ -41,7 +43,15 @@ import 'features/vaults/vaults_controller.dart';
 /// Точка сборки зависимостей. Конкретные реализации создаются только здесь,
 /// остальной код получает их через интерфейсы.
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final binding = WidgetsFlutterBinding.ensureInitialized();
+  // Экран запуска, пока загружаются ключи и настройки. На Android и в вебе —
+  // системный (держится до готовности приложения), на компьютере его нет —
+  // там такой же рисует Flutter.
+  if (kIsWeb || isAndroid) {
+    FlutterNativeSplash.preserve(widgetsBinding: binding);
+  } else {
+    runApp(const SplashScreen());
+  }
   MediaPlayerScreen.initialize();
 
   // Ключи баз и токены облаков. Идентификатор — как у приложения на
@@ -156,6 +166,8 @@ Future<void> main() async {
       shareSender: SharePlusSender(isAvailable: isAndroid),
     ),
   );
+  // Приложение готово: системный экран запуска убирается (если он был).
+  FlutterNativeSplash.remove();
 }
 
 bool get isAndroid =>
