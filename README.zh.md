@@ -165,7 +165,9 @@ Linux 版没有二维码扫描器——请以字符串形式粘贴密钥。密�
 
 ## 后续计划
 
-- iPhone 版本。
+- 在 Flathub 上发布 Linux 版：可从应用商店安装和更新（Steam Deck 上为 Discover）。
+
+暂时不会推出 iPhone 版本：没有可用于测试的设备。在 iPhone 上可以通过 Safari 使用[网页版](https://kernien.github.io/transmitter-web/)。
 
 ---
 

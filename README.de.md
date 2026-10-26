@@ -307,7 +307,11 @@ Transmitter 0.7.0.
 
 ## Wie es weitergeht
 
-- eine Version für das iPhone.
+- Die Linux-Version auf Flathub: Installation und Updates aus dem App-Store
+  (auf dem Steam Deck — Discover).
+
+Eine iPhone-Version gibt es vorerst nicht: Es fehlt ein Gerät zum Testen. Auf
+dem iPhone kannst du die [Web-Version](https://kernien.github.io/transmitter-web/) in Safari nutzen.
 
 ---
 

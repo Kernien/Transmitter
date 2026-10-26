@@ -267,7 +267,11 @@ Transmitter появился, потому что автору надоело к
 
 ## Что дальше
 
-- версия для iPhone.
+- Linux-версия во Flathub: установка и обновления из магазина приложений
+  (на Steam Deck — Discover).
+
+Версии для iPhone пока не будет: её не на чем проверить. На iPhone можно
+пользоваться [веб-версией](https://kernien.github.io/transmitter-web/) в Safari.
 
 ---
 

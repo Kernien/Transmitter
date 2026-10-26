@@ -272,7 +272,11 @@ to change the vault. Reader keys open in Transmitter 0.7.0 and later.
 
 ## What's next
 
-- an iPhone version.
+- The Linux version on Flathub: install and update from the app store
+  (Discover on the Steam Deck).
+
+There won't be an iPhone version for now: there's nothing to test it on. On an
+iPhone you can use the [web version](https://kernien.github.io/transmitter-web/) in Safari.
 
 ---
 
