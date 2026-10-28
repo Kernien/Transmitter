@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Карточка приложения во Flathub (и в Discover на Steam Deck). -->
+<component type="desktop-application">
+  <id>io.github.kernien.Transmitter</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+
+  <name>Transmitter</name>
+  <summary>Links and small files between your own devices</summary>
+  <summary xml:lang="ru">Ссылки и небольшие файлы между своими устройствами</summary>
+
+  <developer id="io.github.kernien">
+    <name>Kernien</name>
+  </developer>
+
+  <description>
+    <p>
+      Copy a link on your phone — a couple of seconds later it's on your computer.
+      Drop a document into the window at work — it's waiting for you on your phone.
+      No sign-up and no third-party servers: everything is stored in your own cloud
+      (Dropbox, Google Drive or MEGA) and encrypted right on the device, so the cloud
+      only ever sees meaningless bytes.
+    </p>
+    <ul>
+      <li>Text, links and files up to 100 MB</li>
+      <li>Photos, documents, video and music open right in the app</li>
+      <li>Comments on items, editable from any device</li>
+      <li>Read-only public boards to share a collection with others</li>
+      <li>Works on Android, Windows, Linux and in the browser</li>
+    </ul>
+    <p xml:lang="ru">
+      Скопировали ссылку на телефоне — через пару секунд она на компьютере. Бросили
+      документ в окно на работе — он ждёт вас на телефоне. Без регистрации и чужих
+      серверов: всё хранится в вашем облаке (Dropbox, Google Drive или MEGA) и
+      шифруется прямо на устройстве — облако видит только бессмысленные байты.
+    </p>
+    <ul xml:lang="ru">
+      <li>Текст, ссылки и файлы до 100 МБ</li>
+      <li>Фото, документы, видео и музыка открываются прямо в приложении</li>
+      <li>Комментарии к записям — изменить можно с любого устройства</li>
+      <li>Публичные доски только для чтения — поделиться подборкой с другими</li>
+      <li>Работает на Android, Windows, Linux и в браузере</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">io.github.kernien.Transmitter.desktop</launchable>
+
+  <url type="homepage">https://github.com/Kernien/Transmitter</url>
+  <url type="bugtracker">https://github.com/Kernien/Transmitter/issues</url>
+  <url type="vcs-browser">https://github.com/Kernien/Transmitter</url>
+
+  <branding>
+    <color type="primary" scheme_preference="light">#C5CAE9</color>
+    <color type="primary" scheme_preference="dark">#3F51B5</color>
+  </branding>
+
+  <categories>
+    <category>Network</category>
+    <category>FileTransfer</category>
+  </categories>
+
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+    <control>touch</control>
+  </supports>
+  <requires>
+    <internet>always</internet>
+  </requires>
+
+  <content_rating type="oars-1.1">
+    <!-- Обмен своими данными между своими устройствами, без чата и чужих людей. -->
+  </content_rating>
+
+  <releases>
+    <release version="0.16.0" date="2026-10-25">
+      <description>
+        <p>Launch screen: the Transmitter mark on indigo while the app starts.</p>
+      </description>
+    </release>
+  </releases>
+</component>

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -21,8 +22,21 @@ class NativeExternalOpener implements ExternalOpener {
   @override
   bool get isAvailable => true;
 
-  static Future<Directory> _root() async =>
-      Directory('${(await getTemporaryDirectory()).path}/open');
+  static Future<Directory> _root() async => rootFor(
+    isLinux: Platform.isLinux,
+    temporary: () => getTemporaryDirectory(),
+    cache: () => getApplicationCacheDirectory(),
+  );
+
+  /// Папка для открытых копий. На Linux — кеш приложения: во Flatpak у
+  /// песочницы свой /tmp, и системный портал не может открыть файл оттуда
+  /// («Launch failed»), а папку кеша он видит.
+  @visibleForTesting
+  static Future<Directory> rootFor({
+    required bool isLinux,
+    required Future<Directory> Function() temporary,
+    required Future<Directory> Function() cache,
+  }) async => Directory('${(await (isLinux ? cache : temporary)()).path}/open');
 
   @override
   Future<void> open({

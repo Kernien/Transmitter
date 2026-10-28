@@ -202,14 +202,25 @@ static void my_application_class_init(MyApplicationClass* klass) {
 
 static void my_application_init(MyApplication* self) {}
 
+// Идентификатор приложения. Во Flatpak он свой (io.github.kernien.Transmitter):
+// песочница разрешает занять в D-Bus только имя со своим идентификатором, а по
+// нему работает запуск в один экземпляр, — поэтому берём FLATPAK_ID. Так один
+// и тот же собранный архив годится и для AppImage, и для Flatpak.
+static const gchar* application_id() {
+  const gchar* flatpak_id = g_getenv("FLATPAK_ID");
+  return flatpak_id != nullptr && *flatpak_id != '\0' ? flatpak_id
+                                                     : APPLICATION_ID;
+}
+
 MyApplication* my_application_new() {
   // Set the program name to the application ID, which helps various systems
   // like GTK and desktop environments map this running application to its
   // corresponding .desktop file. This ensures better integration by allowing
   // the application to be recognized beyond its binary name.
-  g_set_prgname(APPLICATION_ID);
+  g_set_prgname(application_id());
 
   return MY_APPLICATION(g_object_new(my_application_get_type(),
-                                     "application-id", APPLICATION_ID, "flags",
-                                     G_APPLICATION_DEFAULT_FLAGS, nullptr));
+                                     "application-id", application_id(),
+                                     "flags", G_APPLICATION_DEFAULT_FLAGS,
+                                     nullptr));
 }

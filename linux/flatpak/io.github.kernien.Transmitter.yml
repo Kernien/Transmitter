@@ -1,0 +1,44 @@
+# Flatpak-пакет Transmitter (Flathub). Собирается из того же архива, что и
+# релиз для Linux (tar.gz из tool/build_linux.sh): Flutter во Flathub без
+# сети не собрать. Локально — tool/build_flatpak.sh (архив кладётся в
+# build/flatpak/); для Flathub тот же скрипт пишет копию манифеста со ссылкой
+# на архив релиза и его sha256.
+app-id: io.github.kernien.Transmitter
+runtime: org.gnome.Platform
+runtime-version: '51'
+sdk: org.gnome.Sdk
+command: transmitter
+finish-args:
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --device=dri
+  # Облака и вход в них: браузер возвращается на локальный порт 47819.
+  - --share=network
+  # Перетаскивание файлов из файлового менеджера: приходят обычные пути
+  # (/home/…), без доступа их не прочитать. Только чтение: выбор и сохранение
+  # файлов идут через системные диалоги (порталы).
+  - --filesystem=home:ro
+modules:
+  - name: transmitter
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/lib/transmitter /app/bin
+      - cp -r bundle/. /app/lib/transmitter/
+      # Flutter находит свои файлы (lib/, data/) рядом с настоящим путём
+      # программы, поэтому ссылка из /app/bin не мешает.
+      - ln -s /app/lib/transmitter/transmitter /app/bin/transmitter
+      - install -Dm644 io.github.kernien.Transmitter.desktop -t /app/share/applications
+      - install -Dm644 io.github.kernien.Transmitter.metainfo.xml -t /app/share/metainfo
+      - install -Dm644 icon.png /app/share/icons/hicolor/512x512/apps/io.github.kernien.Transmitter.png
+    sources:
+      - type: archive
+        path: ../../build/flatpak/transmitter-linux-x64.tar.gz
+        dest: bundle
+      - type: file
+        path: io.github.kernien.Transmitter.desktop
+      - type: file
+        path: io.github.kernien.Transmitter.metainfo.xml
+      - type: file
+        path: ../../web/icons/Icon-512.png
+        dest-filename: icon.png

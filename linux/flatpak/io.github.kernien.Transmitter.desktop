@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Transmitter
+Comment=Links and small files between your own devices, end-to-end encrypted
+Comment[ru]=Ссылки и небольшие файлы между своими устройствами со сквозным шифрованием
+Exec=transmitter
+Icon=io.github.kernien.Transmitter
+Categories=Network;FileTransfer;
+Keywords=sync;clipboard;cloud;Dropbox;Google Drive;MEGA;
+Keywords[ru]=синхронизация;буфер обмена;облако;Dropbox;Google Drive;MEGA;
+StartupWMClass=io.github.kernien.Transmitter
+Terminal=false
