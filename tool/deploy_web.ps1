@@ -22,9 +22,12 @@ git -C $deploy config user.name (git config user.name)
 git -C $deploy config user.email (git config user.email)
 git -C $deploy checkout --quiet -B main
 
-Get-ChildItem $deploy -Force | Where-Object Name -ne '.git' | Remove-Item -Recurse -Force
+# flatpak/ — репозиторий Flatpak (tool/publish_flatpak.sh): его не трогаем.
+Get-ChildItem $deploy -Force | Where-Object Name -notin '.git', 'flatpak' | Remove-Item -Recurse -Force
 Copy-Item -Recurse 'build/web/*' $deploy
 New-Item -ItemType File "$deploy/.nojekyll" | Out-Null  # GitHub Pages: отдавать файлы как есть
+# Файлы OSTree — как есть: Git на Windows не должен менять в них концы строк.
+Set-Content "$deploy/.gitattributes" 'flatpak/** -text' -Encoding ascii
 Copy-Item LICENSE "$deploy/LICENSE"  # собранная программа распространяется под GPL-3.0
 # Описание на всех языках; ссылки на документацию разработчика ведут в
 # основной репозиторий, потому что в публичный она не копируется.

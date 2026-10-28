@@ -14,7 +14,7 @@ right on the device: the cloud only ever sees meaningless bytes.
 |---|---|
 | 📱 **Android** | app, including the system “Share” menu |
 | 🖥️ **Windows** | app with an installer, drag-and-drop files into the window |
-| 🐧 **Linux** | AppImage — a single file, no installation; tested on Steam Deck |
+| 🐧 **Linux** | Flatpak with automatic updates, or AppImage — a single file, no installation; tested on Steam Deck |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — nothing to install |
 
 Version **0.17.0**. The interface is in **English and Russian** — it follows the
@@ -129,6 +129,21 @@ Prefer no installation? `Transmitter-0.17.0-windows-x64.zip` is a portable
 version: unpack it anywhere and run `transmitter.exe`.
 
 ### Linux and Steam Deck
+
+**Flatpak — with automatic updates (recommended).** Open
+[`io.github.kernien.Transmitter.flatpakref`](https://kernien.github.io/transmitter-web/flatpak/io.github.kernien.Transmitter.flatpakref)
+— Discover (on the Steam Deck) or your software center will offer to install
+Transmitter. Or in a terminal:
+
+```bash
+flatpak install --user https://kernien.github.io/transmitter-web/flatpak/io.github.kernien.Transmitter.flatpakref
+```
+
+Updates arrive on their own — via Discover or `flatpak update`. The Flatpak
+version has its own data folder: it can't see keys from the AppImage version,
+so add your vaults again.
+
+**AppImage — a single file, no installation:**
 
 1. Download `Transmitter-0.17.0-linux-x86_64.AppImage` from [**Releases**](https://github.com/Kernien/Transmitter/releases).
 2. Make the file executable — in the file manager, right-click →
@@ -267,13 +282,11 @@ to change the vault. Reader keys open in Transmitter 0.7.0 and later.
 | Opening read-only access asks you to sign in to Dropbox again | Press **Sign in to Dropbox again** in the same window and allow access — needed only once |
 | “The owner has closed access to this board” | This reader key no longer works — ask the owner for a new one |
 | The AppImage won't start on Linux | Make the file executable (see Installation → Linux). Some distributions need the `libfuse2` package; Steam Deck already has it |
+| The Flatpak version isn't listed in Discover → Installed | Discover downloads the app description when it checks for updates: press “Check for updates” there, or run `flatpak update --appstream` and reopen Discover |
 
 ---
 
 ## What's next
-
-- The Linux version on Flathub: install and update from the app store
-  (Discover on the Steam Deck).
 
 There won't be an iPhone version for now: there's nothing to test it on. On an
 iPhone you can use the [web version](https://kernien.github.io/transmitter-web/) in Safari.

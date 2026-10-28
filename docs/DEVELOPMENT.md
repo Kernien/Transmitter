@@ -197,6 +197,25 @@ wsl -d Ubuntu-24.04 -- flatpak run io.github.kernien.Transmitter
 релиза и файлы по тегу `v<версия>` с sha256 — тег должен быть опубликован).
 Нужны `flatpak`, `flatpak-builder`, `appstream` (`sudo apt-get install …`).
 
+**Свой репозиторий** — `tool/publish_flatpak.sh`: собирает пакет в ветку
+`stable`, подписывает его ключом GPG «Transmitter Flatpak» и добавляет в
+репозиторий OSTree в `build/web-deploy/flatpak/repo/` (хранятся две
+последние версии); рядом пишет `transmitter.flatpakrepo` и
+`io.github.kernien.Transmitter.flatpakref` с ключом. На GitHub Pages
+(https://kernien.github.io/transmitter-web/flatpak/) его отправляет
+`tool/deploy_web.ps1` вместе с сайтом и папку `flatpak/` при этом не
+трогает. Пользователь ставит одной командой или открывает `.flatpakref` в
+Discover:
+
+```bash
+flatpak install --user https://kernien.github.io/transmitter-web/flatpak/io.github.kernien.Transmitter.flatpakref
+```
+
+**Ключ подписи** — в WSL (`gpg`), резервная копия:
+`%USERPROFILE%\.transmitter-signing\flatpak-signing-key.asc` (восстановить:
+`gpg --import`). Без него новые версии не подписать, а с новым ключом
+пользователям придётся подключать репозиторий заново — держите копию.
+
 Особенности песочницы:
 
 - **Идентификатор** во Flatpak — `io.github.kernien.Transmitter` (Flathub
@@ -299,13 +318,25 @@ Dropbox. Для личного использования этого доста�
    powershell -File tool/build_release.ps1
    ```
 
-3. Опубликовать веб-версию на GitHub Pages:
+3. Flatpak: файл-установщик (в `build/flatpak/`, приложить к релизу) и
+   новая версия в своём репозитории Flatpak (в `build/web-deploy/flatpak/`):
+
+   ```powershell
+   wsl -d Ubuntu-24.04 -- bash tool/build_flatpak.sh
+   wsl -d Ubuntu-24.04 -- bash tool/publish_flatpak.sh
+   ```
+
+4. Опубликовать веб-версию на GitHub Pages — вместе с ней уходит и
+   репозиторий Flatpak:
 
    ```powershell
    powershell -File tool/deploy_web.ps1
    ```
 
-4. Тег и GitHub Release с файлами из `build/dist`.
+5. Тег и GitHub Release с файлами из `build/dist` и
+   `build/flatpak/Transmitter-<версия>.flatpak`: черновик
+   (`gh release create --draft`), файлы по одному (`gh release upload`),
+   проверка размеров, публикация (`gh release edit --draft=false --latest`).
 
 **Ключ подписи Android** лежит в `%USERPROFILE%\.transmitter-signing\`
 (`upload-keystore.jks` и копия `key.properties` с паролем); рабочая копия
@@ -462,14 +493,14 @@ Dropbox. Для личного использования этого доста�
    GitHub Actions с macOS или Codemagic). Для установки на телефон дольше чем
    на 7 дней и для App Store нужен Apple Developer Program (платный,
    $99/год).
-5. **Linux-версия во Flathub (Flatpak)** — в работе (начато 2026-10-26).
-   Установка одной кнопкой из магазина (на Steam Deck — Discover) и
-   автообновления вместо ручного AppImage.
-   - Сделано: пакет собирается и проверен на Steam Deck (2026-10-28) — вход
-     в облака, выбор и сохранение файлов, перетаскивание, «Открыть в другом
-     приложении», один экземпляр. Как устроено — «Flatpak» в «Сборке для
-     Linux».
-   - Осталось: скриншоты для карточки (`<screenshots>` в metainfo —
-     Flathub без них не принимает), релиз с этими исправлениями (в архиве
-     0.16.0 их нет), заявка во Flathub (PR в `flathub/flathub` с манифестом
-     из `build/flatpak/flathub/` — от аккаунта владельца репозитория).
+5. **Linux-версия во Flatpak** ✅ (0.17.0) — свой репозиторий на GitHub
+   Pages: установка в один клик (`.flatpakref`, на Steam Deck — Discover) и
+   автообновления. Проверено на Steam Deck (2026-10-28): вход в облака,
+   выбор и сохранение файлов, перетаскивание, «Открыть в другом приложении»,
+   один экземпляр. Как устроено — «Flatpak» в «Сборке для Linux».
+   - **Во Flathub не подаём** (решено 2026-10-28): правила Flathub
+     запрещают ИИ-помощь с упаковкой и заявкой, а манифест не может
+     содержать сгенерированного ИИ; код приложения тоже требует раскрытия.
+     Если подавать — манифест и заявку владелец делает сам, вручную.
+     `tool/build_flatpak.sh` по-прежнему пишет черновик манифеста в
+     `build/flatpak/flathub/`, но в этом виде его подавать нельзя.

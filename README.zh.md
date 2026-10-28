@@ -10,7 +10,7 @@
 |---|---|
 | 📱 **Android** | 应用，支持系统“分享”菜单 |
 | 🖥️ **Windows** | 带安装程序的应用，可将文件拖放到窗口中 |
-| 🐧 **Linux** | AppImage——单个文件，无需安装；已在 Steam Deck 上测试 |
+| 🐧 **Linux** | 可自动更新的 Flatpak，或 AppImage——单个文件，无需安装；已在 Steam Deck 上测试 |
 | 🌐 **浏览器** | https://kernien.github.io/transmitter-web/ ——无需安装 |
 
 版本 **0.17.0**。
@@ -73,6 +73,16 @@
 不想安装？`Transmitter-0.17.0-windows-x64.zip` 是便携版：解压到任意位置，运行 `transmitter.exe` 即可。
 
 ### Linux 和 Steam Deck
+
+**Flatpak——可自动更新（推荐）。** 打开 [`io.github.kernien.Transmitter.flatpakref`](https://kernien.github.io/transmitter-web/flatpak/io.github.kernien.Transmitter.flatpakref)，Discover（Steam Deck 上）或软件中心会提示安装 Transmitter。也可以在终端中运行：
+
+```bash
+flatpak install --user https://kernien.github.io/transmitter-web/flatpak/io.github.kernien.Transmitter.flatpakref
+```
+
+更新会自动到达——通过 Discover 或 `flatpak update`。Flatpak 版本有自己的数据文件夹：看不到 AppImage 版本中的密钥，需要重新添加库。
+
+**AppImage——单个文件，无需安装：**
 
 1. 从 [**Releases**](https://github.com/Kernien/Transmitter/releases) 下载 `Transmitter-0.17.0-linux-x86_64.AppImage`。
 2. 将文件设为可执行：在文件管理器中右键 → **属性 → 权限 → 可执行**（或运行 `chmod +x Transmitter-*.AppImage`），然后启动。
@@ -160,12 +170,11 @@ Linux 版没有二维码扫描器——请以字符串形式粘贴密钥。密�
 | 开放只读访问时提示重新登录 Dropbox | 在同一窗口中点击“Sign in to Dropbox again”并允许访问——只需一次 |
 | “The owner has closed access to this board” | 此读者密钥已失效——请向所有者索取新的密钥 |
 | Linux 上 AppImage 无法启动 | 将文件设为可执行（见“安装 → Linux”）。部分发行版需要安装 `libfuse2` 软件包；Steam Deck 已自带 |
+| Discover →“已安装”中没有 Flatpak 版本 | Discover 在检查更新时才会下载应用描述：在其中点击“检查更新”，或运行 `flatpak update --appstream` 后重新打开 Discover |
 
 ---
 
 ## 后续计划
-
-- 在 Flathub 上发布 Linux 版：可从应用商店安装和更新（Steam Deck 上为 Discover）。
 
 暂时不会推出 iPhone 版本：没有可用于测试的设备。在 iPhone 上可以通过 Safari 使用[网页版](https://kernien.github.io/transmitter-web/)。
 

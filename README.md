@@ -14,7 +14,7 @@
 |---|---|
 | 📱 **Android** | приложение, в том числе меню «Поделиться» |
 | 🖥️ **Windows** | приложение с установщиком, перетаскивание файлов в окно |
-| 🐧 **Linux** | AppImage — один файл без установки; проверено на Steam Deck |
+| 🐧 **Linux** | Flatpak с автообновлениями или AppImage — один файл без установки; проверено на Steam Deck |
 | 🌐 **Браузер** | https://kernien.github.io/transmitter-web/ — ничего устанавливать не нужно |
 
 Версия **0.17.0**. Интерфейс — на **русском и английском**: по языку системы
@@ -126,6 +126,21 @@ Transmitter появился, потому что автору надоело к
 версия: распакуйте в любую папку и запустите `transmitter.exe`.
 
 ### Linux и Steam Deck
+
+**Flatpak — с автообновлениями (советуем).** Откройте
+[`io.github.kernien.Transmitter.flatpakref`](https://kernien.github.io/transmitter-web/flatpak/io.github.kernien.Transmitter.flatpakref)
+— Discover (на Steam Deck) или «Центр приложений» предложит установить
+Transmitter. Или в терминале:
+
+```bash
+flatpak install --user https://kernien.github.io/transmitter-web/flatpak/io.github.kernien.Transmitter.flatpakref
+```
+
+Обновления приходят сами — через Discover или `flatpak update`. У
+Flatpak-версии своя папка данных: ключи из AppImage-версии она не видит,
+базы нужно добавить заново.
+
+**AppImage — один файл без установки:**
 
 1. Скачайте `Transmitter-0.17.0-linux-x86_64.AppImage` из раздела [**Releases**](https://github.com/Kernien/Transmitter/releases).
 2. Сделайте файл исполняемым: в файловом менеджере — правой кнопкой →
@@ -262,13 +277,11 @@ Transmitter появился, потому что автору надоело к
 | При открытии доступа на чтение — «войдите в Dropbox заново» | Нажмите в том же окне «Войти в Dropbox заново» и разрешите доступ — это нужно один раз |
 | «Владелец закрыл доступ к этой доске» | Этот ключ читателя больше не работает — попросите у владельца новый |
 | AppImage на Linux не запускается | Сделайте файл исполняемым (см. «Установка → Linux»). На некоторых дистрибутивах нужен пакет `libfuse2`; на Steam Deck он уже есть |
+| Flatpak-версии нет в Discover → «Установленные» | Discover скачивает описание приложения при проверке обновлений: нажмите в нём «Проверить обновления» или выполните `flatpak update --appstream` и откройте Discover заново |
 
 ---
 
 ## Что дальше
-
-- Linux-версия во Flathub: установка и обновления из магазина приложений
-  (на Steam Deck — Discover).
 
 Версии для iPhone пока не будет: её не на чем проверить. На iPhone можно
 пользоваться [веб-версией](https://kernien.github.io/transmitter-web/) в Safari.
