@@ -17,7 +17,7 @@
 | 🐧 **Linux** | AppImage — один файл без установки; проверено на Steam Deck |
 | 🌐 **Браузер** | https://kernien.github.io/transmitter-web/ — ничего устанавливать не нужно |
 
-Версия **0.16.0**. Интерфейс — на **русском и английском**: по языку системы
+Версия **0.17.0**. Интерфейс — на **русском и английском**: по языку системы
 или на выбор в ⚙ «Настройках».
 
 ## Зачем это
@@ -101,9 +101,9 @@ Transmitter появился, потому что автору надоело к
 ### Android
 
 1. Скачайте APK из раздела [**Releases**](https://github.com/Kernien/Transmitter/releases):
-   - `Transmitter-0.16.0-android-arm64.apk` — для большинства телефонов
+   - `Transmitter-0.17.0-android-arm64.apk` — для большинства телефонов
      последних лет;
-   - `Transmitter-0.16.0-android-armv7.apk` — для старых или недорогих моделей,
+   - `Transmitter-0.17.0-android-armv7.apk` — для старых или недорогих моделей,
      если первый не устанавливается.
 2. Откройте файл на телефоне. Android попросит разрешить установку из этого
    источника (браузера или файлового менеджера) — разрешите.
@@ -114,7 +114,7 @@ Transmitter появился, потому что автору надоело к
 
 ### Windows
 
-1. Скачайте `Transmitter-0.16.0-windows-setup.exe` из раздела [**Releases**](https://github.com/Kernien/Transmitter/releases)
+1. Скачайте `Transmitter-0.17.0-windows-setup.exe` из раздела [**Releases**](https://github.com/Kernien/Transmitter/releases)
    и запустите. Установка — только для вашего пользователя, без прав
    администратора; Transmitter появится в меню «Пуск». Удалить можно в
    **Параметры → Приложения**; ключи и вход в облака при этом сохраняются.
@@ -122,12 +122,12 @@ Transmitter появился, потому что автору надоело к
    компьютер» — у приложения нет платной цифровой подписи. Нажмите
    **Подробнее → Выполнить в любом случае**.
 
-Не хотите устанавливать? `Transmitter-0.16.0-windows-x64.zip` — портативная
+Не хотите устанавливать? `Transmitter-0.17.0-windows-x64.zip` — портативная
 версия: распакуйте в любую папку и запустите `transmitter.exe`.
 
 ### Linux и Steam Deck
 
-1. Скачайте `Transmitter-0.16.0-linux-x86_64.AppImage` из раздела [**Releases**](https://github.com/Kernien/Transmitter/releases).
+1. Скачайте `Transmitter-0.17.0-linux-x86_64.AppImage` из раздела [**Releases**](https://github.com/Kernien/Transmitter/releases).
 2. Сделайте файл исполняемым: в файловом менеджере — правой кнопкой →
    **Свойства → Права → «Является исполняемым»** (или
    `chmod +x Transmitter-*.AppImage`), — и запустите.
@@ -139,7 +139,7 @@ Transmitter появился, потому что автору надоело к
 
 Сканера QR на Linux нет — ключ вставляется строкой. Ключи и вход в облака
 хранятся в `~/.local/share/app.transmitter.transmitter` (доступ только у
-вашего пользователя). Есть и архив `Transmitter-0.16.0-linux-x64.tar.gz`:
+вашего пользователя). Есть и архив `Transmitter-0.17.0-linux-x64.tar.gz`:
 распакуйте и запустите `transmitter`.
 
 ### Браузер

@@ -45,6 +45,19 @@
 
   <launchable type="desktop-id">io.github.kernien.Transmitter.desktop</launchable>
 
+  <!-- Снимки — linux/flatpak/screenshots/, ссылки на тег релиза: картинки
+       не меняются вместе с веткой. Сняты на Steam Deck (Flatpak). -->
+  <screenshots>
+    <screenshot type="default">
+      <caption>A vault's feed: links with comments and a photo</caption>
+      <image>https://raw.githubusercontent.com/Kernien/Transmitter/v0.17.0/linux/flatpak/screenshots/feed.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Vaults in Dropbox, Google Drive and MEGA</caption>
+      <image>https://raw.githubusercontent.com/Kernien/Transmitter/v0.17.0/linux/flatpak/screenshots/vaults.png</image>
+    </screenshot>
+  </screenshots>
+
   <url type="homepage">https://github.com/Kernien/Transmitter</url>
   <url type="bugtracker">https://github.com/Kernien/Transmitter/issues</url>
   <url type="vcs-browser">https://github.com/Kernien/Transmitter</url>
@@ -73,6 +86,11 @@
   </content_rating>
 
   <releases>
+    <release version="0.17.0" date="2026-10-28">
+      <description>
+        <p>First Flatpak release: works in the sandbox — cloud sign-in, file picker, drag and drop, “Open in another app”.</p>
+      </description>
+    </release>
     <release version="0.16.0" date="2026-10-25">
       <description>
         <p>Launch screen: the Transmitter mark on indigo while the app starts.</p>

@@ -65,8 +65,22 @@ else
 fi
 
 echo "== Манифест для Flathub"
-sha() { sha256sum "$1" | cut -d' ' -f1; }
-raw="https://raw.githubusercontent.com/$REPO/v$version"
+# Суммы файлов — по содержимому тега (так их отдаёт GitHub), а не рабочей
+# папки: в ней Git на Windows может поменять концы строк. Архив — свой,
+# из build/dist: он же загружается в релиз.
+tag="v$version"
+sha() {
+  case "$1" in
+    "$archive") sha256sum "$1" | cut -d' ' -f1 ;;
+    *) git -c safe.directory="$SRC" -C "$SRC" show "$tag:${1#"$SRC/"}" | sha256sum | cut -d' ' -f1 ;;
+  esac
+}
+git -c safe.directory="$SRC" -C "$SRC" rev-parse -q --verify "refs/tags/$tag" >/dev/null || {
+  echo "   Тега $tag ещё нет — манифест для Flathub не записан" >&2
+  echo "== Готово: flatpak run $APP_ID"
+  exit 0
+}
+raw="https://raw.githubusercontent.com/$REPO/$tag"
 sed \
   -e "s|path: ../../build/flatpak/transmitter-linux-x64.tar.gz|url: https://github.com/$REPO/releases/download/v$version/Transmitter-$version-linux-x64.tar.gz\n        sha256: $(sha "$archive")|" \
   -e "s|path: $APP_ID.desktop|url: $raw/linux/flatpak/$APP_ID.desktop\n        sha256: $(sha "$SRC/linux/flatpak/$APP_ID.desktop")|" \
