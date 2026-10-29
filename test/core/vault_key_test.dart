@@ -97,9 +97,17 @@ void main() {
     expect(await store.loadAll(), isEmpty);
     final keys = [
       VaultKey.generate(provider: CloudProviderId.googleDrive, label: 'Дом'),
-      VaultKey.generate(provider: CloudProviderId.oneDrive, label: 'Работа'),
+      VaultKey.generate(provider: CloudProviderId.dropbox, label: 'Работа'),
     ];
     await store.saveAll(keys);
     expect(await store.loadAll(), keys);
+  });
+
+  test('OneDrive убран: его код — неизвестное облако, не падение', () {
+    expect(
+      CloudProviderId.values.map((p) => p.code),
+      isNot(contains('onedrive')),
+    );
+    expect(() => CloudProviderId.fromCode('onedrive'), throwsFormatException);
   });
 }

@@ -1,11 +1,11 @@
 /// Поддерживаемые облачные сервисы.
 ///
 /// [code] записывается в ключ хранилища и в настройки, поэтому его нельзя
-/// менять у уже существующих значений.
+/// менять у уже существующих значений. Код `onedrive` занят: OneDrive был в
+/// списке («Скоро»), но так и не появился — новому облаку его не давать.
 enum CloudProviderId {
   googleDrive('gdrive', 'Google Drive'),
   dropbox('dropbox', 'Dropbox'),
-  oneDrive('onedrive', 'OneDrive'),
   mega('mega', 'MEGA');
 
   const CloudProviderId(this.code, this.title);
