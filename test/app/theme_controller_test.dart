@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:transmitter/app/cache_settings.dart';
 import 'package:transmitter/app/language_controller.dart';
 import 'package:transmitter/app/theme_controller.dart';
+import 'package:transmitter/core/device/device_identity.dart';
 import 'package:transmitter/core/persistence/blob_cache.dart';
 import 'package:transmitter/core/persistence/key_value_store.dart';
 import 'package:transmitter/features/settings/settings_sheet.dart';
@@ -76,6 +77,9 @@ void main() {
           ChangeNotifierProvider.value(value: theme),
           ChangeNotifierProvider(create: (_) => LanguageController(store)),
           ChangeNotifierProvider(
+            create: (_) => DeviceIdentity(store, _TestDeviceNameSuggester()),
+          ),
+          ChangeNotifierProvider(
             create: (_) => CacheSettings(const NoBlobCache(), store),
           ),
         ],
@@ -107,6 +111,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(theme.theme, AppTheme.night);
   });
+}
+
+class _TestDeviceNameSuggester implements DeviceNameSuggester {
+  @override
+  Future<String> suggest() async => 'Test device';
 }
 
 /// Контраст двух цветов по WCAG.

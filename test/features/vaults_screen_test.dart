@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:transmitter/app/cache_settings.dart';
+import 'package:transmitter/app/language_controller.dart';
+import 'package:transmitter/app/theme_controller.dart';
 import 'package:transmitter/core/persistence/blob_cache.dart';
 import 'package:transmitter/core/device/device_identity.dart';
 import 'package:transmitter/core/persistence/key_value_store.dart';
@@ -98,7 +100,7 @@ void main() {
     expect(find.textContaining('Не удалось сохранить'), findsOneWidget);
   });
 
-  testWidgets('на главном экране есть кнопка имени устройства', (tester) async {
+  testWidgets('имя устройства и облака доступны в настройках', (tester) async {
     final store = InMemoryKeyValueStore();
     final device = DeviceIdentity(store, FakeSuggester(() async => 'Тест'));
     await device.rename('Ноутбук');
@@ -114,6 +116,8 @@ void main() {
             create: (_) => VaultsController(VaultKeyStore(store)),
           ),
           ChangeNotifierProvider.value(value: device),
+          ChangeNotifierProvider(create: (_) => LanguageController(store)),
+          ChangeNotifierProvider(create: (_) => ThemeController(store)),
           ChangeNotifierProvider(
             create: (_) => CacheSettings(const NoBlobCache(), store),
           ),
@@ -127,13 +131,22 @@ void main() {
       ),
     );
 
-    final button = find.byIcon(Icons.badge_outlined);
-    expect(button, findsOneWidget);
-    expect(find.byTooltip('Имя устройства: Ноутбук'), findsOneWidget);
+    expect(find.byIcon(Icons.badge_outlined), findsNothing);
+    expect(find.byIcon(Icons.cloud_outlined), findsNothing);
+    expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
 
-    await tester.tap(button);
+    await tester.tap(find.byIcon(Icons.settings_outlined));
     await tester.pumpAndSettle();
-    expect(find.text('Имя устройства'), findsOneWidget);
+    expect(find.text('Ноутбук'), findsOneWidget);
+    expect(find.text('Облака'), findsOneWidget);
+    await tester.tap(find.text('Имя устройства'));
+    await tester.pumpAndSettle();
+    expect(find.text('Имя устройства'), findsNWidgets(2));
     expect(find.widgetWithText(TextField, 'Ноутбук'), findsOneWidget);
+    await tester.tap(find.text('Отмена'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Облака'));
+    await tester.pumpAndSettle();
+    expect(find.text('Dropbox'), findsOneWidget);
   });
 }

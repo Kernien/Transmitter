@@ -6,13 +6,10 @@ import 'package:provider/provider.dart';
 import '../../app/l10n.dart';
 import '../../app/widgets/content_width.dart';
 import '../../app/vault_session_factory.dart';
-import '../../core/device/device_identity.dart';
 import '../../core/storage/cloud_connection_service.dart';
 import '../../core/vault/reader_key.dart';
 import '../../core/vault/vault_key.dart';
-import '../cloud_connect/clouds_screen.dart';
 import '../cloud_connect/connect_cloud_screen.dart';
-import '../device/device_name_dialog.dart';
 import '../feed/feed_screen.dart';
 import '../settings/settings_sheet.dart';
 import 'board_access_sheet.dart';
@@ -41,17 +38,6 @@ class VaultsScreen extends StatelessWidget {
             tooltip: l.settings,
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => showSettingsSheet(context),
-          ),
-          IconButton(
-            tooltip: l.deviceNameTooltip(context.watch<DeviceIdentity>().name),
-            icon: const Icon(Icons.badge_outlined),
-            onPressed: () => showDeviceNameDialog(context),
-          ),
-          IconButton(
-            tooltip: l.clouds,
-            icon: const Icon(Icons.cloud_outlined),
-            onPressed: () => Navigator.of(context)
-                .push(MaterialPageRoute(builder: (_) => const CloudsScreen())),
           ),
           IconButton(
             tooltip: l.addKey,
