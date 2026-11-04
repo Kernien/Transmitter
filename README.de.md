@@ -18,7 +18,7 @@ Bytes.
 | 🐧 **Linux** | Flatpak mit automatischen Updates oder AppImage — eine einzige Datei ohne Installation; getestet auf dem Steam Deck |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — keine Installation nötig |
 
-Version **0.17.0**.
+Version **0.18.0**.
 
 > **Sprache der Oberfläche.** Die App gibt es auf Englisch und Russisch; auf
 > einem deutschen System ist sie auf Englisch (umschalten unter ⚙ „Settings“).
@@ -92,6 +92,7 @@ Computer und Browser.
   teile ihn mit anderen: Mit einem Leseschlüssel lassen sich Einträge ansehen,
   kopieren und herunterladen, aber nicht ändern. Leser brauchen kein
   Cloud-Konto.
+- **PIN-Code und Fingerabdruck.** Schütze die App mit einer 4-stelligen PIN (und Fingerabdruck unter Android): wird beim Start und nach 5 Minuten im Hintergrund abgefragt.
 - **Keine Registrierung.** Keine Transmitter-Konten: Geräte werden über einen
   Schlüssel verbunden — per QR-Code oder als Zeichenfolge.
 
@@ -119,9 +120,9 @@ Computer und Browser.
 ### Android
 
 1. Lade die APK unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter:
-   - `Transmitter-0.17.0-android-arm64.apk` — für die meisten Handys der
+   - `Transmitter-0.18.0-android-arm64.apk` — für die meisten Handys der
      letzten Jahre;
-   - `Transmitter-0.17.0-android-armv7.apk` — für ältere oder günstige
+   - `Transmitter-0.18.0-android-armv7.apk` — für ältere oder günstige
      Modelle, falls sich die erste nicht installieren lässt.
 2. Öffne die Datei auf dem Handy. Android fragt, ob Installationen aus dieser
    Quelle (Browser oder Dateimanager) erlaubt sind — erlaube es.
@@ -133,7 +134,7 @@ klone ihn ebenfalls.
 
 ### Windows
 
-1. Lade `Transmitter-0.17.0-windows-setup.exe` unter [**Releases**](https://github.com/Kernien/Transmitter/releases)
+1. Lade `Transmitter-0.18.0-windows-setup.exe` unter [**Releases**](https://github.com/Kernien/Transmitter/releases)
    herunter und starte es. Die Installation gilt nur für deinen Benutzer —
    ohne Administratorrechte — und legt Transmitter im Startmenü an.
    Deinstallieren unter **Einstellungen → Apps**; Schlüssel und
@@ -143,7 +144,7 @@ klone ihn ebenfalls.
    Signaturzertifikat. Klicke auf **Weitere Informationen → Trotzdem
    ausführen**.
 
-Lieber ohne Installation? `Transmitter-0.17.0-windows-x64.zip` ist eine
+Lieber ohne Installation? `Transmitter-0.18.0-windows-x64.zip` ist eine
 portable Version: irgendwo entpacken und `transmitter.exe` starten.
 
 ### Linux und Steam Deck
@@ -163,7 +164,7 @@ sieht sie nicht, füge deine Tresore also erneut hinzu.
 
 **AppImage — eine einzige Datei ohne Installation:**
 
-1. Lade `Transmitter-0.17.0-linux-x86_64.AppImage` unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter.
+1. Lade `Transmitter-0.18.0-linux-x86_64.AppImage` unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter.
 2. Mache die Datei ausführbar — im Dateimanager per Rechtsklick →
    **Eigenschaften → Berechtigungen → Ausführbar** (oder
    `chmod +x Transmitter-*.AppImage`) — und starte sie.
@@ -176,7 +177,7 @@ Bibliothek unter den Nicht-Steam-Spielen.
 Unter Linux gibt es keinen QR-Scanner — füge den Schlüssel als Text ein.
 Schlüssel und Cloud-Anmeldungen liegen in
 `~/.local/share/app.transmitter.transmitter` (nur für deinen Benutzer
-lesbar). Außerdem gibt es `Transmitter-0.17.0-linux-x64.tar.gz`: entpacken und
+lesbar). Außerdem gibt es `Transmitter-0.18.0-linux-x64.tar.gz`: entpacken und
 `transmitter` starten.
 
 ### Browser
@@ -257,13 +258,11 @@ der Verlauf geöffnet ist.
 - **Mehrere Tresore:** Lege einen weiteren Schlüssel an — er bekommt einen
   eigenen Verlauf.
 - **Einstellungen:** das ⚙-Symbol auf dem Startbildschirm („Settings“) —
-  Erscheinungsbild („Appearance“), Sprache („Language“: wie im System,
-  Русский oder English) und Speicher auf dem Gerät („Storage on this device“,
-  nicht im Browser). Die Wahl gilt für jedes Gerät einzeln.
-- **Gerätename:** das 🪪-Symbol auf dem Startbildschirm. Beim ersten Start
-  schlägt Transmitter selbst einen Namen vor.
-- **Clouds:** das ☁-Symbol auf dem Startbildschirm — auf diesem Gerät bei
-  einer Cloud an- oder abmelden.
+  Gerätename („Device name“), Clouds („Clouds“), App-Sperre („App lock“:
+  4-stellige PIN und Fingerabdruck), Erscheinungsbild („Appearance“), Sprache
+  („Language“: wie im System, Русский oder English) und Speicher auf dem Gerät
+  („Storage on this device“, nicht im Browser). Die Wahl gilt für jedes Gerät
+  einzeln.
 - **Tresor vom Gerät entfernen:** ⋮ neben dem Tresor → **Vom Gerät
   entfernen** („Remove from device“). Die Daten in der Cloud und auf anderen
   Geräten bleiben erhalten.
