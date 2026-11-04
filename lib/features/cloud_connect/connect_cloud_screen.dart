@@ -217,7 +217,15 @@ class _ConnectCloudScreenState extends State<ConnectCloudScreen> {
     setState(() {
       _busy = false;
       _error = error;
-      if (error is SecondFactorRequiredException) _needsCode = true;
+      if (error is SecondFactorRequiredException) {
+        _needsCode = true;
+      } else if (error != null) {
+        if (_needsCode) {
+          _code.clear();
+        } else {
+          _password.clear();
+        }
+      }
     });
   }
 

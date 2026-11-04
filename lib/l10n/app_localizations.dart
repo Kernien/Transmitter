@@ -782,6 +782,156 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settings;
 
+  /// No description provided for @appLockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'App lock'**
+  String get appLockTitle;
+
+  /// No description provided for @appLockEnabledSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN enabled · locks after 5 minutes in the background'**
+  String get appLockEnabledSubtitle;
+
+  /// No description provided for @appLockDisabledSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Protect the app with a PIN'**
+  String get appLockDisabledSubtitle;
+
+  /// No description provided for @appLockEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable PIN'**
+  String get appLockEnable;
+
+  /// No description provided for @appLockChangePin.
+  ///
+  /// In en, this message translates to:
+  /// **'Change PIN'**
+  String get appLockChangePin;
+
+  /// No description provided for @appLockDisablePin.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off PIN'**
+  String get appLockDisablePin;
+
+  /// No description provided for @appLockSetPinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a PIN'**
+  String get appLockSetPinTitle;
+
+  /// No description provided for @appLockCurrentPinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your current PIN'**
+  String get appLockCurrentPinTitle;
+
+  /// No description provided for @appLockEnterPinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter PIN'**
+  String get appLockEnterPinTitle;
+
+  /// No description provided for @appLockPinInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a {length}-digit PIN'**
+  String appLockPinInstructions(int length);
+
+  /// No description provided for @appLockEnterPinHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your 4-digit PIN'**
+  String get appLockEnterPinHint;
+
+  /// No description provided for @appLockSettingsCorrupt.
+  ///
+  /// In en, this message translates to:
+  /// **'The PIN record can\'t be read. Reset local keys to continue.'**
+  String get appLockSettingsCorrupt;
+
+  /// No description provided for @appLockRepeatPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat PIN'**
+  String get appLockRepeatPin;
+
+  /// No description provided for @appLockPinInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN must contain 4 digits'**
+  String get appLockPinInvalid;
+
+  /// No description provided for @appLockPinMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The PINs don\'t match'**
+  String get appLockPinMismatch;
+
+  /// No description provided for @appLockWrongPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect PIN'**
+  String get appLockWrongPin;
+
+  /// No description provided for @appLockWaitSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Try again in {seconds} sec.'**
+  String appLockWaitSeconds(int seconds);
+
+  /// No description provided for @appLockBiometrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock with fingerprint or biometrics'**
+  String get appLockBiometrics;
+
+  /// No description provided for @appLockBiometricReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock Transmitter'**
+  String get appLockBiometricReason;
+
+  /// No description provided for @appLockUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock'**
+  String get appLockUnlock;
+
+  /// No description provided for @appLockForgotPin.
+  ///
+  /// In en, this message translates to:
+  /// **'I forgot my PIN'**
+  String get appLockForgotPin;
+
+  /// No description provided for @appLockRecoveryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset local keys?'**
+  String get appLockRecoveryTitle;
+
+  /// No description provided for @appLockRecoveryMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'All board keys on this device will be deleted. Cloud data and cloud sign-ins will remain. To restore your boards, add the keys from another device.'**
+  String get appLockRecoveryMessage;
+
+  /// No description provided for @appLockRecover.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset keys'**
+  String get appLockRecover;
+
+  /// No description provided for @appLockRecoveryComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Local keys were reset. Add them again from another device.'**
+  String get appLockRecoveryComplete;
+
   /// No description provided for @theme.
   ///
   /// In en, this message translates to:

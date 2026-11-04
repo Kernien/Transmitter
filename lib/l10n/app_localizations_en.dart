@@ -408,6 +408,89 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings => 'Settings';
 
   @override
+  String get appLockTitle => 'App lock';
+
+  @override
+  String get appLockEnabledSubtitle =>
+      'PIN enabled · locks after 5 minutes in the background';
+
+  @override
+  String get appLockDisabledSubtitle => 'Protect the app with a PIN';
+
+  @override
+  String get appLockEnable => 'Enable PIN';
+
+  @override
+  String get appLockChangePin => 'Change PIN';
+
+  @override
+  String get appLockDisablePin => 'Turn off PIN';
+
+  @override
+  String get appLockSetPinTitle => 'Create a PIN';
+
+  @override
+  String get appLockCurrentPinTitle => 'Enter your current PIN';
+
+  @override
+  String get appLockEnterPinTitle => 'Enter PIN';
+
+  @override
+  String appLockPinInstructions(int length) {
+    return 'Use a $length-digit PIN';
+  }
+
+  @override
+  String get appLockEnterPinHint => 'Enter your 4-digit PIN';
+
+  @override
+  String get appLockSettingsCorrupt =>
+      'The PIN record can\'t be read. Reset local keys to continue.';
+
+  @override
+  String get appLockRepeatPin => 'Repeat PIN';
+
+  @override
+  String get appLockPinInvalid => 'PIN must contain 4 digits';
+
+  @override
+  String get appLockPinMismatch => 'The PINs don\'t match';
+
+  @override
+  String get appLockWrongPin => 'Incorrect PIN';
+
+  @override
+  String appLockWaitSeconds(int seconds) {
+    return 'Too many attempts. Try again in $seconds sec.';
+  }
+
+  @override
+  String get appLockBiometrics => 'Unlock with fingerprint or biometrics';
+
+  @override
+  String get appLockBiometricReason => 'Unlock Transmitter';
+
+  @override
+  String get appLockUnlock => 'Unlock';
+
+  @override
+  String get appLockForgotPin => 'I forgot my PIN';
+
+  @override
+  String get appLockRecoveryTitle => 'Reset local keys?';
+
+  @override
+  String get appLockRecoveryMessage =>
+      'All board keys on this device will be deleted. Cloud data and cloud sign-ins will remain. To restore your boards, add the keys from another device.';
+
+  @override
+  String get appLockRecover => 'Reset keys';
+
+  @override
+  String get appLockRecoveryComplete =>
+      'Local keys were reset. Add them again from another device.';
+
+  @override
   String get theme => 'Appearance';
 
   @override

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../features/app_lock/app_lock_gate.dart';
 import '../core/device/device_identity.dart';
 import '../core/files/external_opener.dart';
 import '../core/files/file_transfer_service.dart';
@@ -14,13 +15,15 @@ import '../features/vaults/vaults_controller.dart';
 import '../features/vaults/vaults_screen.dart';
 import '../l10n/app_localizations.dart';
 import 'cache_settings.dart';
+import 'app_lock_controller.dart';
 import 'language_controller.dart';
 import 'theme_controller.dart';
 import 'vault_session_factory.dart';
 
 class TransmitterApp extends StatelessWidget {
-  const TransmitterApp({
+  TransmitterApp({
     super.key,
+    required this.appLock,
     required this.connections,
     required this.vaults,
     required this.device,
@@ -33,8 +36,9 @@ class TransmitterApp extends StatelessWidget {
     this.opener = const NoExternalOpener(),
     required this.incomingShares,
     required this.shareSender,
-  });
+  }) : _navigatorKey = GlobalKey<NavigatorState>();
 
+  final AppLockController appLock;
   final CloudConnectionService connections;
   final VaultsController vaults;
   final DeviceIdentity device;
@@ -47,6 +51,7 @@ class TransmitterApp extends StatelessWidget {
   final ExternalOpener opener;
   final IncomingShareSource incomingShares;
   final ShareSender shareSender;
+  final GlobalKey<NavigatorState> _navigatorKey;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +63,7 @@ class TransmitterApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: language),
         ChangeNotifierProvider.value(value: cacheSettings),
         ChangeNotifierProvider.value(value: theme),
+        ChangeNotifierProvider.value(value: appLock),
         Provider.value(value: sessions),
         Provider<FileTransferService>.value(value: files),
         Provider<MediaPicker>.value(value: media),
@@ -67,6 +73,7 @@ class TransmitterApp extends StatelessWidget {
       ],
       child: Consumer2<LanguageController, ThemeController>(
         builder: (context, language, theme, _) => MaterialApp(
+          navigatorKey: _navigatorKey,
           title: 'Transmitter',
           // Язык: выбранный в приложении или (null) как в системе — русский
           // или английский, для остальных языков английский. Тексты —
@@ -79,6 +86,13 @@ class TransmitterApp extends StatelessWidget {
           theme: theme.light,
           darkTheme: theme.dark,
           themeMode: theme.mode,
+          builder: (context, child) => AppLockGate(
+            controller: appLock,
+            vaults: vaults,
+            sessions: sessions,
+            navigatorKey: _navigatorKey,
+            child: child ?? const SizedBox.shrink(),
+          ),
           home: const IncomingShareListener(
             child: DeviceNamePrompt(child: VaultsScreen()),
           ),

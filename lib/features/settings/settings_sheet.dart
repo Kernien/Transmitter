@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/cache_settings.dart';
+import '../../app/app_lock_controller.dart';
 import '../../app/l10n.dart';
 import '../../app/language_controller.dart';
 import '../../app/theme_controller.dart';
 import '../../core/device/device_identity.dart';
 import '../cloud_connect/clouds_screen.dart';
 import '../device/device_name_dialog.dart';
+import '../app_lock/app_lock_settings_screen.dart';
 import 'language_dialog.dart';
 import 'storage_dialog.dart';
 import 'theme_dialog.dart';
@@ -30,6 +32,7 @@ class _SettingsSheet extends StatelessWidget {
     final language = context.watch<LanguageController>().language;
     final cache = context.watch<CacheSettings>();
     final device = context.watch<DeviceIdentity>();
+    final appLock = context.watch<AppLockController>();
     return SafeArea(
       child: SingleChildScrollView(
         child: Column(
@@ -53,6 +56,16 @@ class _SettingsSheet extends StatelessWidget {
               onTap: () => Navigator.of(
                 context,
               ).push(MaterialPageRoute(builder: (_) => const CloudsScreen())),
+            ),
+            ListTile(
+              leading: const Icon(Icons.lock_outline),
+              title: Text(l.appLockTitle),
+              subtitle: Text(
+                appLock.isEnabled
+                    ? l.appLockEnabledSubtitle
+                    : l.appLockDisabledSubtitle,
+              ),
+              onTap: () => showAppLockSettings(context),
             ),
             ListTile(
               leading: const Icon(Icons.palette_outlined),

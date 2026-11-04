@@ -408,6 +408,89 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settings => 'Настройки';
 
   @override
+  String get appLockTitle => 'Блокировка приложения';
+
+  @override
+  String get appLockEnabledSubtitle =>
+      'ПИН-код включён · блокировка через 5 минут в фоне';
+
+  @override
+  String get appLockDisabledSubtitle => 'Защитить приложение ПИН-кодом';
+
+  @override
+  String get appLockEnable => 'Включить ПИН-код';
+
+  @override
+  String get appLockChangePin => 'Изменить ПИН-код';
+
+  @override
+  String get appLockDisablePin => 'Отключить ПИН-код';
+
+  @override
+  String get appLockSetPinTitle => 'Придумайте ПИН-код';
+
+  @override
+  String get appLockCurrentPinTitle => 'Введите текущий ПИН-код';
+
+  @override
+  String get appLockEnterPinTitle => 'Введите ПИН-код';
+
+  @override
+  String appLockPinInstructions(int length) {
+    return 'Задайте $length-значный ПИН-код';
+  }
+
+  @override
+  String get appLockEnterPinHint => 'Введите ПИН-код (4 цифры)';
+
+  @override
+  String get appLockSettingsCorrupt =>
+      'Не удалось прочитать ПИН-код. Для продолжения сбросьте локальные ключи.';
+
+  @override
+  String get appLockRepeatPin => 'Повторите ПИН-код';
+
+  @override
+  String get appLockPinInvalid => 'ПИН-код должен состоять из 4 цифр';
+
+  @override
+  String get appLockPinMismatch => 'ПИН-коды не совпадают';
+
+  @override
+  String get appLockWrongPin => 'Неверный ПИН-код';
+
+  @override
+  String appLockWaitSeconds(int seconds) {
+    return 'Слишком много попыток. Попробуйте снова через $seconds с.';
+  }
+
+  @override
+  String get appLockBiometrics => 'Разблокировать по отпечатку или биометрии';
+
+  @override
+  String get appLockBiometricReason => 'Разблокировать Transmitter';
+
+  @override
+  String get appLockUnlock => 'Разблокировать';
+
+  @override
+  String get appLockForgotPin => 'Не помню ПИН-код';
+
+  @override
+  String get appLockRecoveryTitle => 'Сбросить локальные ключи?';
+
+  @override
+  String get appLockRecoveryMessage =>
+      'Все ключи досок на этом устройстве будут удалены. Данные и подключение к облакам останутся. Чтобы вернуть доски, добавьте ключи с другого устройства.';
+
+  @override
+  String get appLockRecover => 'Сбросить ключи';
+
+  @override
+  String get appLockRecoveryComplete =>
+      'Локальные ключи сброшены. Добавьте их снова с другого устройства.';
+
+  @override
   String get theme => 'Оформление';
 
   @override

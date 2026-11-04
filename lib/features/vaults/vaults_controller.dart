@@ -183,6 +183,18 @@ class VaultsController extends ChangeNotifier {
     customLabels: _customLabels.difference({key.locator}),
   );
 
+  /// Сбрасывает ключи баз и читателей только на этом устройстве.
+  /// Данные и учётные записи облаков не затрагиваются.
+  Future<void> clearLocalKeys() async {
+    await _store.saveAll(const []);
+    final readers = _readers;
+    if (readers != null) await readers.saveAll(const [], const {});
+    _vaults = const [];
+    _boards = const [];
+    _customLabels = const {};
+    notifyListeners();
+  }
+
   Future<void> _save(List<VaultKey> next) async {
     await _store.saveAll(next);
     _vaults = next;

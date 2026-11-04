@@ -4,9 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:http/http.dart' as http;
+import 'package:local_auth/local_auth.dart';
 
 import 'app/app.dart';
 import 'app/app_config.dart';
+import 'app/app_lock_controller.dart';
 import 'app/cache_settings.dart';
 import 'app/language_controller.dart';
 import 'app/theme_controller.dart';
@@ -16,6 +18,7 @@ import 'core/auth/auth_browser.dart';
 import 'core/auth/platform_auth_browser.dart';
 import 'core/device/device_identity.dart';
 import 'core/device/platform_device_name_suggester.dart';
+import 'core/device/local_biometric_authenticator.dart';
 import 'core/files/android_gallery_picker.dart';
 import 'core/files/file_picker_transfer_service.dart';
 import 'core/files/media_picker.dart';
@@ -60,6 +63,12 @@ Future<void> main() async {
     appId: 'app.transmitter.transmitter',
   );
   final httpClient = http.Client();
+  final appLock = AppLockController(
+    secureStore,
+    biometrics: isAndroid
+        ? LocalAuthBiometricAuthenticator(LocalAuthentication())
+        : const NoBiometricAuthenticator(),
+  );
 
   // Язык интерфейса (системный или выбранный в приложении). Тексты вне
   // виджетов — страница входа в браузере, подсказки имени устройства,
@@ -133,7 +142,12 @@ Future<void> main() async {
     // Название и лимит размера файла — общие для всех устройств базы.
     settings: sessions,
   );
-  await Future.wait([connections.load(), vaults.load(), device.load()]);
+  await Future.wait([
+    connections.load(),
+    vaults.load(),
+    device.load(),
+    appLock.load(),
+  ]);
   // Названия и лимиты могли поменять на другом устройстве — в фоне.
   unawaited(vaults.refreshSettings());
 
@@ -142,6 +156,7 @@ Future<void> main() async {
 
   runApp(
     TransmitterApp(
+      appLock: appLock,
       connections: connections,
       vaults: vaults,
       device: device,

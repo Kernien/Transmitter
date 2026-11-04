@@ -101,4 +101,19 @@ void main() {
       expect(raw, startsWith('['));
     },
   );
+
+  test('сброс ключей очищает доски только на устройстве', () async {
+    final c = controller();
+    await c.load();
+    await c.importAny(ownerCode);
+    await c.importAny(const ReaderKeyCodec().encode(readerKey));
+
+    await c.clearLocalKeys();
+
+    expect(c.vaults, isEmpty);
+    expect(c.boards, isEmpty);
+    expect(await store.read('vault_keys'), '[]');
+    expect(await store.read('reader_keys'), '[]');
+    expect(await store.read('reader_custom_labels'), '[]');
+  });
 }

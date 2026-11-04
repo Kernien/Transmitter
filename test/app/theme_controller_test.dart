@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:transmitter/app/cache_settings.dart';
+import 'package:transmitter/app/app_lock_controller.dart';
 import 'package:transmitter/app/language_controller.dart';
 import 'package:transmitter/app/theme_controller.dart';
 import 'package:transmitter/core/device/device_identity.dart';
@@ -76,6 +77,7 @@ void main() {
         providers: [
           ChangeNotifierProvider.value(value: theme),
           ChangeNotifierProvider(create: (_) => LanguageController(store)),
+          ChangeNotifierProvider(create: (_) => AppLockController(store)),
           ChangeNotifierProvider(
             create: (_) => DeviceIdentity(store, _TestDeviceNameSuggester()),
           ),

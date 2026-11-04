@@ -54,6 +54,12 @@ class VaultSessionFactory implements VaultSettingsRemote {
   _sessions = {};
   final Map<String, PostRepository> _boards = {};
 
+  /// Отбрасывает сессии с ключами, когда ключи на устройстве сбрасываются.
+  void clearSessions() {
+    _sessions.clear();
+    _boards.clear();
+  }
+
   /// Лента базы. Если облако умеет открывать файлы по ссылке, изменения
   /// сразу попадают и в публичную доску (когда доступ на чтение открыт).
   Future<PostRepository> open(VaultKey key) {
