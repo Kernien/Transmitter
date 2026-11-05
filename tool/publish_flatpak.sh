@@ -53,7 +53,10 @@ flatpak-builder --force-clean --disable-cache --default-branch="$BRANCH" \
 
 echo "== Сводка репозитория"
 # Две последние версии: можно откатиться на прошлую, а сайт не разрастается.
-flatpak build-update-repo --gpg-sign="$key" --generate-static-deltas \
+# Без --generate-static-deltas: дельты кодируются base64 (содержат каталоги
+# вроде kA и KA), которые на файловой системе Windows (NTFS) вызывают коллизию имён.
+rm -rf "$WORK/repo/deltas" "$WORK/repo/delta-indexes"
+flatpak build-update-repo --gpg-sign="$key" \
   --prune --prune-depth=2 --title=Transmitter \
   --default-branch="$BRANCH" "$WORK/repo"
 
