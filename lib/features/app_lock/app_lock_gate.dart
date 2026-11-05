@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -6,7 +9,8 @@ import '../../app/l10n.dart';
 import '../../app/vault_session_factory.dart';
 import '../../features/vaults/vaults_controller.dart';
 
-/// Закрывает всё приложение при запуске и после долгого пребывания в фоне.
+/// Закрывает всё приложение при запуске, после долгого пребывания в фоне или
+/// при отсутствии активности пользователя (в вебе).
 class AppLockGate extends StatefulWidget {
   const AppLockGate({
     super.key,
@@ -15,6 +19,8 @@ class AppLockGate extends StatefulWidget {
     required this.sessions,
     required this.navigatorKey,
     required this.child,
+    this.trackInactivity = kIsWeb,
+    this.inactivityTimeout = AppLockController.backgroundTimeout,
   });
 
   final AppLockController controller;
@@ -22,6 +28,8 @@ class AppLockGate extends StatefulWidget {
   final VaultSessionFactory sessions;
   final GlobalKey<NavigatorState> navigatorKey;
   final Widget child;
+  final bool trackInactivity;
+  final Duration inactivityTimeout;
 
   @override
   State<AppLockGate> createState() => _AppLockGateState();
@@ -29,13 +37,20 @@ class AppLockGate extends StatefulWidget {
 
 class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
   bool _biometricPromptOpen = false;
+  Timer? _inactivityTimer;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    if (widget.trackInactivity) {
+      HardwareKeyboard.instance.addHandler(_onHardwareKeyEvent);
+    }
     widget.controller.addListener(_onLockChanged);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _tryBiometrics());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _tryBiometrics();
+      _startInactivityTimer();
+    });
   }
 
   @override
@@ -45,29 +60,85 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
       oldWidget.controller.removeListener(_onLockChanged);
       widget.controller.addListener(_onLockChanged);
     }
+    if (oldWidget.trackInactivity != widget.trackInactivity) {
+      if (widget.trackInactivity) {
+        HardwareKeyboard.instance.addHandler(_onHardwareKeyEvent);
+        _startInactivityTimer();
+      } else {
+        HardwareKeyboard.instance.removeHandler(_onHardwareKeyEvent);
+        _stopInactivityTimer();
+      }
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    if (widget.trackInactivity) {
+      HardwareKeyboard.instance.removeHandler(_onHardwareKeyEvent);
+    }
+    _stopInactivityTimer();
     widget.controller.removeListener(_onLockChanged);
     super.dispose();
+  }
+
+  bool _onHardwareKeyEvent(KeyEvent event) {
+    _onUserActivity();
+    return false;
+  }
+
+  void _onUserActivity() {
+    _startInactivityTimer();
+  }
+
+  void _startInactivityTimer() {
+    if (!widget.trackInactivity ||
+        !widget.controller.isEnabled ||
+        widget.controller.isLocked) {
+      _stopInactivityTimer();
+      return;
+    }
+    _inactivityTimer?.cancel();
+    _inactivityTimer = Timer(widget.inactivityTimeout, _onInactivityTimeout);
+  }
+
+  void _stopInactivityTimer() {
+    _inactivityTimer?.cancel();
+    _inactivityTimer = null;
+  }
+
+  void _onInactivityTimeout() {
+    if (!mounted) return;
+    if (widget.trackInactivity &&
+        widget.controller.isEnabled &&
+        !widget.controller.isLocked) {
+      widget.controller.lock();
+    }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.hidden ||
         state == AppLifecycleState.paused) {
+      _stopInactivityTimer();
       widget.controller.onBackground();
     } else if (state == AppLifecycleState.resumed) {
       widget.controller.onForeground();
       _tryBiometrics();
+      if (!widget.controller.isLocked) {
+        _startInactivityTimer();
+      }
     }
   }
 
   void _onLockChanged() {
     if (mounted) setState(() {});
     _tryBiometrics();
+    if (widget.controller.isLocked) {
+      _stopInactivityTimer();
+    } else {
+      _startInactivityTimer();
+    }
   }
 
   Future<void> _tryBiometrics() async {
@@ -93,34 +164,49 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: widget.controller,
-    builder: (context, _) => Stack(
-      fit: StackFit.expand,
-      children: [
-        // Пока приложение закрыто, лента под экраном блокировки не должна
-        // получать ввод с клавиатуры (Tab, Enter) и читаться программами
-        // экранного доступа: на ПК фокус иначе уходит под экран ПИН-кода.
-        ExcludeFocus(
-          excluding: widget.controller.isLocked,
-          child: ExcludeSemantics(
+    builder: (context, _) {
+      Widget content = Stack(
+        fit: StackFit.expand,
+        children: [
+          // Пока приложение закрыто, лента под экраном блокировки не должна
+          // получать ввод с клавиатуры (Tab, Enter) и читаться программами
+          // экранного доступа: на ПК фокус иначе уходит под экран ПИН-кода.
+          ExcludeFocus(
             excluding: widget.controller.isLocked,
-            child: widget.child,
+            child: ExcludeSemantics(
+              excluding: widget.controller.isLocked,
+              child: widget.child,
+            ),
           ),
-        ),
-        if (widget.controller.isLocked)
-          Overlay(
-            initialEntries: [
-              OverlayEntry(
-                builder: (_) => AppLockScreen(
-                  controller: widget.controller,
-                  vaults: widget.vaults,
-                  sessions: widget.sessions,
-                  navigatorKey: widget.navigatorKey,
+          if (widget.controller.isLocked)
+            Overlay(
+              initialEntries: [
+                OverlayEntry(
+                  builder: (_) => AppLockScreen(
+                    controller: widget.controller,
+                    vaults: widget.vaults,
+                    sessions: widget.sessions,
+                    navigatorKey: widget.navigatorKey,
+                  ),
                 ),
-              ),
-            ],
-          ),
-      ],
-    ),
+              ],
+            ),
+        ],
+      );
+
+      if (widget.trackInactivity) {
+        content = Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (_) => _onUserActivity(),
+          onPointerMove: (_) => _onUserActivity(),
+          onPointerHover: (_) => _onUserActivity(),
+          onPointerSignal: (_) => _onUserActivity(),
+          child: content,
+        );
+      }
+
+      return content;
+    },
   );
 }
 

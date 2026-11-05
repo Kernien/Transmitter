@@ -20,9 +20,9 @@ Flutter: `C:\dev\flutter\bin`. Скрипты `.ps1` запускать с
 1. `flutter build windows --release --dart-define-from-file=config/dev.json --dart-define-from-file=config/secrets.json`
    (в PATH — `%LOCALAPPDATA%\bin\NASM`).
 2. Установщик из свежей сборки (Inno Setup 6, версия из `pubspec.yaml`):
-   `ISCC.exe /Q /DAppVersion=<версия> /DSourceDir=<build\windows\x64\runner\Release> /DOutputDir=<build\local-install> installer\transmitter.iss`
-3. Закрыть работающее приложение (`Get-Process transmitter | Stop-Process`),
-   затем `Start-Process <setup.exe> -ArgumentList /SILENT,/CLOSEAPPLICATIONS -Wait`.
+   `& "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" /Q /DAppVersion=<версия> /DSourceDir=(Resolve-Path build\windows\x64\runner\Release).Path /DOutputDir=(Resolve-Path build\local-install).Path installer\transmitter.iss`
+3. Закрыть работающее приложение (`Get-Process transmitter -ErrorAction SilentlyContinue | Stop-Process`),
+   затем `Start-Process "build\local-install\Transmitter-<версия>-windows-setup.exe" -ArgumentList /SILENT,/CLOSEAPPLICATIONS -Wait`.
 4. Проверить: время `data\app.so` в `%LOCALAPPDATA%\Programs\Transmitter`
    совпадает со сборкой. Время `transmitter.exe` не меняется при правках на
    Dart — по нему версию не проверять.

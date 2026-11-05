@@ -168,6 +168,16 @@ class AppLockController extends ChangeNotifier {
     return true;
   }
 
+
+  /// Принудительно блокирует приложение (например, по таймауту неактивности).
+  void lock() {
+    if (_record != null && !_locked) {
+      _locked = true;
+      _automaticBiometricAttempted = false;
+      notifyListeners();
+    }
+  }
+
   /// Вызывается, когда приложение уходит в фон.
   void onBackground() {
     _backgroundedAt ??= _clock();

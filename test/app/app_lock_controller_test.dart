@@ -307,4 +307,143 @@ void main() {
     await tester.pump();
     expect(feedField.hasFocus, isTrue);
   });
+
+  test('lock() принудительно блокирует только при включённом ПИН-коде', () async {
+    final store = InMemoryKeyValueStore();
+    final controller = AppLockController(store, iterations: 2);
+    await controller.load();
+    expect(controller.isLocked, isFalse);
+
+    // Без ПИН-кода lock() ничего не делает
+    controller.lock();
+    expect(controller.isLocked, isFalse);
+
+    // Устанавливаем ПИН-код
+    await controller.setPin('1234');
+    expect(controller.isLocked, isFalse);
+
+    // С ПИН-кодом lock() блокирует
+    var notified = 0;
+    controller.addListener(() => notified++);
+    controller.lock();
+    expect(controller.isLocked, isTrue);
+    expect(notified, 1);
+
+    // Повторный вызов lock() не шлёт повторных уведомлений
+    controller.lock();
+    expect(notified, 1);
+  });
+
+  testWidgets('таймаут неактивности блокирует приложение при отсутствии действий', (
+    tester,
+  ) async {
+    final store = InMemoryKeyValueStore();
+    final controller = AppLockController(store, iterations: 2);
+    await controller.load();
+    await controller.setPin('1942');
+    expect(controller.isLocked, isFalse);
+
+    final sessions = VaultSessionFactory(
+      connections: CloudConnectionService(CloudProviderRegistry(const []), store),
+      deviceName: () => 'Test',
+    );
+    final vaults = VaultsController(VaultKeyStore(store), settings: sessions);
+    final navKey = GlobalKey<NavigatorState>();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        navigatorKey: navKey,
+        locale: const Locale('ru'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        builder: (context, child) => AppLockGate(
+          controller: controller,
+          vaults: vaults,
+          sessions: sessions,
+          navigatorKey: navKey,
+          trackInactivity: true,
+          inactivityTimeout: const Duration(seconds: 10),
+          child: child!,
+        ),
+        home: const Scaffold(
+          body: Center(child: Text('Контент ленты')),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(controller.isLocked, isFalse);
+    expect(find.text('Контент ленты'), findsOneWidget);
+
+    // Ждём 6 секунд (< 10 секунд) — приложение всё ещё разблокировано
+    await tester.pump(const Duration(seconds: 6));
+    expect(controller.isLocked, isFalse);
+
+    // Пользователь совершает действие (нажатие) — таймер сбрасывается
+    await tester.tap(find.text('Контент ленты'));
+    await tester.pump();
+
+    // Проходит ещё 6 секунд (всего 12 секунд от старта, но 6 от активности) — разблокировано
+    await tester.pump(const Duration(seconds: 6));
+    expect(controller.isLocked, isFalse);
+
+    // Нажатие клавиши на клавиатуре также сбрасывает таймер неактивности
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyA);
+    await tester.pump();
+
+    // Проходит ещё 6 секунд — разблокировано
+    await tester.pump(const Duration(seconds: 6));
+    expect(controller.isLocked, isFalse);
+
+    // Проходит ещё 5 секунд (11 секунд после активности на клавиатуре) — блокируется!
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+    expect(controller.isLocked, isTrue);
+    expect(find.byType(AppLockScreen), findsOneWidget);
+  });
+
+  testWidgets('trackInactivity: false не блокирует приложение по таймауту', (
+    tester,
+  ) async {
+    final store = InMemoryKeyValueStore();
+    final controller = AppLockController(store, iterations: 2);
+    await controller.load();
+    await controller.setPin('1942');
+    expect(controller.isLocked, isFalse);
+
+    final sessions = VaultSessionFactory(
+      connections: CloudConnectionService(CloudProviderRegistry(const []), store),
+      deviceName: () => 'Test',
+    );
+    final vaults = VaultsController(VaultKeyStore(store), settings: sessions);
+    final navKey = GlobalKey<NavigatorState>();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        navigatorKey: navKey,
+        locale: const Locale('ru'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        builder: (context, child) => AppLockGate(
+          controller: controller,
+          vaults: vaults,
+          sessions: sessions,
+          navigatorKey: navKey,
+          trackInactivity: false,
+          inactivityTimeout: const Duration(seconds: 10),
+          child: child!,
+        ),
+        home: const Scaffold(
+          body: Center(child: Text('Контент ленты')),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(controller.isLocked, isFalse);
+
+    // Проходит 20 секунд — приложение НЕ блокируется
+    await tester.pump(const Duration(seconds: 20));
+    await tester.pumpAndSettle();
+    expect(controller.isLocked, isFalse);
+    expect(find.byType(AppLockScreen), findsNothing);
+  });
 }
