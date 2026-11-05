@@ -39,6 +39,22 @@ Flutter: `C:\dev\flutter\bin`. Скрипты `.ps1` запускать с
    из-за номера после `+` в `pubspec.yaml`): собирать прошлый коммит с тем же
    или большим номером.
 
+## Linux (Steam Deck)
+
+Steam Deck подключён по сети (`deck@192.168.31.177`). На нём используются две версии:
+- **Flatpak** (`io.github.kernien.Transmitter`, ветка `stable`) — режим рабочего стола (Discover, ярлык на рабочем столе).
+- **AppImage** (`~/.var/app/AppImage/Transmitter-linux-x86_64.AppImage`) — игровой режим (ярлык в Steam).
+
+Порядок обновления:
+1. `wsl -d Ubuntu-24.04 -- bash tool/build_linux.sh` (собирает bundle, tar.gz и AppImage в `build/dist/`).
+2. Для Flatpak через репозиторий:
+   - `wsl -d Ubuntu-24.04 -- bash tool/publish_flatpak.sh`
+   - `powershell -ExecutionPolicy Bypass -File tool/deploy_web.ps1`
+   - На Deck: `ssh deck@192.168.31.177 "flatpak update -y io.github.kernien.Transmitter"`
+3. Для игрового режима (AppImage):
+   - `scp build/dist/Transmitter-<версия>-linux-x86_64.AppImage deck@192.168.31.177:/home/deck/.var/app/AppImage/Transmitter-linux-x86_64.AppImage`
+   - `ssh deck@192.168.31.177 "chmod +x /home/deck/.var/app/AppImage/Transmitter-linux-x86_64.AppImage"`
+
 ## Релиз
 
 Полная процедура — «Выпуск релиза» в `docs/DEVELOPMENT.md`

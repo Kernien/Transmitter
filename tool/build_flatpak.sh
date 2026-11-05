@@ -44,6 +44,7 @@ mkdir -p "$WORK"
 # --disable-cache: архив подключён по пути, и смену его содержимого
 # flatpak-builder не замечает — без этого ставится прошлая сборка.
 flatpak-builder --user --install --force-clean --disable-cache \
+  --default-branch=stable \
   --install-deps-from=flathub \
   --state-dir="$WORK/state" --repo="$WORK/repo" "$WORK/build" \
   "$SRC/linux/flatpak/$APP_ID.yml"
@@ -54,7 +55,7 @@ flatpak-builder --user --install --force-clean --disable-cache \
 echo "== Файл-установщик"
 flatpak build-bundle \
   --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo \
-  "$WORK/repo" "$out/Transmitter-$version.flatpak" "$APP_ID"
+  "$WORK/repo" "$out/Transmitter-$version.flatpak" "$APP_ID" stable
 echo "   $out/Transmitter-$version.flatpak"
 
 echo "== Проверка карточки (AppStream)"

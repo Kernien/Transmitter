@@ -4,6 +4,7 @@
 # build/flatpak/); для Flathub тот же скрипт пишет копию манифеста со ссылкой
 # на архив релиза и его sha256.
 app-id: io.github.kernien.Transmitter
+default-branch: stable
 runtime: org.gnome.Platform
 runtime-version: '51'
 sdk: org.gnome.Sdk
