@@ -25,4 +25,8 @@ Flutter-приложение (Android, Windows, Linux, Web) для переда�
   (без `await` до `window.open`), иначе браузер заблокирует окно.
 - Любое изменение логики сопровождается тестом. Перед завершением задачи
   `flutter analyze` и `flutter test` должны проходить без ошибок.
+- После изменений в приложении сразу ставить актуальную сборку на устройства
+  владельца: Windows (установщик в `%LOCALAPPDATA%\Programs\Transmitter`,
+  а не запуск из `build\`) и телефон по USB, если он подключён. Как это
+  делать — навык `transmitter-local-install`.
 - Flutter SDK: `C:\dev\flutter`; JAVA_HOME — JBR из Android Studio.
