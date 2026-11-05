@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:transmitter/app/app_lock_controller.dart';
@@ -247,4 +248,63 @@ void main() {
       );
     },
   );
+
+  testWidgets('под экраном блокировки фокус и ввод недоступны ленте', (
+    tester,
+  ) async {
+    final store = InMemoryKeyValueStore();
+    final setup = AppLockController(store, iterations: 2);
+    await setup.load();
+    await setup.setPin('1942');
+    final locked = AppLockController(store, iterations: 2);
+    await locked.load();
+    final sessions = VaultSessionFactory(
+      connections: CloudConnectionService(CloudProviderRegistry(const []), store),
+      deviceName: () => 'Test',
+    );
+    final vaults = VaultsController(VaultKeyStore(store), settings: sessions);
+    final navKey = GlobalKey<NavigatorState>();
+    final feedField = FocusNode();
+    addTearDown(feedField.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        navigatorKey: navKey,
+        locale: const Locale('ru'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        builder: (context, child) => AppLockGate(
+          controller: locked,
+          vaults: vaults,
+          sessions: sessions,
+          navigatorKey: navKey,
+          child: child!,
+        ),
+        home: Scaffold(
+          body: TextField(
+            key: const Key('feed-field'),
+            focusNode: feedField,
+            autofocus: true,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(locked.isLocked, isTrue);
+    expect(feedField.hasFocus, isFalse);
+
+    // Нажатие Tab не отдаёт фокус ленте под экраном блокировки.
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pumpAndSettle();
+    expect(feedField.hasFocus, isFalse);
+
+    // После разблокировки лента снова принимает фокус.
+    await tester.enterText(find.byType(TextField).last, '1942');
+    await tester.tap(find.text('Разблокировать'));
+    await tester.pumpAndSettle();
+    expect(locked.isLocked, isFalse);
+    feedField.requestFocus();
+    await tester.pump();
+    expect(feedField.hasFocus, isTrue);
+  });
 }

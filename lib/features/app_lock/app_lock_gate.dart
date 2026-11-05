@@ -96,7 +96,16 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
     builder: (context, _) => Stack(
       fit: StackFit.expand,
       children: [
-        widget.child,
+        // Пока приложение закрыто, лента под экраном блокировки не должна
+        // получать ввод с клавиатуры (Tab, Enter) и читаться программами
+        // экранного доступа: на ПК фокус иначе уходит под экран ПИН-кода.
+        ExcludeFocus(
+          excluding: widget.controller.isLocked,
+          child: ExcludeSemantics(
+            excluding: widget.controller.isLocked,
+            child: widget.child,
+          ),
+        ),
         if (widget.controller.isLocked)
           Overlay(
             initialEntries: [

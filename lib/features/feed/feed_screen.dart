@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/app_config.dart';
+import '../../app/app_lock_controller.dart';
 import '../../app/l10n.dart';
 import '../../app/vault_session_factory.dart';
 import '../../app/widgets/content_width.dart';
@@ -291,6 +292,8 @@ class _FileDropZoneState extends State<_FileDropZone> {
       onDragExited: (_) => setState(() => _dragging = false),
       onDragDone: (details) {
         setState(() => _dragging = false);
+        // Окно закрыто ПИН-кодом: файлы, брошенные поверх него, не принимаем.
+        if (context.read<AppLockController?>()?.isLocked ?? false) return;
         final files = details.files.whereType<DropItemFile>().toList();
         if (files.isNotEmpty) {
           context.read<FeedController>().sendDroppedFiles(files);
