@@ -145,15 +145,24 @@ class _VaultTile extends StatelessWidget {
       vault.provider,
     );
     return ListTile(
-      leading: const CircleAvatar(child: Icon(Icons.key)),
+      leading: CircleAvatar(
+        child: Icon(vault.isEncrypted ? Icons.key : Icons.folder_open_outlined),
+      ),
       title: Text(vault.label.isEmpty ? l.untitled : vault.label),
       subtitle: Text(
         connected
-            ? l.vaultSubtitleConnected(
-                vault.provider.title,
-                l.sizeLimitOf(vault.maxFileSize),
-              )
-            : l.vaultSubtitleNotConnected(vault.provider.title),
+            ? (vault.isEncrypted
+                  ? l.vaultSubtitleConnected(
+                      vault.provider.title,
+                      l.sizeLimitOf(vault.maxFileSize),
+                    )
+                  : l.vaultSubtitleConnectedPlain(
+                      vault.provider.title,
+                      l.sizeLimitOf(vault.maxFileSize),
+                    ))
+            : (vault.isEncrypted
+                  ? l.vaultSubtitleNotConnected(vault.provider.title)
+                  : l.vaultSubtitleNotConnectedPlain(vault.provider.title)),
       ),
       onTap: () => openVault(context, vault),
       trailing: PopupMenuButton<_VaultAction>(

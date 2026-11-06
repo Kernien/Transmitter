@@ -95,6 +95,7 @@ extension AppLocalizationsX on AppLocalizations {
       ErrorCode.noAppToOpen => errNoAppToOpen,
       ErrorCode.keyNotTransmitter => errKeyNotTransmitter,
       ErrorCode.keyCorrupted => errKeyCorrupted,
+      ErrorCode.keyRequiresUpdate => errKeyRequiresUpdate,
       ErrorCode.boardSignatureInvalid => errBoardSignatureInvalid,
       ErrorCode.boardClosed => errBoardClosed,
     };

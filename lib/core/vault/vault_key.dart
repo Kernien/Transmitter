@@ -15,6 +15,7 @@ class VaultKey {
     required this.provider,
     required this.label,
     this.maxFileSize = defaultMaxFileSize,
+    this.isEncrypted = true,
   }) : secret = Uint8List.fromList(secret) {
     if (secret.length != secretLength) {
       throw ArgumentError('Secret must be $secretLength bytes');
@@ -28,6 +29,7 @@ class VaultKey {
     required CloudProviderId provider,
     required String label,
     int maxFileSize = defaultMaxFileSize,
+    bool isEncrypted = true,
     Random? random,
   }) {
     final rnd = random ?? Random.secure();
@@ -36,6 +38,7 @@ class VaultKey {
       provider: provider,
       label: label,
       maxFileSize: maxFileSize,
+      isEncrypted: isEncrypted,
     );
   }
 
@@ -68,16 +71,23 @@ class VaultKey {
   /// (`VaultSettings`), поэтому одинаков на всех устройствах.
   final int maxFileSize;
 
+  /// Шифруются ли записи и файлы в облаке. В базе без шифрования файлы
+  /// лежат под своими настоящими именами и открываются прямо в облаке.
+  final bool isEncrypted;
+
   VaultKey copyWith({String? label, int? maxFileSize}) => VaultKey(
     secret: secret,
     provider: provider,
     label: label ?? this.label,
     maxFileSize: maxFileSize ?? this.maxFileSize,
+    isEncrypted: isEncrypted,
   );
 
   /// Один и тот же ключ, даже если локальные названия различаются.
   bool sameVaultAs(VaultKey other) =>
-      provider == other.provider && listEquals(secret, other.secret);
+      provider == other.provider &&
+      isEncrypted == other.isEncrypted &&
+      listEquals(secret, other.secret);
 
   @override
   bool operator ==(Object other) =>
@@ -87,6 +97,11 @@ class VaultKey {
       maxFileSize == other.maxFileSize;
 
   @override
-  int get hashCode =>
-      Object.hash(provider, label, maxFileSize, Object.hashAll(secret));
+  int get hashCode => Object.hash(
+    provider,
+    label,
+    maxFileSize,
+    isEncrypted,
+    Object.hashAll(secret),
+  );
 }

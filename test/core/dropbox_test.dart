@@ -274,6 +274,30 @@ void main() {
       await storage().delete('v1/posts/x');
     });
 
+    test('listFolders и renameFolder', () async {
+      handler = (r) async {
+        if (r.url.path.endsWith('/list_folder')) {
+          return jsonResponse({
+            'entries': [
+              {'.tag': 'folder', 'name': 'Доска [a1b2]'},
+              {'.tag': 'file', 'name': 'x.bin', 'size': 1},
+            ],
+            'cursor': 'c',
+            'has_more': false,
+          });
+        }
+        expect(r.url.path, '/2/files/move_v2');
+        expect(jsonDecode(r.body), {
+          'from_path': '/Доска [a1b2]',
+          'to_path': '/Новое [a1b2]',
+          'autorename': false,
+        });
+        return jsonResponse({});
+      };
+      expect(await storage().listFolders(''), ['Доска [a1b2]']);
+      await storage().renameFolder('Доска [a1b2]', 'Новое [a1b2]');
+    });
+
     test('при 401 токен обновляется и запрос повторяется', () async {
       handler = (r) async => r.headers['Authorization'] == 'Bearer tok'
           ? jsonResponse({'error_summary': 'expired_access_token/'}, 401)

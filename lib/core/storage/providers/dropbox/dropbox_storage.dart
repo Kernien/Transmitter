@@ -123,6 +123,52 @@ class DropboxStorage implements CloudStorage, PublicSharing {
     _fail(response);
   }
 
+  @override
+  Future<List<String>> listFolders(String folder) async {
+    var response = await _rpc('/files/list_folder', {
+      'path': _remote(folder),
+      'limit': 2000,
+    });
+    if (response.statusCode == 409 &&
+        _errorSummary(response).contains('not_found')) {
+      return [];
+    }
+    final result = <String>[];
+    while (true) {
+      if (response.statusCode != 200) _fail(response);
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      for (final entry
+          in (json['entries'] as List).cast<Map<String, dynamic>>()) {
+        if (entry['.tag'] == 'folder') {
+          result.add(entry['name'] as String);
+        }
+      }
+      if (json['has_more'] != true) return result;
+      response = await _rpc('/files/list_folder/continue', {
+        'cursor': json['cursor'],
+      });
+    }
+  }
+
+  @override
+  Future<void> renameFolder(String fromPath, String toPath) async {
+    final from = _remote(fromPath);
+    final to = _remote(toPath);
+    if (from.isEmpty || to.isEmpty || from == to) return;
+    final response = await _rpc('/files/move_v2', {
+      'from_path': from,
+      'to_path': to,
+      'autorename': false,
+    });
+    if (response.statusCode == 200) return;
+    final summary = _errorSummary(response);
+    if (response.statusCode == 409 &&
+        (summary.contains('not_found') || summary.contains('conflict'))) {
+      return;
+    }
+    _fail(response);
+  }
+
   // ---- Публичные ссылки ----
 
   /// Локатор — ссылка вида `https://www.dropbox.com/scl/fi/…?rlkey=…`;

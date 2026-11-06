@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:transmitter/core/errors/app_error.dart';
 import 'package:transmitter/core/persistence/key_value_store.dart';
 import 'package:transmitter/core/storage/cloud_provider_id.dart';
 import 'package:transmitter/core/vault/vault_key.dart';
@@ -46,6 +47,44 @@ void main() {
     expect(() => codec.decode('hello'), throwsFormatException);
     expect(() => codec.decode('TRM1.!!!'), throwsFormatException);
     expect(() => codec.decode('TRM1.e30'), throwsFormatException); // "{}"
+  });
+
+  group('база без шифрования и версии формата', () {
+    test('зашифрованный ключ остаётся TRM1., без шифрования — TRM2.', () {
+      final encrypted = VaultKey.generate(
+        provider: CloudProviderId.dropbox,
+        label: 'Секрет',
+      );
+      expect(encrypted.isEncrypted, isTrue);
+      expect(codec.encode(encrypted), startsWith('TRM1.'));
+      expect(codec.decode(codec.encode(encrypted)), encrypted);
+
+      final plain = VaultKey.generate(
+        provider: CloudProviderId.dropbox,
+        label: 'Общая папка',
+        isEncrypted: false,
+      );
+      expect(plain.isEncrypted, isFalse);
+      final code = codec.encode(plain);
+      expect(code, startsWith('TRM2.'));
+      final decoded = codec.decode(code);
+      expect(decoded.isEncrypted, isFalse);
+      expect(decoded, plain);
+      expect(decoded.sameVaultAs(encrypted), isFalse);
+    });
+
+    test('неизвестная будущая версия просит обновить приложение', () {
+      expect(
+        () => codec.decode('TRM3.e30'),
+        throwsA(
+          isA<InvalidVaultKeyException>().having(
+            (e) => e.code,
+            'code',
+            ErrorCode.keyRequiresUpdate,
+          ),
+        ),
+      );
+    });
   });
 
   group('лимит размера файла', () {

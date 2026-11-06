@@ -42,6 +42,7 @@ enum ErrorCode {
   decryptionFailed,
   keyNotTransmitter,
   keyCorrupted,
+  keyRequiresUpdate,
   // Публичные доски.
   boardSignatureInvalid,
   boardClosed,

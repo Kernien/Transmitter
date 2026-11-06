@@ -14,13 +14,14 @@ import 'post_repository.dart';
 
 typedef IdGenerator = String Function();
 
-/// Посты в облаке, зашифрованные на устройстве.
+/// Посты в облаке (с шифрованием или в открытом виде — через [Cipher]).
 ///
 /// Раскладка в облаке:
 /// ```
-/// <vaultId>/posts/<время>_<id>.post               — зашифрованный JSON поста
+/// <vaultId>/posts/<время>_<id>.post               — JSON поста
 /// <vaultId>/posts/<время>_<id>~<правка>.note      — комментарий к посту
 /// <vaultId>/files/<id>.bin                        — зашифрованный файл
+/// <vaultId>/files/<имя файла>                     — файл в базе без шифрования
 /// ```
 /// Каждый пост лежит в отдельном файле, поэтому несколько устройств могут
 /// писать одновременно без конфликтов. Имена начинаются со времени, так что
@@ -37,6 +38,7 @@ class EncryptedCloudPostRepository implements PostRepository {
     required this._cipher,
     required this._deviceName,
     this.maxFileSize = VaultKey.defaultMaxFileSize,
+    this.plainFileNames = false,
     Clock? clock,
     IdGenerator? idGenerator,
     this._linkDetector = const LinkDetector(),
@@ -53,6 +55,10 @@ class EncryptedCloudPostRepository implements PostRepository {
 
   @override
   final int maxFileSize;
+
+  /// Класть ли файлы вложений под их настоящими именами (для баз без
+  /// шифрования, чтобы файлы открывались прямо в облаке).
+  final bool plainFileNames;
 
   @override
   Object? get backgroundError => null;
@@ -268,16 +274,19 @@ class EncryptedCloudPostRepository implements PostRepository {
     if (bytes.length > maxFileSize) {
       throw FileTooLargeException(bytes.length, maxFileSize);
     }
-    final attachment = Attachment(
-      id: _newId(),
-      fileName: fileName,
-      size: bytes.length,
-      mimeType: mimeType,
-    );
     if (!_filesDirReady) {
       await _storage.ensureFolder(_filesDir);
       _filesDirReady = true;
     }
+    final attachmentId = plainFileNames
+        ? await _choosePlainFileName(fileName)
+        : _newId();
+    final attachment = Attachment(
+      id: attachmentId,
+      fileName: fileName,
+      size: bytes.length,
+      mimeType: mimeType,
+    );
     final encrypted = await _cipher.encrypt(bytes);
     await _storage.upload(
       _attachmentPath(attachment),
@@ -406,11 +415,46 @@ class EncryptedCloudPostRepository implements PostRepository {
     return post;
   }
 
-  String _attachmentPath(Attachment a) => '$_filesDir/${a.id}.bin';
+  String _attachmentPath(Attachment a) =>
+      attachmentPath(_filesDir, a.id, plainFileNames: plainFileNames, inFilesDir: true);
 
-  /// Путь к зашифрованному файлу вложения в облаке (для публичной доски).
-  static String attachmentPath(String vaultId, String attachmentId) =>
-      '$vaultId/files/$attachmentId.bin';
+  /// Путь к файлу вложения в облаке (для публичной доски).
+  static String attachmentPath(
+    String baseDir,
+    String attachmentId, {
+    bool plainFileNames = false,
+    bool inFilesDir = false,
+  }) {
+    final dir = inFilesDir ? baseDir : '$baseDir/files';
+    return plainFileNames ? '$dir/$attachmentId' : '$dir/$attachmentId.bin';
+  }
+
+  /// Выбирает свободное имя файла в `files/` для базы без шифрования:
+  /// убирает запрещённые в облаках символы, а при совпадении имён добавляет
+  /// « (2)», « (3)»… перед расширением.
+  Future<String> _choosePlainFileName(String original) async {
+    final existing = (await _storage.listFiles(_filesDir))
+        .map((f) => f.name.toLowerCase())
+        .toSet();
+    final safe = _sanitizeFileName(original);
+    final dot = safe.lastIndexOf('.');
+    final (base, ext) = dot > 0
+        ? (safe.substring(0, dot), safe.substring(dot))
+        : (safe, '');
+    var candidate = safe;
+    for (var i = 2; existing.contains(candidate.toLowerCase()); i++) {
+      candidate = '$base ($i)$ext';
+    }
+    return candidate;
+  }
+
+  static String _sanitizeFileName(String name) {
+    final cleaned = name
+        .replaceAll(RegExp(r'[\x00-\x1F\\/:*?"<>|]'), '_')
+        .trim();
+    if (cleaned.isEmpty || cleaned == '.' || cleaned == '..') return 'file';
+    return cleaned;
+  }
 
   static String _fileNameFor(Post post) =>
       '${_baseNameFor(post)}$_postExtension';

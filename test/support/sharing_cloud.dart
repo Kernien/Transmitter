@@ -33,6 +33,22 @@ class SharingCloud extends InMemoryCloudStorage implements PublicSharing {
   }
 
   @override
+  Future<void> renameFolder(String fromPath, String toPath) async {
+    final from = _norm(fromPath);
+    final to = _norm(toPath);
+    await super.renameFolder(fromPath, toPath);
+    final moved = [
+      for (final p in published)
+        if (p.startsWith('$from/')) p,
+    ];
+    for (final p in moved) {
+      published
+        ..remove(p)
+        ..add('$to${p.substring(from.length)}');
+    }
+  }
+
+  @override
   Future<String> publish(String path) async {
     publishCalls++;
     final normalized = _norm(path);

@@ -21,8 +21,14 @@ abstract interface class BlobCache {
 /// хранятся, пока не кончится выделенное место).
 const int defaultFileCacheLimit = 1024 * 1024 * 1024;
 
-/// Ключ кеша для вложения.
-String attachmentCacheKey(String attachmentId) => 'att-$attachmentId.bin';
+/// Ключ кеша для вложения (только ASCII-символы, безопасные для файловой системы).
+String attachmentCacheKey(String attachmentId) {
+  final safe = attachmentId.replaceAllMapped(
+    RegExp(r'[^a-zA-Z0-9._-]'),
+    (m) => '_${m[0]!.codeUnitAt(0).toRadixString(16)}_',
+  );
+  return 'att-$safe.bin';
+}
 
 bool isAttachmentCacheKey(String key) =>
     key.startsWith('att-') && key.endsWith('.bin');

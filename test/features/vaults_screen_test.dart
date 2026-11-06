@@ -151,4 +151,19 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Dropbox'), findsOneWidget);
   });
+
+  testWidgets('база без шифрования отмечается в списке', (tester) async {
+    final settings = FakeSettings();
+    final vaults = await pumpScreen(tester, settings);
+    await vaults.create(
+      label: 'Фото архив',
+      provider: CloudProviderId.dropbox,
+      isEncrypted: false,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Фото архив'), findsOneWidget);
+    expect(find.textContaining('без шифрования'), findsOneWidget);
+    expect(find.byIcon(Icons.folder_open_outlined), findsOneWidget);
+  });
 }

@@ -184,6 +184,46 @@ class MegaStorage implements CloudStorage, PublicSharing {
     }
   });
 
+  @override
+  Future<List<String>> listFolders(String folder) async {
+    await _sync();
+    final handle = await _folderHandle(folder, create: false);
+    if (handle == null) return const [];
+    final names = <String>{};
+    for (final child in _children[handle] ?? const <String>{}) {
+      final node = _nodes[child];
+      if (node != null && node.type == 1) {
+        final name = _nameOf(node);
+        if (name != null) names.add(name);
+      }
+    }
+    return names.toList();
+  }
+
+  @override
+  Future<void> renameFolder(String fromPath, String toPath) => _serial(() async {
+    final from = fromPath.split('/').where((p) => p.isNotEmpty).join('/');
+    final to = toPath.split('/').where((p) => p.isNotEmpty).join('/');
+    if (from.isEmpty || to.isEmpty || from == to) return;
+    await _sync();
+    final handle = await _folderHandle(from, create: false);
+    if (handle == null) return;
+    final node = _nodes[handle];
+    final key = node == null ? null : _nodeKey(node);
+    if (node == null || key == null) return;
+    final (_, newName) = _split(to);
+    final attr = MegaCrypto.encryptAttributes(
+      {'n': newName},
+      MegaCrypto.fileAesKey(key),
+    );
+    await _request({'a': 'a', 'n': handle, 'at': attr}, path: fromPath);
+    node
+      ..attributes = attr
+      ..decrypted = true
+      ..key = key
+      ..name = newName;
+  });
+
   // ----------------------------------------------------- Публичные ссылки
 
   /// Открывает по ссылке папку с файлом [path] (если ещё не открыта) и

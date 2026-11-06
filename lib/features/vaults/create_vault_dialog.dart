@@ -19,6 +19,7 @@ class _CreateVaultDialogState extends State<CreateVaultDialog> {
   final _label = TextEditingController();
   CloudProviderId? _provider;
   int _maxFileSize = VaultKey.defaultMaxFileSize;
+  bool _isEncrypted = true;
 
   @override
   void initState() {
@@ -81,6 +82,14 @@ class _CreateVaultDialogState extends State<CreateVaultDialog> {
             ],
             onChanged: (size) => setState(() => _maxFileSize = size!),
           ),
+          const SizedBox(height: 8),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(l.encryptVaultLabel),
+            subtitle: Text(l.encryptVaultSubtitle),
+            value: _isEncrypted,
+            onChanged: (v) => setState(() => _isEncrypted = v),
+          ),
         ],
       ),
       actions: [
@@ -101,6 +110,7 @@ class _CreateVaultDialogState extends State<CreateVaultDialog> {
       label: _label.text,
       provider: _provider!,
       maxFileSize: _maxFileSize,
+      isEncrypted: _isEncrypted,
     );
     if (mounted) Navigator.pop(context, key);
   }

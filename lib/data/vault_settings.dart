@@ -51,7 +51,64 @@ class VaultSettings {
   }
 }
 
-/// Файл настроек базы в облаке: `<vaultId>/settings.bin`.
+/// Имя папки базы в облаке.
+///
+/// У зашифрованных баз это 32-символьный `vaultId` (`c5eea100…`).
+/// У баз без шифрования папка называется так, как её назвал владелец, с
+/// коротким кодом в квадратных скобках в конце (`Фото отпуска [c5ee]` или
+/// `[c5ee]`, если названия нет):
+/// - пользователю сразу видно свою папку в облаке;
+/// - другие устройства находят папку по суффиксу `[c5ee]`, даже если её уже
+///   переименовали на другом устройстве;
+/// - при переименовании базы сама папка в облаке тоже переименовывается.
+class PlainVaultFolder {
+  const PlainVaultFolder._();
+
+  static const int _tagLength = 4;
+
+  static String tagOf(String vaultId) =>
+      '[${vaultId.substring(0, _tagLength)}]';
+
+  /// Целевое имя папки для названия [label] и идентификатора [vaultId].
+  static String formatName(String label, String vaultId) {
+    final tag = tagOf(vaultId);
+    final clean = _sanitize(label);
+    return clean.isEmpty ? tag : '$clean $tag';
+  }
+
+  /// Относится ли папка [folderName] к базе [vaultId] (по тегу `[xxxx]`
+  /// или прежнему полному `vaultId`).
+  static bool matches(String folderName, String vaultId) =>
+      folderName == vaultId || folderName.endsWith(tagOf(vaultId));
+
+  /// Находит существующую папку базы в корне облака (и при необходимости
+  /// переименовывает её под текущее [label]) или возвращает имя новой папки.
+  static Future<String> resolve(
+    CloudStorage storage, {
+    required String vaultId,
+    required String label,
+    bool renameToLabel = false,
+  }) async {
+    final target = formatName(label, vaultId);
+    final folders = await storage.listFolders('');
+    final existing =
+        folders.where((f) => f.endsWith(tagOf(vaultId))).firstOrNull ??
+        folders.where((f) => f == vaultId).firstOrNull;
+    if (existing == null) return target;
+    if (renameToLabel && existing != target) {
+      await storage.renameFolder(existing, target);
+      return target;
+    }
+    return existing;
+  }
+
+  static String _sanitize(String label) => label
+      .replaceAll(RegExp(r'[\x00-\x1F\\/:*?"<>|\[\]]'), ' ')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+}
+
+/// Файл настроек базы в облаке: `<папка базы>/settings.bin`.
 ///
 /// Его нет, пока настройки ни разу не меняли (у старых баз тоже): тогда
 /// действуют название и лимит из ключа.

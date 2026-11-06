@@ -54,11 +54,13 @@ class VaultsController extends ChangeNotifier {
     required String label,
     required CloudProviderId provider,
     int maxFileSize = VaultKey.defaultMaxFileSize,
+    bool isEncrypted = true,
   }) async {
     final key = VaultKey.generate(
       provider: provider,
       label: label.trim(),
       maxFileSize: maxFileSize,
+      isEncrypted: isEncrypted,
     );
     await _save([..._vaults, key]);
     return key;

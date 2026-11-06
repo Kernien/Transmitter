@@ -51,6 +51,39 @@ class InMemoryCloudStorage implements CloudStorage {
   @override
   Future<void> delete(String path) async => files.remove(_normalize(path));
 
+  @override
+  Future<List<String>> listFolders(String folder) async {
+    final prefix = _normalize(folder);
+    return [
+      for (final f in folders)
+        if (_parentOf(f) == prefix) f.split('/').last,
+    ];
+  }
+
+  @override
+  Future<void> renameFolder(String fromPath, String toPath) async {
+    final from = _normalize(fromPath);
+    final to = _normalize(toPath);
+    if (from == to || !folders.contains(from)) return;
+    final movedFolders = [
+      for (final f in folders)
+        if (f == from || f.startsWith('$from/')) f,
+    ];
+    for (final f in movedFolders) {
+      folders
+        ..remove(f)
+        ..add(f == from ? to : '$to${f.substring(from.length)}');
+    }
+    final movedFiles = [
+      for (final entry in files.entries)
+        if (entry.key.startsWith('$from/')) entry,
+    ];
+    for (final entry in movedFiles) {
+      files.remove(entry.key);
+      files['$to${entry.key.substring(from.length)}'] = entry.value;
+    }
+  }
+
   static List<String> _segments(String path) =>
       path.split('/').where((s) => s.isNotEmpty).toList();
 

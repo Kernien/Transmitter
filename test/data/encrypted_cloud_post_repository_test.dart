@@ -3,6 +3,8 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:transmitter/core/crypto/aes_gcm_cipher.dart';
+import 'package:transmitter/core/crypto/plaintext_cipher.dart';
+import 'package:transmitter/core/persistence/blob_cache.dart';
 import 'package:transmitter/core/storage/in_memory_cloud_storage.dart';
 import 'package:transmitter/core/vault/vault_key.dart';
 import 'package:transmitter/data/encrypted_cloud_post_repository.dart';
@@ -236,5 +238,73 @@ void main() {
         expect(cloud.files.keys.where((p) => p.endsWith('.post')), [postFile]);
       },
     );
+  });
+
+  group('база без шифрования (PlaintextCipher + настоящие имена файлов)', () {
+    EncryptedCloudPostRepository plainDevice(String name) =>
+        EncryptedCloudPostRepository(
+          storage: cloud,
+          vaultId: vaultId,
+          cipher: const PlaintextCipher(),
+          deviceName: name,
+          plainFileNames: true,
+          blobs: MemoryBlobCache(),
+          clock: () => DateTime.utc(2026, 1, 1).add(Duration(seconds: tick++)),
+        );
+
+    test('файлы лежат в облаке под настоящими именами и без шифрования', () async {
+      final a = plainDevice('Телефон');
+      final bytes = Uint8List.fromList(utf8.encode('Содержимое документа'));
+      final sent = await a.sendFile(
+        fileName: 'Отчёт за год.txt',
+        bytes: bytes,
+      );
+      expect(sent.attachment!.id, 'Отчёт за год.txt');
+      expect(sent.attachment!.fileName, 'Отчёт за год.txt');
+      expect(
+        cloud.files['$vaultId/files/Отчёт за год.txt'],
+        bytes,
+      );
+
+      final b = plainDevice('Ноутбук');
+      final post = (await b.fetchPosts()).single;
+      expect(post.attachment!.fileName, 'Отчёт за год.txt');
+      expect(await b.downloadAttachment(post.attachment!), bytes);
+
+      await b.deletePost(post);
+      expect(cloud.files, isEmpty);
+    });
+
+    test('одинаковые имена файлов получают суффикс (2), (3)', () async {
+      final a = plainDevice('A');
+      final first = await a.sendFile(
+        fileName: 'Фото отпуска.jpg',
+        bytes: Uint8List.fromList([1]),
+      );
+      final second = await a.sendFile(
+        fileName: 'фото отпуска.JPG',
+        bytes: Uint8List.fromList([2]),
+      );
+      final third = await a.sendFile(
+        fileName: 'Фото отпуска.jpg',
+        bytes: Uint8List.fromList([3]),
+      );
+      expect(first.attachment!.id, 'Фото отпуска.jpg');
+      expect(second.attachment!.id, 'фото отпуска (2).JPG');
+      expect(third.attachment!.id, 'Фото отпуска (3).jpg');
+
+      final receiver = plainDevice('B');
+      final posts = await receiver.fetchPosts();
+      expect(
+        await Future.wait(
+          posts.map((p) => receiver.downloadAttachment(p.attachment!)),
+        ),
+        [
+          [1],
+          [2],
+          [3],
+        ],
+      );
+    });
   });
 }

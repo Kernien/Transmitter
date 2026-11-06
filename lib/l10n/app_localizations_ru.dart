@@ -104,8 +104,18 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String vaultSubtitleConnectedPlain(String provider, String limit) {
+    return '$provider · без шифрования · файлы до $limit';
+  }
+
+  @override
   String vaultSubtitleNotConnected(String provider) {
     return '$provider · не подключено';
+  }
+
+  @override
+  String vaultSubtitleNotConnectedPlain(String provider) {
+    return '$provider · без шифрования · не подключено';
   }
 
   @override
@@ -148,6 +158,13 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get maxFileSizeHelp =>
       'Действует на всех устройствах с этим ключом.\nПотом его можно изменить: ⋮ у базы → «Размер файлов…».';
+
+  @override
+  String get encryptVaultLabel => 'Шифровать данные';
+
+  @override
+  String get encryptVaultSubtitle =>
+      'Если выключить, файлы будут лежать в облаке под своими именами — их можно будет открывать прямо в облаке.';
 
   @override
   String get fileSizeAction => 'Размер файлов…';
@@ -771,6 +788,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get errKeyCorrupted => 'Ключ повреждён';
+
+  @override
+  String get errKeyRequiresUpdate =>
+      'Этот ключ создан в более новой версии Transmitter — обновите приложение';
 
   @override
   String get errNetwork =>

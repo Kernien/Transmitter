@@ -95,6 +95,11 @@ class FakeDrive {
       final meta = jsonDecode(r.body) as Map<String, dynamic>;
       return _json({'id': _store(null, meta, null)});
     }
+    if (r.method == 'PATCH' && fileId != null) {
+      if (!items.containsKey(fileId)) return _json({'error': {}}, 404);
+      final meta = jsonDecode(r.body) as Map<String, dynamic>;
+      return _json({'id': _store(fileId, meta, null)});
+    }
     if (r.method == 'DELETE') {
       final existed = items.remove(fileId) != null;
       contents.remove(fileId);
@@ -249,6 +254,16 @@ void main() {
         drive.items.values.where((i) => i['name'] == 'posts'),
         hasLength(1),
       );
+    });
+
+    test('listFolders и renameFolder переименовывают папку без потери файлов', () async {
+      final s = storage();
+      await s.upload('Доска [a1b2]/files/photo.jpg', Uint8List.fromList([1, 2]));
+      expect(await s.listFolders(''), ['Доска [a1b2]']);
+
+      await s.renameFolder('Доска [a1b2]', 'Новое [a1b2]');
+      expect(await s.listFolders(''), ['Новое [a1b2]']);
+      expect(await s.download('Новое [a1b2]/files/photo.jpg'), [1, 2]);
     });
 
     test('загрузка, список, скачивание, удаление', () async {

@@ -43,10 +43,15 @@ class ShareTargetScreen extends StatelessWidget {
                         title: Text(key.label.isEmpty ? l.untitled : key.label),
                         subtitle: Text(
                           c.isUsable(key)
-                              ? l.vaultSubtitleConnected(
-                                  key.provider.title,
-                                  l.sizeLimitOf(key.maxFileSize),
-                                )
+                              ? (key.isEncrypted
+                                    ? l.vaultSubtitleConnected(
+                                        key.provider.title,
+                                        l.sizeLimitOf(key.maxFileSize),
+                                      )
+                                    : l.vaultSubtitleConnectedPlain(
+                                        key.provider.title,
+                                        l.sizeLimitOf(key.maxFileSize),
+                                      ))
                               : l.vaultNeedsSignIn(key.provider.title),
                         ),
                       ),

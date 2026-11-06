@@ -202,5 +202,62 @@ void main() {
       await laptop.refreshSettings();
       expect(laptop.vaults.single.label, 'База');
     });
+
+    test('база без шифрования пишет файлы и настройки в открытом виде', () async {
+      final plainKey = VaultKey(
+        secret: List<int>.filled(32, 7),
+        provider: CloudProviderId.dropbox,
+        label: 'Общая',
+        isEncrypted: false,
+      );
+      final repo = await sessions.open(plainKey);
+      await repo.sendFile(
+        fileName: 'План работ.txt',
+        bytes: Uint8List.fromList(utf8.encode('1. Сделать')),
+      );
+      // Папка называется именем доски + коротким тегом: «Общая [xxxx]».
+      final initialFile = cloud.files.keys.singleWhere(
+        (k) => k.endsWith('/files/План работ.txt'),
+      );
+      expect(initialFile, startsWith('Общая ['));
+
+      final controller = VaultsController(
+        VaultKeyStore(InMemoryKeyValueStore()),
+        settings: sessions,
+      );
+      await controller.load();
+      await controller.importCode(const VaultKeyCodec().encode(plainKey));
+      await controller.rename(controller.vaults.single, 'Общая папка');
+
+      // После переименования папка в облаке тоже переименовалась в «Общая папка [xxxx]»,
+      // а файл внутри неё остался на месте.
+      final renamedFile = cloud.files.keys.singleWhere(
+        (k) => k.endsWith('/files/План работ.txt'),
+      );
+      expect(renamedFile, startsWith('Общая папка ['));
+
+      final settingsBytes = cloud.files.entries
+          .singleWhere((e) => e.key.endsWith('/settings.bin'))
+          .value;
+      expect(utf8.decode(settingsBytes), contains('Общая папка'));
+
+      // Второе устройство со старым ключом («Общая») находит переименованную
+      // папку по тегу `[xxxx]` и видит файл и новые настройки.
+      final otherSessions = VaultSessionFactory(
+        connections: connections,
+        deviceName: () => 'Ноутбук',
+      );
+      final otherDevice = VaultsController(
+        VaultKeyStore(InMemoryKeyValueStore()),
+        settings: otherSessions,
+      );
+      await otherDevice.load();
+      await otherDevice.importCode(const VaultKeyCodec().encode(plainKey));
+      final otherRepo = await otherSessions.open(otherDevice.vaults.single);
+      final posts = await otherRepo.fetchPosts();
+      expect(posts.single.attachment!.fileName, 'План работ.txt');
+      await otherDevice.refreshSettings();
+      expect(otherDevice.vaults.single.label, 'Общая папка');
+    });
   });
 }

@@ -266,11 +266,23 @@ abstract class AppLocalizations {
   /// **'{provider} · files up to {limit}'**
   String vaultSubtitleConnected(String provider, String limit);
 
+  /// No description provided for @vaultSubtitleConnectedPlain.
+  ///
+  /// In en, this message translates to:
+  /// **'{provider} · unencrypted · files up to {limit}'**
+  String vaultSubtitleConnectedPlain(String provider, String limit);
+
   /// No description provided for @vaultSubtitleNotConnected.
   ///
   /// In en, this message translates to:
   /// **'{provider} · not connected'**
   String vaultSubtitleNotConnected(String provider);
+
+  /// No description provided for @vaultSubtitleNotConnectedPlain.
+  ///
+  /// In en, this message translates to:
+  /// **'{provider} · unencrypted · not connected'**
+  String vaultSubtitleNotConnectedPlain(String provider);
 
   /// No description provided for @showKeyQr.
   ///
@@ -343,6 +355,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Applies to all devices with this key.\nYou can change it later: ⋮ next to the vault → “File size…”.'**
   String get maxFileSizeHelp;
+
+  /// No description provided for @encryptVaultLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Encrypt data'**
+  String get encryptVaultLabel;
+
+  /// No description provided for @encryptVaultSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'If turned off, files are stored in the cloud with their real names so you can open them right in the cloud.'**
+  String get encryptVaultSubtitle;
 
   /// No description provided for @fileSizeAction.
   ///
@@ -1387,6 +1411,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The key is damaged'**
   String get errKeyCorrupted;
+
+  /// No description provided for @errKeyRequiresUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'This key was created in a newer version of Transmitter — update the app'**
+  String get errKeyRequiresUpdate;
 
   /// No description provided for @errNetwork.
   ///

@@ -38,6 +38,14 @@ abstract interface class CloudStorage {
 
   /// Удаляет файл. Если файла нет, ничего не делает.
   Future<void> delete(String path);
+
+  /// Имена подпапок, лежащих прямо в [folder]. Если папки нет, возвращает
+  /// пустой список.
+  Future<List<String>> listFolders(String folder) async => const [];
+
+  /// Переименовывает папку [fromPath] в [toPath] (внутри того же родителя).
+  /// Если [fromPath] нет или пути совпадают, ничего не делает.
+  Future<void> renameFolder(String fromPath, String toPath) async {}
 }
 
 /// Ошибка облака. Текст для пользователя — по [code] (см. ErrorCode).

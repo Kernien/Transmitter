@@ -104,8 +104,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String vaultSubtitleConnectedPlain(String provider, String limit) {
+    return '$provider · unencrypted · files up to $limit';
+  }
+
+  @override
   String vaultSubtitleNotConnected(String provider) {
     return '$provider · not connected';
+  }
+
+  @override
+  String vaultSubtitleNotConnectedPlain(String provider) {
+    return '$provider · unencrypted · not connected';
   }
 
   @override
@@ -148,6 +158,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get maxFileSizeHelp =>
       'Applies to all devices with this key.\nYou can change it later: ⋮ next to the vault → “File size…”.';
+
+  @override
+  String get encryptVaultLabel => 'Encrypt data';
+
+  @override
+  String get encryptVaultSubtitle =>
+      'If turned off, files are stored in the cloud with their real names so you can open them right in the cloud.';
 
   @override
   String get fileSizeAction => 'File size…';
@@ -772,6 +789,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errKeyCorrupted => 'The key is damaged';
+
+  @override
+  String get errKeyRequiresUpdate =>
+      'This key was created in a newer version of Transmitter — update the app';
 
   @override
   String get errNetwork => 'No connection — check your internet and try again';

@@ -207,6 +207,12 @@ class FakeMega {
       case 'k':
         _applyReaderKeys(c['cr'] as List, (ref) => ref);
         return 0;
+      case 'a':
+        final node = nodes[c['n']];
+        if (node == null) return MegaApiException.eNoEnt;
+        node['a'] = c['at'];
+        actions.add({'a': 'u', 'n': c['n'], 'at': c['at']});
+        return 0;
       case 'l':
         final handle = c['n'] as String;
         if (!nodes.containsKey(handle)) return MegaApiException.eNoEnt;
@@ -493,6 +499,19 @@ void main() {
         storageOn(server).listFiles(''),
         throwsA(isA<StorageAuthException>()),
       );
+    });
+
+    test('listFolders и renameFolder обновляют имя папки и в журнале /sc', () async {
+      final server = FakeMega();
+      final phone = storageOn(server);
+      final laptop = storageOn(server);
+      await phone.upload('Доска [a1b2]/files/doc.txt', bytesOf(4));
+      expect(await laptop.listFolders(''), ['Доска [a1b2]']);
+
+      await phone.renameFolder('Доска [a1b2]', 'Новое [a1b2]');
+      expect(await phone.listFolders(''), ['Новое [a1b2]']);
+      expect(await laptop.listFolders(''), ['Новое [a1b2]']);
+      expect(await laptop.download('Новое [a1b2]/files/doc.txt'), bytesOf(4));
     });
   });
 

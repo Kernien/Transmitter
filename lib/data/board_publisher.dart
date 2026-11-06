@@ -97,6 +97,7 @@ class BoardPublisher {
     required this._signer,
     required this._provider,
     required this._loadPosts,
+    this.plainFileNames = false,
     Clock? clock,
     String Function()? idGenerator,
     this._stateTtl = const Duration(minutes: 1),
@@ -114,6 +115,7 @@ class BoardPublisher {
   final Uint8List _encryptionKey;
   final BoardSigner _signer;
   final CloudProviderId _provider;
+  final bool plainFileNames;
 
   /// Текущие записи базы — чтобы сразу заполнить опись при открытии доступа.
   final Future<List<Post>> Function() _loadPosts;
@@ -330,5 +332,9 @@ class BoardPublisher {
   }
 
   String _attachmentPath(String attachmentId) =>
-      EncryptedCloudPostRepository.attachmentPath(_vaultId, attachmentId);
+      EncryptedCloudPostRepository.attachmentPath(
+        _vaultId,
+        attachmentId,
+        plainFileNames: plainFileNames,
+      );
 }

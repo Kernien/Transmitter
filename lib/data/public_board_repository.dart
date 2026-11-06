@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../core/crypto/aes_gcm_cipher.dart';
 import '../core/crypto/board_signature.dart';
 import '../core/crypto/cipher.dart';
+import '../core/crypto/plaintext_cipher.dart';
 import '../core/errors/app_error.dart';
 import '../core/persistence/blob_cache.dart';
 import '../core/storage/cloud_storage.dart';
@@ -39,12 +40,14 @@ class PublicBoardRepository implements PostRepository {
     required ReaderKey key,
     this._blobs = const NoBlobCache(),
   }) : _locator = key.locator,
-       _cipher = AesGcmCipher(key.encryptionKey),
+       _cipher = key.isEncrypted
+           ? AesGcmCipher(key.encryptionKey)
+           : const PlaintextCipher(),
        _verifier = BoardVerifier(key.ownerPublicKey);
 
   final PublicFileReader _reader;
   final String _locator;
-  final AesGcmCipher _cipher;
+  final Cipher _cipher;
   final BoardVerifier _verifier;
 
   /// Последняя опись на устройстве — доска открывается сразу, даже без сети.

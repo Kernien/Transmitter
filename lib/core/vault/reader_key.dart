@@ -19,7 +19,8 @@ class ReaderKey {
     required List<int> ownerPublicKey,
   }) : encryptionKey = Uint8List.fromList(encryptionKey),
        ownerPublicKey = Uint8List.fromList(ownerPublicKey) {
-    if (encryptionKey.length != 32 || ownerPublicKey.length != 32) {
+    if ((encryptionKey.isNotEmpty && encryptionKey.length != 32) ||
+        ownerPublicKey.length != 32) {
       throw ArgumentError('Invalid reader key');
     }
   }
@@ -32,8 +33,12 @@ class ReaderKey {
   /// Адрес описи доски для `PublicFileReader` этого облака.
   final String locator;
 
-  /// Ключ AES-256, которым зашифрованы опись и файлы.
+  /// Ключ AES-256, которым зашифрованы опись и файлы (пустой для досок
+  /// без шифрования).
   final Uint8List encryptionKey;
+
+  /// Зашифрованы ли опись и файлы доски.
+  bool get isEncrypted => encryptionKey.isNotEmpty;
 
   /// Открытый ключ Ed25519 владельца для проверки подписи описи.
   final Uint8List ownerPublicKey;

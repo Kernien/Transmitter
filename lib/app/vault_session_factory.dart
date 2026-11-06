@@ -4,6 +4,8 @@ import 'package:crypto/crypto.dart' as hash;
 
 import '../core/crypto/aes_gcm_cipher.dart';
 import '../core/crypto/board_signature.dart';
+import '../core/crypto/cipher.dart';
+import '../core/crypto/plaintext_cipher.dart';
 import '../core/crypto/vault_key_derivation.dart';
 import '../core/persistence/blob_cache.dart';
 import '../core/storage/cloud_connection_service.dart';
@@ -63,10 +65,11 @@ class VaultSessionFactory implements VaultSettingsRemote {
   /// Лента базы. Если облако умеет открывать файлы по ссылке, изменения
   /// сразу попадают и в публичную доску (когда доступ на чтение открыт).
   Future<PostRepository> open(VaultKey key) {
-    final id = '${key.provider.code}:${base64Url.encode(key.secret)}';
+    final id =
+        '${key.provider.code}:${key.isEncrypted}:${base64Url.encode(key.secret)}';
     final stamp =
         '${_connections.connectionEpoch(key.provider)}/${_deviceName()}/'
-        '${key.maxFileSize}';
+        '${key.maxFileSize}/${key.isEncrypted ? '' : key.label}';
     final cached = _sessions[id];
     if (cached != null && cached.stamp == stamp) return cached.session;
 
@@ -85,8 +88,15 @@ class VaultSessionFactory implements VaultSettingsRemote {
   Future<PostRepository> _create(VaultKey key) async {
     final secrets = await _derivation.derive(key.secret);
     final storage = _connections.storageFor(key.provider);
-    final repository = _repository(key, storage, secrets);
-    final publisher = await _publisher(key, storage, secrets, repository);
+    final vaultFolder = await _resolveVaultFolder(key, storage, secrets);
+    final repository = _repository(key, storage, secrets, vaultFolder);
+    final publisher = await _publisher(
+      key,
+      storage,
+      secrets,
+      vaultFolder,
+      repository,
+    );
     return publisher == null
         ? repository
         : PublishingPostRepository(repository, publisher);
@@ -116,11 +126,13 @@ class VaultSessionFactory implements VaultSettingsRemote {
   Future<BoardPublisher?> openBoard(VaultKey key) async {
     final secrets = await _derivation.derive(key.secret);
     final storage = _connections.storageFor(key.provider);
+    final vaultFolder = await _resolveVaultFolder(key, storage, secrets);
     return _publisher(
       key,
       storage,
       secrets,
-      _repository(key, storage, secrets),
+      vaultFolder,
+      _repository(key, storage, secrets, vaultFolder),
     );
   }
 
@@ -132,27 +144,58 @@ class VaultSessionFactory implements VaultSettingsRemote {
 
   @override
   Future<void> saveSettings(VaultKey key, VaultSettings settings) async =>
-      (await _settings(key)).save(settings);
+      (await _settings(key, renameFolder: true)).save(settings);
 
-  Future<VaultSettingsStore> _settings(VaultKey key) async {
+  Future<VaultSettingsStore> _settings(
+    VaultKey key, {
+    bool renameFolder = false,
+  }) async {
     final secrets = await _derivation.derive(key.secret);
+    final storage = _connections.storageFor(key.provider);
+    final vaultFolder = await _resolveVaultFolder(
+      key,
+      storage,
+      secrets,
+      renameToLabel: renameFolder,
+    );
     return VaultSettingsStore(
-      storage: _connections.storageFor(key.provider),
-      vaultId: secrets.vaultId,
-      cipher: AesGcmCipher(secrets.encryptionKey),
+      storage: storage,
+      vaultId: vaultFolder,
+      cipher: _cipherFor(key, secrets),
     );
   }
+
+  Future<String> _resolveVaultFolder(
+    VaultKey key,
+    CloudStorage storage,
+    VaultSecrets secrets, {
+    bool renameToLabel = false,
+  }) async {
+    if (key.isEncrypted) return secrets.vaultId;
+    return PlainVaultFolder.resolve(
+      storage,
+      vaultId: secrets.vaultId,
+      label: key.label,
+      renameToLabel: renameToLabel,
+    );
+  }
+
+  Cipher _cipherFor(VaultKey key, VaultSecrets secrets) => key.isEncrypted
+      ? AesGcmCipher(secrets.encryptionKey)
+      : const PlaintextCipher();
 
   EncryptedCloudPostRepository _repository(
     VaultKey key,
     CloudStorage storage,
     VaultSecrets secrets,
+    String vaultFolder,
   ) => EncryptedCloudPostRepository(
     storage: storage,
-    vaultId: secrets.vaultId,
-    cipher: AesGcmCipher(secrets.encryptionKey),
+    vaultId: vaultFolder,
+    cipher: _cipherFor(key, secrets),
     deviceName: _deviceName(),
     maxFileSize: key.maxFileSize,
+    plainFileNames: !key.isEncrypted,
     blobs: _cache.scope('${key.provider.code}-${secrets.vaultId}'),
   );
 
@@ -160,19 +203,21 @@ class VaultSessionFactory implements VaultSettingsRemote {
     VaultKey key,
     CloudStorage storage,
     VaultSecrets secrets,
+    String vaultFolder,
     PostRepository posts,
   ) async {
     if (storage is! PublicSharing) return null;
     return BoardPublisher(
       storage: storage,
       sharing: storage as PublicSharing,
-      vaultId: secrets.vaultId,
-      cipher: AesGcmCipher(secrets.encryptionKey),
-      encryptionKey: secrets.encryptionKey,
+      vaultId: vaultFolder,
+      cipher: _cipherFor(key, secrets),
+      encryptionKey: key.isEncrypted ? secrets.encryptionKey : const [],
       signer: await BoardSigner.fromSeed(
         await _derivation.boardSigningSeed(key.secret),
       ),
       provider: key.provider,
+      plainFileNames: !key.isEncrypted,
       loadPosts: posts.fetchPosts,
     );
   }

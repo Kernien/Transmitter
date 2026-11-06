@@ -149,6 +149,61 @@ class GoogleDriveStorage implements CloudStorage, PublicSharing {
     _fail(response);
   }
 
+  @override
+  Future<List<String>> listFolders(String folder) async {
+    final folderPath = _normalize(folder);
+    final folderId = await _folderId(folderPath, create: false);
+    if (folderId == null) return [];
+    final result = <String>[];
+    String? pageToken;
+    do {
+      final page = await _getJson('/files', {
+        'q':
+            "'$folderId' in parents and mimeType = '$_folderMime' and trashed = false",
+        'fields': 'nextPageToken,files(id,name)',
+        'pageSize': '1000',
+        'spaces': 'drive',
+        'pageToken': ?pageToken,
+      });
+      for (final item in (page['files'] as List).cast<Map<String, dynamic>>()) {
+        final name = item['name'] as String;
+        _folderIds[_join(folderPath, name)] = item['id'] as String;
+        result.add(name);
+      }
+      pageToken = page['nextPageToken'] as String?;
+    } while (pageToken != null);
+    return result;
+  }
+
+  @override
+  Future<void> renameFolder(String fromPath, String toPath) async {
+    final from = _normalize(fromPath);
+    final to = _normalize(toPath);
+    if (from.isEmpty || to.isEmpty || from == to) return;
+    final (_, newName) = _split(to);
+    final id = await _folderId(from, create: false);
+    if (id == null) return;
+    final response = await _send(
+      (token) => _client.patch(
+        Uri.parse('$_api/files/$id?fields=id'),
+        headers: {..._auth(token), 'Content-Type': 'application/json'},
+        body: utf8.encode(jsonEncode({'name': newName})),
+      ),
+    );
+    if (response.statusCode == 404) {
+      _evictPrefix(from);
+      return;
+    }
+    if (response.statusCode != 200) _fail(response);
+    _evictPrefix(from);
+    _folderIds[to] = id;
+  }
+
+  void _evictPrefix(String prefix) {
+    _folderIds.removeWhere((k, _) => k == prefix || k.startsWith('$prefix/'));
+    _fileIds.removeWhere((k, _) => k == prefix || k.startsWith('$prefix/'));
+  }
+
   // ---- Публичный доступ ----
 
   /// Id разрешения «все, у кого есть ссылка» в Drive.

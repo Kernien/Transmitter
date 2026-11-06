@@ -3,8 +3,10 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:transmitter/core/crypto/aes_gcm_cipher.dart';
 import 'package:transmitter/core/crypto/board_signature.dart';
+import 'package:transmitter/core/crypto/plaintext_cipher.dart';
 import 'package:transmitter/core/storage/cloud_provider_id.dart';
 import 'package:transmitter/core/vault/reader_key.dart';
+import 'package:transmitter/core/vault/reader_key_codec.dart';
 import 'package:transmitter/data/board_manifest_codec.dart';
 import 'package:transmitter/data/board_publisher.dart';
 import 'package:transmitter/data/encrypted_cloud_post_repository.dart';
@@ -108,6 +110,50 @@ void main() {
 
   test('подменённую опись читатель отклоняет', () async {
     final key = await publisher().open(label: 'Доска');
+    final manifest = cloud.files.keys.firstWhere((p) => p.endsWith('.board'));
+    cloud.files[manifest]![cloud.files[manifest]!.length - 1] ^= 1;
+    expect(reader(key).fetchPosts(), throwsA(isA<BoardSignatureException>()));
+  });
+
+  test('публичная доска базы без шифрования работает и проверяет подпись', () async {
+    EncryptedCloudPostRepository plainOwnerRepo() =>
+        EncryptedCloudPostRepository(
+          storage: cloud,
+          vaultId: vaultId,
+          cipher: const PlaintextCipher(),
+          deviceName: 'ПК',
+          plainFileNames: true,
+        );
+    BoardPublisher plainPublisher() => BoardPublisher(
+          storage: cloud,
+          sharing: cloud,
+          vaultId: vaultId,
+          cipher: const PlaintextCipher(),
+          encryptionKey: const [],
+          signer: signer,
+          provider: CloudProviderId.dropbox,
+          plainFileNames: true,
+          loadPosts: plainOwnerRepo().fetchPosts,
+        );
+
+    final owner = PublishingPostRepository(plainOwnerRepo(), plainPublisher());
+    final file = await owner.sendFile(
+      fileName: 'Фото отпуска.jpg',
+      bytes: Uint8List.fromList([10, 20, 30]),
+    );
+    final rawKey = await plainPublisher().open(label: 'Открытая доска');
+    expect(rawKey.isEncrypted, isFalse);
+    final encoded = const ReaderKeyCodec().encode(rawKey);
+    expect(encoded, startsWith('TRM2R.'));
+    final key = const ReaderKeyCodec().decode(encoded);
+    expect(key, rawKey);
+
+    final board = reader(key);
+    final posts = await board.fetchPosts();
+    expect(posts.single.attachment!.fileName, 'Фото отпуска.jpg');
+    expect(await board.downloadAttachment(file.attachment!), [10, 20, 30]);
+
+    // Подпись описи проверяется даже без шифрования.
     final manifest = cloud.files.keys.firstWhere((p) => p.endsWith('.board'));
     cloud.files[manifest]![cloud.files[manifest]!.length - 1] ^= 1;
     expect(reader(key).fetchPosts(), throwsA(isA<BoardSignatureException>()));
