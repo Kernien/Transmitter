@@ -2,6 +2,9 @@ import 'dart:typed_data';
 
 import '../errors/app_error.dart';
 
+/// Колбэк прогресса передачи байтов: переданное количество и общий размер.
+typedef ProgressCallback = void Function(int count, int total);
+
 /// Файл в облачном хранилище.
 class RemoteFile {
   const RemoteFile({required this.name, required this.size});
@@ -24,10 +27,14 @@ abstract interface class CloudStorage {
   Future<List<RemoteFile>> listFiles(String folder);
 
   /// Загружает файл, перезаписывая существующий.
-  Future<void> upload(String path, Uint8List bytes);
+  Future<void> upload(
+    String path,
+    Uint8List bytes, {
+    ProgressCallback? onProgress,
+  });
 
   /// Бросает [StorageNotFoundException], если файла нет.
-  Future<Uint8List> download(String path);
+  Future<Uint8List> download(String path, {ProgressCallback? onProgress});
 
   /// Удаляет файл. Если файла нет, ничего не делает.
   Future<void> delete(String path);

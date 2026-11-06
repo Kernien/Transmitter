@@ -12,3 +12,13 @@ Future<http.Response> sendWithBearer(
   if (response.statusCode != 401) return response;
   return request(await tokens.refresh());
 }
+
+/// Как [sendWithBearer], но для потоковых запросов.
+Future<http.StreamedResponse> sendWithBearerStream(
+  OAuthTokenManager tokens,
+  Future<http.StreamedResponse> Function(String token) request,
+) async {
+  final response = await request(await tokens.accessToken());
+  if (response.statusCode != 401) return response;
+  return request(await tokens.refresh());
+}

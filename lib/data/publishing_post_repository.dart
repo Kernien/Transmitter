@@ -63,18 +63,22 @@ class PublishingPostRepository implements PostRepository {
     required Uint8List bytes,
     String? mimeType,
     String caption = '',
+    ProgressCallback? onProgress,
   }) => _changed(
     _inner.sendFile(
       fileName: fileName,
       bytes: bytes,
       mimeType: mimeType,
       caption: caption,
+      onProgress: onProgress,
     ),
   );
 
   @override
-  Future<Uint8List> downloadAttachment(Attachment attachment) =>
-      _inner.downloadAttachment(attachment);
+  Future<Uint8List> downloadAttachment(
+    Attachment attachment, {
+    ProgressCallback? onProgress,
+  }) => _inner.downloadAttachment(attachment, onProgress: onProgress);
 
   @override
   Future<void> deletePost(Post post) => _changed(_inner.deletePost(post));

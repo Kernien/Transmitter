@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'cloud_provider_id.dart';
+import 'cloud_storage.dart';
 
 /// Открытие файлов облака по ссылке — для читателей публичных досок, у
 /// которых нет доступа к облаку владельца. Реализуют хранилища облаков,
@@ -20,5 +21,5 @@ abstract interface class PublicFileReader {
   CloudProviderId get provider;
 
   /// Бросает `StorageNotFoundException`, если файла нет или доступ закрыт.
-  Future<Uint8List> download(String locator);
+  Future<Uint8List> download(String locator, {ProgressCallback? onProgress});
 }

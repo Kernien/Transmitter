@@ -22,9 +22,9 @@ class CountingCloud extends InMemoryCloudStorage {
   int downloads = 0;
 
   @override
-  Future<Uint8List> download(String path) {
+  Future<Uint8List> download(String path, {ProgressCallback? onProgress}) {
     downloads++;
-    return super.download(path);
+    return super.download(path, onProgress: onProgress);
   }
 }
 

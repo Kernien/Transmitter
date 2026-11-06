@@ -32,7 +32,10 @@ class MegaPublicReader implements PublicFileReader {
   CloudProviderId get provider => CloudProviderId.mega;
 
   @override
-  Future<Uint8List> download(String locator) async {
+  Future<Uint8List> download(
+    String locator, {
+    ProgressCallback? onProgress,
+  }) async {
     final link = MegaFolderLink.parse(locator);
     if (link == null) throw StorageNotFoundException(locator);
     final api = MegaApi(_client, folder: link.publicHandle);
@@ -44,13 +47,13 @@ class MegaPublicReader implements PublicFileReader {
     }
     if (file == null) throw StorageNotFoundException(locator);
     try {
-      return await _downloadFile(api, file, locator);
+      return await _downloadFile(api, file, locator, onProgress: onProgress);
     } on StorageNotFoundException {
       // Файл перезаписали после того, как мы получили список папки.
       listing = await _listing(api, link, reload: true);
       file = listing.files[link.fileName];
       if (file == null) rethrow;
-      return _downloadFile(api, file, locator);
+      return _downloadFile(api, file, locator, onProgress: onProgress);
     }
   }
 
@@ -114,8 +117,9 @@ class MegaPublicReader implements PublicFileReader {
   Future<Uint8List> _downloadFile(
     MegaApi api,
     ({String handle, Uint8List key, int ts}) file,
-    String locator,
-  ) async {
+    String locator, {
+    ProgressCallback? onProgress,
+  }) async {
     final Object? info;
     try {
       info = await api.call({'a': 'g', 'g': 1, 'ssl': 2, 'n': file.handle});
@@ -127,7 +131,7 @@ class MegaPublicReader implements PublicFileReader {
     if (error is int && error < 0) throw _error(error, locator);
     final url = info['g'];
     if (url is! String) throw StorageNotFoundException(locator);
-    final encrypted = await api.downloadBytes(url);
+    final encrypted = await api.downloadBytes(url, onProgress: onProgress);
     final args = (
       encrypted,
       MegaCrypto.fileAesKey(file.key),

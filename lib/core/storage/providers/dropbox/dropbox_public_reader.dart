@@ -33,9 +33,24 @@ class DropboxPublicReader implements PublicFileReader {
   }
 
   @override
-  Future<Uint8List> download(String locator) async {
-    final response = await _client.get(directUrl(locator));
-    if (response.statusCode == 200) return response.bodyBytes;
+  Future<Uint8List> download(
+    String locator, {
+    ProgressCallback? onProgress,
+  }) async {
+    final response = await _client.send(
+      http.Request('GET', directUrl(locator)),
+    );
+    if (response.statusCode == 200) {
+      final total = response.contentLength ?? 0;
+      final builder = BytesBuilder(copy: false);
+      var received = 0;
+      await for (final chunk in response.stream) {
+        builder.add(chunk);
+        received += chunk.length;
+        onProgress?.call(received, total);
+      }
+      return builder.takeBytes();
+    }
     if (response.statusCode == 429) {
       throw const StorageException(ErrorCode.cloudRateLimited, {
         'provider': 'Dropbox',

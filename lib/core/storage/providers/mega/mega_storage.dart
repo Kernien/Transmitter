@@ -83,7 +83,11 @@ class MegaStorage implements CloudStorage, PublicSharing {
   }
 
   @override
-  Future<void> upload(String path, Uint8List bytes) => _serial(() async {
+  Future<void> upload(
+    String path,
+    Uint8List bytes, {
+    ProgressCallback? onProgress,
+  }) => _serial(() async {
     final (folder, name) = _split(path);
     final parent = (await _folderHandle(folder, create: true))!;
     final key = MegaCrypto.randomBytes(16);
@@ -107,7 +111,9 @@ class MegaStorage implements CloudStorage, PublicSharing {
         'provider': 'MEGA',
       });
     }
-    final completion = MegaCrypto.b64(await _uploadPieces(url, encrypted.data));
+    final completion = MegaCrypto.b64(
+      await _uploadPieces(url, encrypted.data, onProgress: onProgress),
+    );
 
     final fileKey = MegaCrypto.packFileKey(key, nonce, encrypted.mac);
     final result = await _request({
@@ -131,7 +137,7 @@ class MegaStorage implements CloudStorage, PublicSharing {
   });
 
   @override
-  Future<Uint8List> download(String path) async {
+  Future<Uint8List> download(String path, {ProgressCallback? onProgress}) async {
     var node = await _findFile(path);
     if (node == null) {
       // Файл мог появиться только что: спросим сервер ещё раз.
@@ -150,7 +156,7 @@ class MegaStorage implements CloudStorage, PublicSharing {
     if (error is int && error < 0) throw megaStorageError(error, path: path);
     final url = info['g'];
     if (url is! String) throw StorageNotFoundException(path);
-    final encrypted = await _api.downloadBytes(url);
+    final encrypted = await _api.downloadBytes(url, onProgress: onProgress);
     final nodeKey = node.key!;
     final args = (
       encrypted,
@@ -618,10 +624,15 @@ class MegaStorage implements CloudStorage, PublicSharing {
 
   // ------------------------------------------------------------ Служебное
 
-  Future<Uint8List> _uploadPieces(String url, Uint8List data) async {
+  Future<Uint8List> _uploadPieces(
+    String url,
+    Uint8List data, {
+    ProgressCallback? onProgress,
+  }) async {
     var pieceStart = 0;
     var completion = Uint8List(0);
     final ends = MegaCrypto.chunkEnds(data.length);
+    onProgress?.call(0, data.length);
     for (var i = 0; i < ends.length; i++) {
       final end = ends[i];
       final last = i == ends.length - 1;
@@ -636,6 +647,7 @@ class MegaStorage implements CloudStorage, PublicSharing {
         throw megaStorageError(e.code);
       }
       pieceStart = end;
+      onProgress?.call(pieceStart, data.length);
     }
     if (completion.isEmpty) {
       throw StorageException.request('MEGA', 'upload not completed');

@@ -27,6 +27,21 @@ extension AppLocalizationsX on AppLocalizations {
     return '$text ${units[unit]}';
   }
 
+  /// Скорость передачи: «512 B/s», «1.2 MB/s» / «1,2 МБ/с».
+  String transferSpeed(double bytesPerSecond) {
+    final units = [speedUnitB, speedUnitKb, speedUnitMb, speedUnitGb];
+    var value = bytesPerSecond;
+    var unit = 0;
+    while (value >= 1024 && unit < units.length - 1) {
+      value /= 1024;
+      unit++;
+    }
+    final text = unit == 0 || value >= 100
+        ? value.round().toString()
+        : value.toStringAsFixed(1).replaceAll('.', decimalSeparator);
+    return '$text ${units[unit]}';
+  }
+
   /// Лимит размера в целых мегабайтах: «25 MB» / «25 МБ».
   String sizeLimitOf(int bytes) => sizeLimit(bytes ~/ (1024 * 1024));
 

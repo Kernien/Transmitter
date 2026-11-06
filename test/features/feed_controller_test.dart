@@ -9,6 +9,7 @@ import 'package:transmitter/core/storage/cloud_storage.dart';
 import 'package:transmitter/core/storage/in_memory_cloud_storage.dart';
 import 'package:transmitter/core/vault/vault_key.dart';
 import 'package:transmitter/data/encrypted_cloud_post_repository.dart';
+import 'package:transmitter/domain/transfer_progress.dart';
 import 'package:transmitter/features/feed/feed_controller.dart';
 
 import '../support/fake_file_transfer_service.dart';
@@ -245,6 +246,61 @@ void main() {
             .having((e) => e.fileName, 'файл', 'huge.iso')
             .having((e) => e.cause, 'причина', isA<FileTooLargeException>()),
       );
+      feed.dispose();
+    });
+
+    test('файл сразу появляется в ленте как временный, а после отправки заменяется настоящим', () async {
+      final feed = controllerFor('A');
+      files.nextPick = PickedFile(name: 'doc.pdf', bytes: bytes);
+
+      String? firstSeenId;
+      TransferProgress? firstSeenTransfer;
+      feed.addListener(() {
+        if (feed.posts.isNotEmpty && firstSeenId == null) {
+          firstSeenId = feed.posts.first.id;
+          firstSeenTransfer = feed.transferProgress(feed.posts.first);
+        }
+      });
+
+      expect(await feed.attachFile(caption: 'документ'), isTrue);
+      expect(firstSeenId?.startsWith('pending_'), isTrue);
+      expect(firstSeenTransfer, isNotNull);
+      expect(feed.posts, hasLength(1));
+      expect(feed.posts.single.id.startsWith('pending_'), isFalse);
+      expect(feed.posts.single.attachment?.fileName, 'doc.pdf');
+      expect(feed.transferProgress(feed.posts.single), isNull);
+      feed.dispose();
+    });
+
+    test('пачка перетащенных файлов сразу вся появляется в ленте со статусом загрузки и не пропадает при refresh', () async {
+      final feed = controllerFor('A');
+      List<String>? initialIds;
+      List<bool>? initialHasTransfer;
+
+      feed.addListener(() {
+        if (initialIds == null && feed.posts.length == 3) {
+          initialIds = feed.posts.map((p) => p.id).toList();
+          initialHasTransfer = feed.posts
+              .map((p) => feed.transferProgress(p) != null)
+              .toList();
+          // Фоновый refresh во время отправки не должен затирать ожидающие посты.
+          feed.refresh();
+        }
+      });
+
+      final sent = await feed.sendDroppedFiles([
+        XFile.fromData(bytes, path: '1.txt'),
+        XFile.fromData(bytes, path: '2.txt'),
+        XFile.fromData(bytes, path: '3.txt'),
+      ]);
+
+      expect(sent, 3);
+      expect(initialIds, hasLength(3));
+      expect(initialIds!.every((id) => id.startsWith('pending_')), isTrue);
+      expect(initialHasTransfer, [true, true, true]);
+      expect(feed.posts, hasLength(3));
+      expect(feed.posts.every((p) => !p.id.startsWith('pending_')), isTrue);
+      expect(feed.posts.map((p) => p.attachment!.fileName), ['1.txt', '2.txt', '3.txt']);
       feed.dispose();
     });
 

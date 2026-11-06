@@ -16,9 +16,13 @@ class SharingCloud extends InMemoryCloudStorage implements PublicSharing {
       path.split('/').where((s) => s.isNotEmpty).join('/');
 
   @override
-  Future<void> upload(String path, Uint8List bytes) {
+  Future<void> upload(
+    String path,
+    Uint8List bytes, {
+    ProgressCallback? onProgress,
+  }) {
     uploads++;
-    return super.upload(path, bytes);
+    return super.upload(path, bytes, onProgress: onProgress);
   }
 
   @override
@@ -53,12 +57,13 @@ class SharingCloudReader implements PublicFileReader {
   CloudProviderId get provider => CloudProviderId.dropbox;
 
   @override
-  Future<Uint8List> download(String locator) async {
+  Future<Uint8List> download(String locator, {ProgressCallback? onProgress}) async {
     final path = locator.substring('pub:'.length);
     final bytes = _cloud.files[path];
     if (!_cloud.published.contains(path) || bytes == null) {
       throw StorageNotFoundException(locator);
     }
+    onProgress?.call(bytes.length, bytes.length);
     return Uint8List.fromList(bytes);
   }
 }

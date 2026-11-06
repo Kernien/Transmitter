@@ -70,24 +70,46 @@ class DropboxStorage implements CloudStorage, PublicSharing {
   }
 
   @override
-  Future<void> upload(String path, Uint8List bytes) async {
+  Future<void> upload(
+    String path,
+    Uint8List bytes, {
+    ProgressCallback? onProgress,
+  }) async {
+    onProgress?.call(0, bytes.length);
     final response = await _content('/files/upload', {
       'path': _remote(path),
       'mode': 'overwrite',
       'mute': true,
     }, body: bytes);
     if (response.statusCode != 200) _fail(response);
+    onProgress?.call(bytes.length, bytes.length);
   }
 
   @override
-  Future<Uint8List> download(String path) async {
-    final response = await _content('/files/download', {'path': _remote(path)});
-    if (response.statusCode == 409 &&
-        _errorSummary(response).contains('not_found')) {
-      throw StorageNotFoundException(path);
+  Future<Uint8List> download(String path, {ProgressCallback? onProgress}) async {
+    final response = await _contentStream('/files/download', {
+      'path': _remote(path),
+    });
+    if (response.statusCode == 409) {
+      final body = await response.stream.bytesToString();
+      if (_summaryFromBody(body).contains('not_found')) {
+        throw StorageNotFoundException(path);
+      }
+      _failFromBody(response.statusCode, body);
     }
-    if (response.statusCode != 200) _fail(response);
-    return response.bodyBytes;
+    if (response.statusCode != 200) {
+      final body = await response.stream.bytesToString();
+      _failFromBody(response.statusCode, body);
+    }
+    final total = response.contentLength ?? 0;
+    final builder = BytesBuilder(copy: false);
+    var received = 0;
+    await for (final chunk in response.stream) {
+      builder.add(chunk);
+      received += chunk.length;
+      onProgress?.call(received, total);
+    }
+    return builder.takeBytes();
   }
 
   @override
@@ -168,6 +190,18 @@ class DropboxStorage implements CloudStorage, PublicSharing {
     ),
   );
 
+  Future<http.StreamedResponse> _contentStream(
+    String endpoint,
+    Map<String, Object?> arg,
+  ) => sendWithBearerStream(
+    _tokens,
+    (token) => _client.send(
+      http.Request('POST', Uri.parse('$_contentHost$endpoint'))
+        ..headers['Authorization'] = 'Bearer $token'
+        ..headers['Dropbox-API-Arg'] = _headerJson(arg),
+    ),
+  );
+
   Future<http.Response> _authorized(
     Future<http.Response> Function(String token) request,
   ) => sendWithBearer(_tokens, request);
@@ -186,39 +220,42 @@ class DropboxStorage implements CloudStorage, PublicSharing {
         (m) => '\\u${m[0]!.codeUnitAt(0).toRadixString(16).padLeft(4, '0')}',
       );
 
-  static String _errorSummary(http.Response response) {
+  static String _summaryFromBody(String body) {
     try {
-      return ((jsonDecode(response.body) as Map)['error_summary'] as String?) ??
-          '';
+      return ((jsonDecode(body) as Map)['error_summary'] as String?) ?? '';
     } catch (_) {
       return '';
     }
   }
 
-  static Never _fail(http.Response response) {
-    var summary = _errorSummary(response);
+  static String _errorSummary(http.Response response) =>
+      _summaryFromBody(response.body);
+
+  static Never _fail(http.Response response) =>
+      _failFromBody(response.statusCode, response.body);
+
+  static Never _failFromBody(int statusCode, String body) {
+    var summary = _summaryFromBody(body);
     // Ошибки формата запроса (400) Dropbox присылает обычным текстом.
-    if (summary.isEmpty) summary = response.body.trim();
+    if (summary.isEmpty) summary = body.trim();
     if (summary.length > 300) summary = '${summary.substring(0, 300)}…';
     if (summary.contains('missing_scope')) {
       throw const StorageException(ErrorCode.cloudSharingNotAllowed, {
         'provider': 'Dropbox',
       });
     }
-    if (response.statusCode == 401) throw const StorageAuthException();
+    if (statusCode == 401) throw const StorageAuthException();
     if (summary.contains('insufficient_space')) {
       throw const StorageQuotaException();
     }
-    if (response.statusCode == 429) {
+    if (statusCode == 429) {
       throw const StorageException(ErrorCode.cloudRateLimited, {
         'provider': 'Dropbox',
       });
     }
     throw StorageException.request(
       'Dropbox',
-      summary.isEmpty
-          ? '${response.statusCode}'
-          : '${response.statusCode}: $summary',
+      summary.isEmpty ? '$statusCode' : '$statusCode: $summary',
     );
   }
 }

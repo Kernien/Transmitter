@@ -263,6 +263,7 @@ class EncryptedCloudPostRepository implements PostRepository {
     required Uint8List bytes,
     String? mimeType,
     String caption = '',
+    ProgressCallback? onProgress,
   }) async {
     if (bytes.length > maxFileSize) {
       throw FileTooLargeException(bytes.length, maxFileSize);
@@ -278,7 +279,11 @@ class EncryptedCloudPostRepository implements PostRepository {
       _filesDirReady = true;
     }
     final encrypted = await _cipher.encrypt(bytes);
-    await _storage.upload(_attachmentPath(attachment), encrypted);
+    await _storage.upload(
+      _attachmentPath(attachment),
+      encrypted,
+      onProgress: onProgress,
+    );
     await _blobs.write(attachmentCacheKey(attachment.id), encrypted);
     return _publish(
       _newPost(
@@ -290,17 +295,25 @@ class EncryptedCloudPostRepository implements PostRepository {
   }
 
   @override
-  Future<Uint8List> downloadAttachment(Attachment attachment) async {
+  Future<Uint8List> downloadAttachment(
+    Attachment attachment, {
+    ProgressCallback? onProgress,
+  }) async {
     final key = attachmentCacheKey(attachment.id);
     final cached = await _blobs.read(key);
     if (cached != null) {
       try {
-        return await _cipher.decrypt(cached);
+        final result = await _cipher.decrypt(cached);
+        onProgress?.call(cached.length, cached.length);
+        return result;
       } on DecryptionException {
         await _blobs.delete(key);
       }
     }
-    final encrypted = await _storage.download(_attachmentPath(attachment));
+    final encrypted = await _storage.download(
+      _attachmentPath(attachment),
+      onProgress: onProgress,
+    );
     final bytes = await _cipher.decrypt(encrypted);
     await _blobs.write(key, encrypted);
     return bytes;

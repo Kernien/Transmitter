@@ -60,6 +60,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get sizeUnitGb => 'ГБ';
 
   @override
+  String get speedUnitB => 'Б/с';
+
+  @override
+  String get speedUnitKb => 'КБ/с';
+
+  @override
+  String get speedUnitMb => 'МБ/с';
+
+  @override
+  String get speedUnitGb => 'ГБ/с';
+
+  @override
   String get decimalSeparator => ',';
 
   @override

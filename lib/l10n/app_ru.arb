@@ -18,6 +18,10 @@
   "sizeUnitKb": "КБ",
   "sizeUnitMb": "МБ",
   "sizeUnitGb": "ГБ",
+  "speedUnitB": "Б/с",
+  "speedUnitKb": "КБ/с",
+  "speedUnitMb": "МБ/с",
+  "speedUnitGb": "ГБ/с",
   "decimalSeparator": ",",
   "sizeLimit": "{mb} МБ",
 

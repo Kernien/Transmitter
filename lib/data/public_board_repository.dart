@@ -117,7 +117,10 @@ class PublicBoardRepository implements PostRepository {
   }
 
   @override
-  Future<Uint8List> downloadAttachment(Attachment attachment) async {
+  Future<Uint8List> downloadAttachment(
+    Attachment attachment, {
+    ProgressCallback? onProgress,
+  }) async {
     final key = attachmentCacheKey(attachment.id);
     final cached = await _blobs.read(key);
     if (cached != null) {
@@ -129,7 +132,7 @@ class PublicBoardRepository implements PostRepository {
     }
     final locator = _files[attachment.id];
     if (locator == null) throw StorageNotFoundException(attachment.fileName);
-    final encrypted = await _reader.download(locator);
+    final encrypted = await _reader.download(locator, onProgress: onProgress);
     final bytes = await _cipher.decrypt(encrypted);
     await _blobs.write(key, encrypted);
     return bytes;
@@ -144,6 +147,7 @@ class PublicBoardRepository implements PostRepository {
     required Uint8List bytes,
     String? mimeType,
     String caption = '',
+    ProgressCallback? onProgress,
   }) => _readOnly();
 
   @override

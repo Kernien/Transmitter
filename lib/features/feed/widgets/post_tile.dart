@@ -57,6 +57,7 @@ class PostTile extends StatelessWidget {
     );
     void toggle() => context.read<FeedController>().toggleSelection(post);
 
+    final isPending = post.id.startsWith('pending_');
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       color: selected ? theme.colorScheme.primaryContainer : null,
@@ -64,6 +65,8 @@ class PostTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         onTap: selecting
             ? toggle
+            : isPending
+            ? null
             : switch (post.kind) {
                 PostKind.link => () => _openLink(post.text),
                 // Фото открывается на весь экран, остальные файлы сохраняются.
@@ -122,7 +125,7 @@ class PostTile extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (!selecting)
+                        if (!selecting && !isPending)
                           PopupMenuButton<_PostAction>(
                             tooltip: context.l10n.actions,
                             icon: Icon(
@@ -463,10 +466,22 @@ class _ImagePreviewState extends State<_ImagePreview> {
   bool _failed = false;
 
   @override
+  void didUpdateWidget(covariant _ImagePreview oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.attachment.id != oldWidget.attachment.id) {
+      _failed = false;
+      _requested = widget.attachment.size <= attachmentPreviewAutoLimit;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (_failed) return const SizedBox.shrink();
     final feed = context.read<FeedController>();
     final attachment = widget.attachment;
+    if (widget.post.id.startsWith('pending_') && feed.previews.peek(attachment) == null) {
+      return const SizedBox.shrink();
+    }
     if (!_requested && feed.previews.peek(attachment) == null) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 8),
@@ -532,9 +547,58 @@ class _FileContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final attachment = post.attachment;
-    final saving = context.select<FeedController, bool>(
-      (f) => f.isSaving(post),
+    final (saving, transfer) = context.select(
+      (FeedController f) => (f.isSaving(post), f.transferProgress(post)),
     );
+
+    Widget trailing;
+    if (transfer != null) {
+      trailing = Padding(
+        key: const ValueKey('transfer'),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox.square(
+              dimension: 24,
+              child: CircularProgressIndicator(
+                value: transfer.fraction > 0 ? transfer.fraction : null,
+                strokeWidth: 2.5,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${transfer.percent}%',
+              style: theme.textTheme.labelSmall?.copyWith(fontSize: 10),
+            ),
+            if (transfer.bytesPerSecond > 0)
+              Text(
+                context.l10n.transferSpeed(transfer.bytesPerSecond),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontSize: 9,
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+          ],
+        ),
+      );
+    } else if (saving) {
+      trailing = const Padding(
+        key: ValueKey('saving'),
+        padding: EdgeInsets.all(12),
+        child: SizedBox.square(
+          dimension: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    } else {
+      trailing = IconButton(
+        key: const ValueKey('save'),
+        tooltip: context.l10n.save,
+        icon: const Icon(Icons.download),
+        onPressed: () => PostTile._save(context, post),
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -574,19 +638,15 @@ class _FileContent extends StatelessWidget {
                 ],
               ),
             ),
-            saving
-                ? const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  )
-                : IconButton(
-                    tooltip: context.l10n.save,
-                    icon: const Icon(Icons.download),
-                    onPressed: () => PostTile._save(context, post),
-                  ),
+            SizedBox(
+              width: 52,
+              child: Center(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: trailing,
+                ),
+              ),
+            ),
           ],
         ),
         if (post.text.isNotEmpty) ...[

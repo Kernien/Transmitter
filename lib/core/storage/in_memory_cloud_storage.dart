@@ -26,19 +26,25 @@ class InMemoryCloudStorage implements CloudStorage {
   }
 
   @override
-  Future<void> upload(String path, Uint8List bytes) async {
+  Future<void> upload(
+    String path,
+    Uint8List bytes, {
+    ProgressCallback? onProgress,
+  }) async {
     final normalized = _normalize(path);
     final parent = _parentOf(normalized);
     if (parent.isNotEmpty && !folders.contains(parent)) {
       throw StorageNotFoundException(parent);
     }
     files[normalized] = Uint8List.fromList(bytes);
+    onProgress?.call(bytes.length, bytes.length);
   }
 
   @override
-  Future<Uint8List> download(String path) async {
+  Future<Uint8List> download(String path, {ProgressCallback? onProgress}) async {
     final bytes = files[_normalize(path)];
     if (bytes == null) throw StorageNotFoundException(path);
+    onProgress?.call(bytes.length, bytes.length);
     return Uint8List.fromList(bytes);
   }
 

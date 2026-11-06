@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:transmitter/core/crypto/aes_gcm_cipher.dart';
 import 'package:transmitter/core/files/file_transfer_service.dart';
 import 'package:transmitter/core/persistence/blob_cache.dart';
+import 'package:transmitter/core/storage/cloud_storage.dart';
 import 'package:transmitter/core/storage/in_memory_cloud_storage.dart';
 import 'package:transmitter/data/encrypted_cloud_post_repository.dart';
 import 'package:transmitter/domain/post.dart';
@@ -31,9 +32,9 @@ class CountingCloud extends InMemoryCloudStorage {
   int downloads = 0;
 
   @override
-  Future<Uint8List> download(String path) {
+  Future<Uint8List> download(String path, {ProgressCallback? onProgress}) {
     downloads++;
-    return super.download(path);
+    return super.download(path, onProgress: onProgress);
   }
 }
 

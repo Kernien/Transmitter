@@ -33,10 +33,10 @@ class FlakyCloud extends InMemoryCloudStorage {
   }
 
   @override
-  Future<Uint8List> download(String path) {
+  Future<Uint8List> download(String path, {ProgressCallback? onProgress}) {
     _check();
     downloads++;
-    return super.download(path);
+    return super.download(path, onProgress: onProgress);
   }
 }
 

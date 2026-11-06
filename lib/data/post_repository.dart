@@ -1,9 +1,11 @@
 import 'dart:typed_data';
 
 import '../core/files/file_transfer_service.dart';
+import '../core/storage/cloud_storage.dart';
 import '../domain/post.dart';
 
 export '../core/files/file_transfer_service.dart' show FileTooLargeException;
+export '../core/storage/cloud_storage.dart' show ProgressCallback;
 
 /// Работа с постами одной базы. UI зависит только от этого интерфейса.
 abstract interface class PostRepository {
@@ -41,9 +43,13 @@ abstract interface class PostRepository {
     required Uint8List bytes,
     String? mimeType,
     String caption = '',
+    ProgressCallback? onProgress,
   });
 
-  Future<Uint8List> downloadAttachment(Attachment attachment);
+  Future<Uint8List> downloadAttachment(
+    Attachment attachment, {
+    ProgressCallback? onProgress,
+  });
 
   /// Удаляет пост вместе с файлом и комментарием.
   Future<void> deletePost(Post post);

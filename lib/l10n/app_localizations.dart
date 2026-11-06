@@ -194,6 +194,30 @@ abstract class AppLocalizations {
   /// **'GB'**
   String get sizeUnitGb;
 
+  /// No description provided for @speedUnitB.
+  ///
+  /// In en, this message translates to:
+  /// **'B/s'**
+  String get speedUnitB;
+
+  /// No description provided for @speedUnitKb.
+  ///
+  /// In en, this message translates to:
+  /// **'KB/s'**
+  String get speedUnitKb;
+
+  /// No description provided for @speedUnitMb.
+  ///
+  /// In en, this message translates to:
+  /// **'MB/s'**
+  String get speedUnitMb;
+
+  /// No description provided for @speedUnitGb.
+  ///
+  /// In en, this message translates to:
+  /// **'GB/s'**
+  String get speedUnitGb;
+
   /// No description provided for @decimalSeparator.
   ///
   /// In en, this message translates to:

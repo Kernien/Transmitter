@@ -10,6 +10,7 @@ import '../../core/share/outgoing_share.dart';
 import '../../core/utils/clock.dart';
 import '../../data/post_repository.dart';
 import '../../domain/post.dart';
+import '../../domain/transfer_progress.dart';
 import 'attachment_previews.dart';
 import 'selection_exporter.dart';
 
@@ -52,6 +53,7 @@ class FeedController extends ChangeNotifier {
   bool _sending = false;
   bool _bulkBusy = false;
   final Set<String> _saving = {};
+  final Map<String, TransferProgress> _transfers = {};
   final Set<String> _selected = {};
   Object? _error;
 
@@ -64,6 +66,9 @@ class FeedController extends ChangeNotifier {
 
   /// Идёт ли сейчас скачивание файла из этого поста.
   bool isSaving(Post post) => _saving.contains(post.id);
+
+  /// Прогресс передачи файла для этого поста (`null`, если передача не идёт).
+  TransferProgress? transferProgress(Post post) => _transfers[post.id];
 
   // ---- Выделение нескольких постов ----
 
@@ -224,13 +229,26 @@ class FeedController extends ChangeNotifier {
     if (_refreshing) return;
     _refreshing = true;
     try {
-      _posts = await _repository.fetchPosts();
+      final remote = await _repository.fetchPosts();
       // Посты, удалённые на других устройствах, больше нельзя выбрать.
-      final ids = _posts.map((p) => p.id).toSet();
+      final ids = remote.map((p) => p.id).toSet();
       _selected.retainWhere(ids.contains);
       // Например, не удалось обновить публичную доску: лента работает,
       // но владелец должен об этом знать.
       _error = _repository.backgroundError;
+
+      // Сохраняем локальные временные записи, которые ещё загружаются.
+      final pending = _posts.where((p) => p.id.startsWith('pending_')).toList();
+      final remoteAttachmentNames = remote
+          .where((p) => p.attachment != null)
+          .map((p) => p.attachment!.fileName)
+          .toSet();
+      final activePending = pending.where((p) {
+        final name = p.attachment?.fileName;
+        return name == null || !remoteAttachmentNames.contains(name);
+      }).toList();
+
+      _posts = [...remote, ...activePending];
     } catch (e) {
       _error = e;
       // Владелец закрыл доску: старые записи не показываем — их файлы уже
@@ -270,9 +288,25 @@ class FeedController extends ChangeNotifier {
     _saving.add(post.id);
     _notify();
     try {
+      final cached = previews.peek(attachment);
+      final Uint8List bytes;
+      if (cached != null) {
+        bytes = cached;
+      } else {
+        final tracker = TransferTracker(clock: _clock);
+        _transfers[post.id] = tracker.update(0, attachment.size);
+        _notify();
+        bytes = await _repository.downloadAttachment(
+          attachment,
+          onProgress: (count, total) {
+            _transfers[post.id] = tracker.update(count, total);
+            _notify();
+          },
+        );
+      }
       await _opener.open(
         fileName: attachment.fileName,
-        bytes: await previews.load(attachment),
+        bytes: bytes,
         mimeType: attachment.mimeType,
       );
       _error = null;
@@ -280,6 +314,7 @@ class FeedController extends ChangeNotifier {
       _error = e;
     } finally {
       _saving.remove(post.id);
+      _transfers.remove(post.id);
       _notify();
     }
   }
@@ -308,39 +343,156 @@ class FeedController extends ChangeNotifier {
   }
 
   /// Отправляет файлы, перетащенные в окно, по очереди.
+  /// Все файлы сразу появляются на доске со статусом передачи.
   /// Возвращает, сколько файлов отправлено; ошибки попадают в [error].
   Future<int> sendDroppedFiles(List<XFile> files) async {
+    if (files.isEmpty) return 0;
+    final queue = <({XFile file, String tempId, int size, bool isImage})>[];
+    final pendingPosts = <Post>[];
+    for (var i = 0; i < files.length; i++) {
+      final file = files[i];
+      final size = await file.length();
+      final tempId =
+          'pending_${_clock().millisecondsSinceEpoch}_${i}_${file.name}';
+      final attachment = Attachment(
+        id: tempId,
+        fileName: file.name,
+        size: size,
+        mimeType: file.mimeType,
+      );
+      final post = Post(
+        id: tempId,
+        kind: PostKind.file,
+        createdAt: _clock().add(Duration(milliseconds: i)),
+        senderDevice: '',
+        attachment: attachment,
+      );
+      queue.add((
+        file: file,
+        tempId: tempId,
+        size: size,
+        isImage: attachment.isImage,
+      ));
+      pendingPosts.add(post);
+      _transfers[tempId] = TransferProgress(
+        transferred: 0,
+        total: size,
+        bytesPerSecond: 0,
+      );
+    }
+
+    _posts = [..._posts, ...pendingPosts];
+    _sending = true;
+    _notify();
+
     var sent = 0;
     Object? lastError;
-    for (final file in files) {
+    for (final item in queue) {
+      final tempId = item.tempId;
       try {
+        if (item.size > _repository.maxFileSize) {
+          throw FileTooLargeException(item.size, _repository.maxFileSize);
+        }
         final picked = await _files.readFile(
-          file,
+          item.file,
           maxSize: _repository.maxFileSize,
         );
-        if (await _sendPicked(picked)) {
-          sent++;
-        } else {
-          lastError = _error;
+        if (item.isImage && picked.bytes.length <= attachmentPreviewAutoLimit) {
+          previews.remember(tempId, picked.bytes);
         }
+        final tracker = TransferTracker(clock: _clock);
+        _transfers[tempId] = tracker.update(0, picked.bytes.length);
+        _notify();
+
+        final realPost = await _repository.sendFile(
+          fileName: picked.name,
+          bytes: picked.bytes,
+          mimeType: picked.mimeType,
+          onProgress: (count, total) {
+            _transfers[tempId] = tracker.update(count, total);
+            _notify();
+          },
+        );
+        if (realPost.attachment case final realAttachment?
+            when realAttachment.isImage &&
+                picked.bytes.length <= attachmentPreviewAutoLimit) {
+          previews.remember(realAttachment.id, picked.bytes);
+        }
+        _posts = [for (final p in _posts) p.id == tempId ? realPost : p];
+        _transfers.remove(tempId);
+        _notify();
+        sent++;
       } catch (e) {
-        lastError = FileError(file.name, e);
+        _posts = _posts.where((p) => p.id != tempId).toList();
+        _transfers.remove(tempId);
+        lastError = e is FileError ? e : FileError(item.file.name, e);
+        _notify();
       }
     }
+
+    _sending = false;
     _error = lastError;
     _notify();
     return sent;
   }
 
-  Future<bool> _sendPicked(PickedFile picked, {String caption = ''}) =>
-      _runSend(
-        () => _repository.sendFile(
-          fileName: picked.name,
-          bytes: picked.bytes,
-          mimeType: picked.mimeType,
-          caption: caption,
-        ),
+  Future<bool> _sendPicked(PickedFile picked, {String caption = ''}) async {
+    final tempId = 'pending_${_clock().millisecondsSinceEpoch}_${picked.name}';
+    final attachment = Attachment(
+      id: tempId,
+      fileName: picked.name,
+      size: picked.bytes.length,
+      mimeType: picked.mimeType,
+    );
+    if (picked.bytes.length <= attachmentPreviewAutoLimit && attachment.isImage) {
+      previews.remember(tempId, picked.bytes);
+    }
+    final pendingPost = Post(
+      id: tempId,
+      kind: PostKind.file,
+      createdAt: _clock(),
+      senderDevice: '',
+      text: caption.trim(),
+      attachment: attachment,
+    );
+
+    final tracker = TransferTracker(clock: _clock);
+    _transfers[tempId] = tracker.update(0, picked.bytes.length);
+    _posts = [..._posts, pendingPost];
+    _sending = true;
+    _notify();
+
+    try {
+      final realPost = await _repository.sendFile(
+        fileName: picked.name,
+        bytes: picked.bytes,
+        mimeType: picked.mimeType,
+        caption: caption,
+        onProgress: (count, total) {
+          _transfers[tempId] = tracker.update(count, total);
+          _notify();
+        },
       );
+      if (realPost.attachment case final realAttachment?
+          when realAttachment.isImage &&
+              picked.bytes.length <= attachmentPreviewAutoLimit) {
+        previews.remember(realAttachment.id, picked.bytes);
+      }
+      _posts = [for (final p in _posts) p.id == tempId ? realPost : p];
+      _transfers.remove(tempId);
+      _error = null;
+      return true;
+    } catch (e) {
+      _posts = _posts.where((p) => p.id != tempId).toList();
+      _transfers.remove(tempId);
+      _error = e;
+      return false;
+    } finally {
+      _transfers.remove(tempId);
+      _sending = _transfers.isNotEmpty;
+      _notify();
+    }
+  }
 
   /// Удаляет все посты базы на всех устройствах. Возвращает число удалённых.
   Future<int> clearAll() async {
@@ -368,8 +520,22 @@ class FeedController extends ChangeNotifier {
     _saving.add(post.id);
     _notify();
     try {
-      // Если фото уже показано, повторно не качаем.
-      final bytes = await previews.load(attachment);
+      final cached = previews.peek(attachment);
+      final Uint8List bytes;
+      if (cached != null) {
+        bytes = cached;
+      } else {
+        final tracker = TransferTracker(clock: _clock);
+        _transfers[post.id] = tracker.update(0, attachment.size);
+        _notify();
+        bytes = await _repository.downloadAttachment(
+          attachment,
+          onProgress: (count, total) {
+            _transfers[post.id] = tracker.update(count, total);
+            _notify();
+          },
+        );
+      }
       final saved = await _files.saveFile(
         fileName: attachment.fileName,
         bytes: bytes,
@@ -382,6 +548,7 @@ class FeedController extends ChangeNotifier {
       return false;
     } finally {
       _saving.remove(post.id);
+      _transfers.remove(post.id);
       _notify();
     }
   }

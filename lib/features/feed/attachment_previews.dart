@@ -47,6 +47,9 @@ class AttachmentPreviews {
     }
   }
 
+  /// Сохраняет готовые байты в памяти (например, сразу после отправки).
+  void remember(String id, Uint8List bytes) => _remember(id, bytes);
+
   void _remember(String id, Uint8List bytes) {
     if (bytes.length > maxBytes) return;
     _bytes[id] = bytes;

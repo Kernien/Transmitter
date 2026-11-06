@@ -60,6 +60,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sizeUnitGb => 'GB';
 
   @override
+  String get speedUnitB => 'B/s';
+
+  @override
+  String get speedUnitKb => 'KB/s';
+
+  @override
+  String get speedUnitMb => 'MB/s';
+
+  @override
+  String get speedUnitGb => 'GB/s';
+
+  @override
   String get decimalSeparator => '.';
 
   @override

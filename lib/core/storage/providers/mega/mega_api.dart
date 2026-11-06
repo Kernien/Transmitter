@@ -170,7 +170,10 @@ class MegaApi {
   /// бывает, когда серверы хранения MEGA блокирует провайдер — соединение
   /// открывается, а данные не идут. Общее время не ограничено: большой файл
   /// качается сколько нужно.
-  Future<Uint8List> downloadBytes(String url) async {
+  Future<Uint8List> downloadBytes(
+    String url, {
+    ProgressCallback? onProgress,
+  }) async {
     for (var attempt = 0; ; attempt++) {
       try {
         final response = await _client
@@ -182,8 +185,14 @@ class MegaApi {
             response.request?.url,
           );
         }
+        final total = response.contentLength ?? 0;
         final body = BytesBuilder(copy: false);
-        await response.stream.timeout(stallTimeout).forEach(body.add);
+        var received = 0;
+        await for (final chunk in response.stream.timeout(stallTimeout)) {
+          body.add(chunk);
+          received += chunk.length;
+          onProgress?.call(received, total);
+        }
         return body.takeBytes();
       } on TimeoutException {
         throw const StorageException(ErrorCode.cloudStorageStalled, {

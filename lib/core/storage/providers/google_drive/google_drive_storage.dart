@@ -70,7 +70,12 @@ class GoogleDriveStorage implements CloudStorage, PublicSharing {
   }
 
   @override
-  Future<void> upload(String path, Uint8List bytes) async {
+  Future<void> upload(
+    String path,
+    Uint8List bytes, {
+    ProgressCallback? onProgress,
+  }) async {
+    onProgress?.call(0, bytes.length);
     final normalized = _normalize(path);
     final (parentPath, name) = _split(normalized);
     final parentId = (await _folderId(parentPath, create: true))!;
@@ -93,25 +98,37 @@ class GoogleDriveStorage implements CloudStorage, PublicSharing {
       );
     }
     _fileIds[normalized] = id;
+    onProgress?.call(bytes.length, bytes.length);
   }
 
   @override
-  Future<Uint8List> download(String path) async {
+  Future<Uint8List> download(String path, {ProgressCallback? onProgress}) async {
     final normalized = _normalize(path);
     final id = await _fileId(normalized);
     if (id == null) throw StorageNotFoundException(path);
-    final response = await _send(
-      (token) => _client.get(
-        Uri.parse('$_api/files/$id?alt=media'),
-        headers: _auth(token),
+    final response = await _sendStream(
+      (token) => _client.send(
+        http.Request('GET', Uri.parse('$_api/files/$id?alt=media'))
+          ..headers.addAll(_auth(token)),
       ),
     );
     if (response.statusCode == 404) {
       _fileIds.remove(normalized);
       throw StorageNotFoundException(path);
     }
-    if (response.statusCode != 200) _fail(response);
-    return response.bodyBytes;
+    if (response.statusCode != 200) {
+      final body = await response.stream.bytesToString();
+      _failFromBody(response.statusCode, body);
+    }
+    final total = response.contentLength ?? 0;
+    final builder = BytesBuilder(copy: false);
+    var received = 0;
+    await for (final chunk in response.stream) {
+      builder.add(chunk);
+      received += chunk.length;
+      onProgress?.call(received, total);
+    }
+    return builder.takeBytes();
   }
 
   @override
@@ -372,6 +389,10 @@ class GoogleDriveStorage implements CloudStorage, PublicSharing {
     Future<http.Response> Function(String token) request,
   ) => sendWithBearer(_tokens, request);
 
+  Future<http.StreamedResponse> _sendStream(
+    Future<http.StreamedResponse> Function(String token) request,
+  ) => sendWithBearerStream(_tokens, request);
+
   static Map<String, String> _auth(String token) => {
     'Authorization': 'Bearer $token',
   };
@@ -391,24 +412,27 @@ class GoogleDriveStorage implements CloudStorage, PublicSharing {
   static String _escape(String value) =>
       value.replaceAll(r'\', r'\\').replaceAll("'", r"\'");
 
-  static Never _fail(http.Response response) {
+  static Never _fail(http.Response response) =>
+      _failFromBody(response.statusCode, response.body);
+
+  static Never _failFromBody(int statusCode, String body) {
     var reason = '';
     var message = '';
     try {
-      final error = (jsonDecode(response.body) as Map)['error'] as Map;
+      final error = (jsonDecode(body) as Map)['error'] as Map;
       message = (error['message'] ?? '').toString();
       final errors = error['errors'] as List?;
       if (errors != null && errors.isNotEmpty) {
         reason = ((errors.first as Map)['reason'] ?? '').toString();
       }
     } catch (_) {
-      message = response.body.trim();
+      message = body.trim();
     }
-    if (response.statusCode == 401) throw const StorageAuthException();
+    if (statusCode == 401) throw const StorageAuthException();
     if (reason == 'storageQuotaExceeded' || reason == 'quotaExceeded') {
       throw const StorageQuotaException();
     }
-    if (reason.contains('rateLimit') || response.statusCode == 429) {
+    if (reason.contains('rateLimit') || statusCode == 429) {
       throw const StorageException(ErrorCode.cloudRateLimited, {
         'provider': 'Google Drive',
       });
@@ -416,9 +440,7 @@ class GoogleDriveStorage implements CloudStorage, PublicSharing {
     if (message.length > 300) message = '${message.substring(0, 300)}…';
     throw StorageException.request(
       'Google Drive',
-      message.isEmpty
-          ? '${response.statusCode}'
-          : '${response.statusCode}: $message',
+      message.isEmpty ? '$statusCode' : '$statusCode: $message',
     );
   }
 }
