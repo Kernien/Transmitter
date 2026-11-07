@@ -319,10 +319,8 @@ class _FileDropZoneState extends State<_FileDropZone> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    context.l10n.dropHint(
-                      context.l10n.sizeLimitOf(
-                        context.read<FeedController>().maxFileSize,
-                      ),
+                    context.l10n.dropHintOf(
+                      context.read<FeedController>().maxFileSize,
                     ),
                     style: theme.textTheme.titleMedium,
                   ),

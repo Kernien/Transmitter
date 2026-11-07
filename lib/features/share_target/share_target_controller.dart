@@ -82,12 +82,22 @@ class ShareTargetController extends ChangeNotifier {
       final files = _sendableFiles;
       for (var i = 0; i < files.length; i++) {
         final file = files[i];
-        await repository.sendFile(
-          fileName: file.name,
-          bytes: file.bytes!,
-          mimeType: file.mimeType,
-          caption: i == 0 ? text : '',
-        );
+        if (file.bytes != null) {
+          await repository.sendFile(
+            fileName: file.name,
+            bytes: file.bytes!,
+            mimeType: file.mimeType,
+            caption: i == 0 ? text : '',
+          );
+        } else {
+          await repository.sendFileStream(
+            fileName: file.name,
+            stream: file.openRead(),
+            size: file.size,
+            mimeType: file.mimeType,
+            caption: i == 0 ? text : '',
+          );
+        }
         _progress();
       }
       return true;

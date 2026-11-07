@@ -87,16 +87,16 @@ void main() {
     final vaults = await pumpScreen(tester, settings);
     expect(find.textContaining('25 МБ'), findsNothing, reason: 'не подключено');
 
-    await chooseFileSize(tester, '50 МБ');
-    expect(vaults.vaults.single.maxFileSize, 50 * 1024 * 1024);
-    expect(settings.saved['Работа']!.maxFileSize, 50 * 1024 * 1024);
+    await chooseFileSize(tester, '100 МБ');
+    expect(vaults.vaults.single.maxFileSize, 100 * 1024 * 1024);
+    expect(settings.saved['Работа']!.maxFileSize, 100 * 1024 * 1024);
   });
 
   testWidgets('«Размер файлов…» без облака — понятная ошибка', (tester) async {
     final settings = FakeSettings()..fail = true;
     final vaults = await pumpScreen(tester, settings);
 
-    await chooseFileSize(tester, '50 МБ');
+    await chooseFileSize(tester, '100 МБ');
     expect(vaults.vaults.single.maxFileSize, VaultKey.defaultMaxFileSize);
     expect(find.textContaining('Не удалось сохранить'), findsOneWidget);
   });

@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart'
     show AesGcm, SecretBox, SecretKey;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:transmitter/core/crypto/aes_gcm_cipher.dart';
 import 'package:transmitter/core/crypto/cipher.dart';
+import 'package:transmitter/core/crypto/plaintext_cipher.dart';
 import 'package:transmitter/core/crypto/vault_key_derivation.dart';
 
 void main() {
@@ -85,6 +87,100 @@ void main() {
         () => cipher.decrypt([1, 2, 3]),
         throwsA(isA<DecryptionException>()),
       );
+    });
+
+    group('потоковое шифрование кусками (TRMC v2)', () {
+      final chunked = AesGcmCipher(key, chunkSize: 64);
+
+      Future<Uint8List> collect(Stream<Uint8List> stream) async {
+        final b = BytesBuilder(copy: false);
+        await for (final part in stream) {
+          b.add(part);
+        }
+        return b.takeBytes();
+      }
+
+      Stream<List<int>> sliceStream(Uint8List data, int step) async* {
+        for (var i = 0; i < data.length; i += step) {
+          final end = (i + step < data.length) ? i + step : data.length;
+          yield Uint8List.sublistView(data, i, end);
+        }
+      }
+
+      test('пустой, одноблочный, граничный и многокусковой потоки', () async {
+        for (final size in [0, 1, 63, 64, 65, 128, 129, 300]) {
+          final plain = Uint8List.fromList(
+            List<int>.generate(size, (i) => (i * 13 + 7) & 0xff),
+          );
+          final encrypted = await collect(
+            chunked.encryptStream(sliceStream(plain, 17)),
+          );
+          expect(encrypted.length, chunked.encryptedLength(size));
+          // Потоковая расшифровка произвольными порциями:
+          final decryptedStream = await collect(
+            chunked.decryptStream(sliceStream(encrypted, 19)),
+          );
+          expect(decryptedStream, plain);
+          // И обычная decrypt() понимает формат v2:
+          expect(await chunked.decrypt(encrypted), plain);
+        }
+      });
+
+      test('decryptStream понимает и прежний формат v1', () async {
+        final plain = Uint8List.fromList(utf8.encode('старый формат v1'));
+        final v1 = await cipher.encrypt(plain);
+        final out = await collect(cipher.decryptStream(sliceStream(v1, 5)));
+        expect(out, plain);
+      });
+
+      test('повреждение, обрыв или перестановка кусков → DecryptionException', () async {
+        final plain = Uint8List.fromList(List<int>.generate(200, (i) => i));
+        final encrypted = await collect(
+          chunked.encryptStream(Stream.value(plain)),
+        );
+
+        // Испорченный байт внутри второго куска.
+        final corrupted = Uint8List.fromList(encrypted);
+        corrupted[24 + 80 + 10] ^= 0xff;
+        await expectLater(
+          collect(chunked.decryptStream(Stream.value(corrupted))),
+          throwsA(isA<DecryptionException>()),
+        );
+
+        // Обрезанный поток (без последнего куска — первого куска нет флага isLast).
+        final truncated = Uint8List.sublistView(encrypted, 0, 24 + 80);
+        await expectLater(
+          collect(chunked.decryptStream(Stream.value(truncated))),
+          throwsA(isA<DecryptionException>()),
+        );
+        await expectLater(
+          chunked.decrypt(truncated),
+          throwsA(isA<DecryptionException>()),
+        );
+
+        // Перестановка кусков 0 и 1 местами.
+        final swapped = Uint8List.fromList(encrypted);
+        final c0 = encrypted.sublist(24, 24 + 80);
+        final c1 = encrypted.sublist(24 + 80, 24 + 160);
+        swapped.setRange(24, 24 + 80, c1);
+        swapped.setRange(24 + 80, 24 + 160, c0);
+        await expectLater(
+          collect(chunked.decryptStream(Stream.value(swapped))),
+          throwsA(isA<DecryptionException>()),
+        );
+      });
+
+      test('PlaintextCipher пропускает поток без изменений', () async {
+        const plainCipher = PlaintextCipher();
+        final data = Uint8List.fromList([1, 2, 3, 4, 5]);
+        expect(plainCipher.encryptedLength(data.length), data.length);
+        final enc = await collect(
+          plainCipher.encryptStream(Stream.value(data)),
+        );
+        expect(enc, data);
+        final dec = await collect(plainCipher.decryptStream(Stream.value(enc)));
+        expect(dec, data);
+      });
     });
   });
 

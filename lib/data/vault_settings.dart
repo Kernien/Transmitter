@@ -39,7 +39,7 @@ class VaultSettings {
     if (label is! String ||
         size is! int ||
         ts is! String ||
-        size < VaultKey.maxFileSizeOptions.first ||
+        size < VaultKey.minFileSize ||
         size > VaultKey.absoluteMaxFileSize) {
       throw const FormatException('Invalid vault settings');
     }

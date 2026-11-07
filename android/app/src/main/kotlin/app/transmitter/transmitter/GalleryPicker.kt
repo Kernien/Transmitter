@@ -22,7 +22,10 @@ import java.util.concurrent.Executors
 class GalleryPicker(private val activity: Activity, messenger: BinaryMessenger) {
     private val io = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
-    private val reader = ContentReader(activity.contentResolver)
+    private val reader = ContentReader(
+        activity.contentResolver,
+        java.io.File(activity.cacheDir, "incoming"),
+    )
 
     private var pending: MethodChannel.Result? = null
     private var maxSize: Long = 0

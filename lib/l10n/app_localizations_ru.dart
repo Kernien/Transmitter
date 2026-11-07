@@ -80,6 +80,14 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String sizeLimitGb(int gb) {
+    return '$gb ГБ';
+  }
+
+  @override
+  String get sizeLimitUnlimited => 'Без лимита';
+
+  @override
   String deviceNameTooltip(String name) {
     return 'Имя устройства: $name';
   }
@@ -104,8 +112,18 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String vaultSubtitleConnectedUnlimited(String provider) {
+    return '$provider · файлы без лимита';
+  }
+
+  @override
   String vaultSubtitleConnectedPlain(String provider, String limit) {
     return '$provider · без шифрования · файлы до $limit';
+  }
+
+  @override
+  String vaultSubtitleConnectedPlainUnlimited(String provider) {
+    return '$provider · без шифрования · файлы без лимита';
   }
 
   @override
@@ -343,6 +361,9 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get dropHintUnlimited => 'Отпустите, чтобы отправить';
+
+  @override
   String get feedEmpty =>
       'Пока пусто. Отправьте ссылку или перетащите сюда файл.';
 
@@ -352,9 +373,15 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get attachFileTooltipUnlimited => 'Прикрепить файл';
+
+  @override
   String attachMediaTooltip(String limit) {
     return 'Фото или видео из Галереи (до $limit)';
   }
+
+  @override
+  String get attachMediaTooltipUnlimited => 'Фото или видео из Галереи';
 
   @override
   String get composeHint => 'Ссылка или текст';

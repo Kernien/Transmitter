@@ -45,20 +45,30 @@ class VaultKey {
   static const int secretLength = 32;
 
   static const int _mb = 1024 * 1024;
+  static const int _gb = 1024 * _mb;
+
+  /// Минимальный допустимый лимит размера файла (для совместимости со
+  /// старыми ключами и настройками).
+  static const int minFileSize = 10 * _mb;
 
   /// Лимит для ключей, созданных до появления выбора (и по умолчанию).
   static const int defaultMaxFileSize = 25 * _mb;
 
-  /// Варианты лимита при создании ключа. Больше 100 МБ не предлагаем:
-  /// файл целиком обрабатывается в памяти и отправляется одним запросом.
+  /// Значение «без лимита» (1 ТБ — помещается в 53-битные числа JSON/Web и
+  /// превышает любой практический размер файла).
+  static const int unlimitedFileSize = 1024 * _gb;
+
+  /// Варианты лимита размера файла для базы.
   static const List<int> maxFileSizeOptions = [
-    10 * _mb,
     25 * _mb,
-    50 * _mb,
     100 * _mb,
+    500 * _mb,
+    1 * _gb,
+    2 * _gb,
+    unlimitedFileSize,
   ];
 
-  static const int absoluteMaxFileSize = 100 * _mb;
+  static const int absoluteMaxFileSize = unlimitedFileSize;
 
   final Uint8List secret;
   final CloudProviderId provider;

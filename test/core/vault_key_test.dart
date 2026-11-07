@@ -119,14 +119,26 @@ void main() {
       expect(decoded.sameVaultAs(key), isTrue);
     });
 
-    test('лимит вне 1–100 МБ в ключе — ключ повреждён', () {
+    test('лимит вне допустимого диапазона в ключе — ключ повреждён', () {
       final key = VaultKey.generate(
         provider: CloudProviderId.dropbox,
         label: '',
       );
-      for (final bad in [0, 500 * 1024 * 1024]) {
+      for (final bad in [0, VaultKey.absoluteMaxFileSize + 1]) {
         final code = encodeJson(codec.toJson(key)..['m'] = bad);
         expect(() => codec.decode(code), throwsFormatException);
+      }
+    });
+
+    test('варианты лимита включают гигабайты и «без лимита»', () {
+      for (final size in VaultKey.maxFileSizeOptions) {
+        final key = VaultKey.generate(
+          provider: CloudProviderId.googleDrive,
+          label: 'Тест',
+          maxFileSize: size,
+        );
+        final decoded = codec.decode(codec.encode(key));
+        expect(decoded.maxFileSize, size);
       }
     });
   });

@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 
@@ -87,18 +89,28 @@ class MegaStorage implements CloudStorage, PublicSharing {
     String path,
     Uint8List bytes, {
     ProgressCallback? onProgress,
+  }) => uploadStream(
+    path,
+    Stream.value(bytes),
+    length: bytes.length,
+    onProgress: onProgress,
+  );
+
+  @override
+  Future<void> uploadStream(
+    String path,
+    Stream<List<int>> stream, {
+    required int length,
+    ProgressCallback? onProgress,
   }) => _serial(() async {
     final (folder, name) = _split(path);
     final parent = (await _folderHandle(folder, create: true))!;
     final key = MegaCrypto.randomBytes(16);
     final nonce = MegaCrypto.randomBytes(8);
-    final encrypted = kIsWeb || bytes.length < 256 * 1024
-        ? MegaCrypto.encryptFile(bytes, key, nonce)
-        : await compute(_encryptJob, (bytes, key, nonce));
 
     final target = await _request({
       'a': 'u',
-      's': bytes.length,
+      's': length,
       'ssl': 2,
       'v': 2,
       'ms': 0,
@@ -111,23 +123,30 @@ class MegaStorage implements CloudStorage, PublicSharing {
         'provider': 'MEGA',
       });
     }
-    final completion = MegaCrypto.b64(
-      await _uploadPieces(url, encrypted.data, onProgress: onProgress),
-    );
 
-    final fileKey = MegaCrypto.packFileKey(key, nonce, encrypted.mac);
+    final (:completion, :mac) = await _encryptAndUploadStream(
+      url,
+      stream,
+      length: length,
+      key: key,
+      nonce: nonce,
+      onProgress: onProgress,
+    );
+    final completionB64 = MegaCrypto.b64(completion);
+
+    final fileKey = MegaCrypto.packFileKey(key, nonce, mac);
     final result = await _request({
       'a': 'p',
       't': parent,
       'n': [
         {
-          'h': completion,
+          'h': completionB64,
           't': 0,
           'a': MegaCrypto.encryptAttributes({'n': name}, key),
           'k': MegaCrypto.b64(_master.encryptEcb(fileKey)),
         },
       ],
-      'cr': ?await _keysForReaders(parent, completion, fileKey),
+      'cr': ?await _keysForReaders(parent, completionB64, fileKey),
     });
     final added = _addNodes(result);
     // Перезапись: прежние версии с тем же именем удаляются.
@@ -138,6 +157,18 @@ class MegaStorage implements CloudStorage, PublicSharing {
 
   @override
   Future<Uint8List> download(String path, {ProgressCallback? onProgress}) async {
+    final builder = BytesBuilder(copy: false);
+    await for (final chunk in downloadStream(path, onProgress: onProgress)) {
+      builder.add(chunk);
+    }
+    return builder.takeBytes();
+  }
+
+  @override
+  Stream<Uint8List> downloadStream(
+    String path, {
+    ProgressCallback? onProgress,
+  }) async* {
     var node = await _findFile(path);
     if (node == null) {
       // Файл мог появиться только что: спросим сервер ещё раз.
@@ -156,21 +187,11 @@ class MegaStorage implements CloudStorage, PublicSharing {
     if (error is int && error < 0) throw megaStorageError(error, path: path);
     final url = info['g'];
     if (url is! String) throw StorageNotFoundException(path);
-    final encrypted = await _api.downloadBytes(url, onProgress: onProgress);
-    final nodeKey = node.key!;
-    final args = (
-      encrypted,
-      MegaCrypto.fileAesKey(nodeKey),
-      Uint8List.sublistView(nodeKey, 16, 24),
-      Uint8List.sublistView(nodeKey, 24, 32),
+    yield* decryptMegaStream(
+      _api.downloadStream(url, onProgress: onProgress),
+      size: node.size,
+      nodeKey: node.key!,
     );
-    final plain = kIsWeb || encrypted.length < 256 * 1024
-        ? _decryptJob(args)
-        : await compute(_decryptJob, args);
-    if (plain == null) {
-      throw const StorageException(ErrorCode.decryptionFailed);
-    }
-    return plain;
   }
 
   @override
@@ -664,35 +685,112 @@ class MegaStorage implements CloudStorage, PublicSharing {
 
   // ------------------------------------------------------------ Служебное
 
-  Future<Uint8List> _uploadPieces(
+  Future<({Uint8List completion, Uint8List mac})> _encryptAndUploadStream(
     String url,
-    Uint8List data, {
+    Stream<List<int>> stream, {
+    required int length,
+    required Uint8List key,
+    required Uint8List nonce,
     ProgressCallback? onProgress,
   }) async {
+    final ends = MegaCrypto.pieceEnds(length, _uploadPieceBytes);
+    var pieceIdx = 0;
     var pieceStart = 0;
+    var fileMac = Uint8List(16);
     var completion = Uint8List(0);
-    final ends = MegaCrypto.chunkEnds(data.length);
-    onProgress?.call(0, data.length);
-    for (var i = 0; i < ends.length; i++) {
-      final end = ends[i];
-      final last = i == ends.length - 1;
-      if (!last && end - pieceStart < _uploadPieceBytes) continue;
+    final buffer = _ByteQueue();
+    onProgress?.call(0, length);
+
+    Future<void> flushPiece(Uint8List plainPiece) async {
+      final args = (plainPiece, pieceStart, key, nonce, fileMac);
+      final encrypted = kIsWeb || plainPiece.length < 256 * 1024
+          ? _encryptPieceJob(args)
+          : await compute(_encryptPieceJob, args);
+      fileMac = encrypted.fileMac;
       try {
-        completion = await _api.uploadChunk(
-          url,
-          pieceStart,
-          Uint8List.sublistView(data, pieceStart, end),
-        );
+        completion = await _api.uploadChunk(url, pieceStart, encrypted.data);
       } on MegaApiException catch (e) {
         throw megaStorageError(e.code);
       }
-      pieceStart = end;
-      onProgress?.call(pieceStart, data.length);
+      pieceStart += plainPiece.length;
+      pieceIdx++;
+      onProgress?.call(pieceStart, length);
+    }
+
+    await for (final chunk in stream) {
+      buffer.add(chunk);
+      while (pieceIdx < ends.length) {
+        final needed = ends[pieceIdx] - pieceStart;
+        if (needed == 0 || buffer.length < needed) break;
+        await flushPiece(buffer.take(needed));
+      }
+    }
+    while (pieceIdx < ends.length) {
+      final needed = ends[pieceIdx] - pieceStart;
+      if (buffer.length < needed) {
+        throw StorageException.request('MEGA', 'upload stream truncated');
+      }
+      await flushPiece(buffer.take(needed));
     }
     if (completion.isEmpty) {
       throw StorageException.request('MEGA', 'upload not completed');
     }
-    return completion;
+    return (completion: completion, mac: MegaCrypto.finalizeFileMac(fileMac));
+  }
+
+  /// Потоковая расшифровка и проверка MAC файла MEGA по кускам.
+  static Stream<Uint8List> decryptMegaStream(
+    Stream<Uint8List> encryptedStream, {
+    required int size,
+    required Uint8List nodeKey,
+  }) async* {
+    final aesKey = MegaCrypto.fileAesKey(nodeKey);
+    final nonce = Uint8List.sublistView(nodeKey, 16, 24);
+    final expectedMac = Uint8List.sublistView(nodeKey, 24, 32);
+    final ends = MegaCrypto.pieceEnds(size, _uploadPieceBytes);
+    var pieceIdx = 0;
+    var pieceStart = 0;
+    var fileMac = Uint8List(16);
+    final buffer = _ByteQueue();
+    final pieces = <Uint8List>[];
+
+    Future<Uint8List> decryptOne(Uint8List encPiece) async {
+      final args = (encPiece, pieceStart, aesKey, nonce, fileMac);
+      final decrypted = kIsWeb || encPiece.length < 256 * 1024
+          ? _decryptPieceJob(args)
+          : await compute(_decryptPieceJob, args);
+      fileMac = decrypted.fileMac;
+      pieceStart += encPiece.length;
+      pieceIdx++;
+      return decrypted.data;
+    }
+
+    await for (final chunk in encryptedStream) {
+      buffer.add(chunk);
+      while (pieceIdx < ends.length) {
+        final needed = ends[pieceIdx] - pieceStart;
+        if (needed == 0 || buffer.length < needed) break;
+        final plain = await decryptOne(buffer.take(needed));
+        if (pieces.isNotEmpty) yield pieces.removeAt(0);
+        pieces.add(plain);
+      }
+    }
+    while (pieceIdx < ends.length) {
+      final needed = ends[pieceIdx] - pieceStart;
+      if (buffer.length < needed) {
+        throw const StorageException(ErrorCode.decryptionFailed);
+      }
+      final plain = await decryptOne(buffer.take(needed));
+      if (pieces.isNotEmpty) yield pieces.removeAt(0);
+      pieces.add(plain);
+    }
+    if (buffer.length != 0 ||
+        !MegaCrypto.macEquals(MegaCrypto.finalizeFileMac(fileMac), expectedMac)) {
+      throw const StorageException(ErrorCode.decryptionFailed);
+    }
+    for (final piece in pieces) {
+      if (piece.isNotEmpty) yield piece;
+    }
   }
 
   Future<Object?> _request(Map<String, Object?> command, {String? path}) async {
@@ -744,9 +842,72 @@ class _Node {
 }
 
 // Функции верхнего уровня: их можно передать в compute().
-({Uint8List data, Uint8List mac}) _encryptJob(
-  (Uint8List, Uint8List, Uint8List) args,
-) => MegaCrypto.encryptFile(args.$1, args.$2, args.$3);
+({Uint8List data, Uint8List fileMac}) _encryptPieceJob(
+  (Uint8List, int, Uint8List, Uint8List, Uint8List) args,
+) => MegaCrypto.encryptPiece(
+  plainPiece: args.$1,
+  pieceStart: args.$2,
+  key: args.$3,
+  nonce: args.$4,
+  previousFileMac: args.$5,
+);
 
-Uint8List? _decryptJob((Uint8List, Uint8List, Uint8List, Uint8List) args) =>
-    MegaCrypto.decryptFile(args.$1, args.$2, args.$3, args.$4);
+({Uint8List data, Uint8List fileMac}) _decryptPieceJob(
+  (Uint8List, int, Uint8List, Uint8List, Uint8List) args,
+) => MegaCrypto.decryptPiece(
+  encryptedPiece: args.$1,
+  pieceStart: args.$2,
+  key: args.$3,
+  nonce: args.$4,
+  previousFileMac: args.$5,
+);
+
+class _ByteQueue {
+  final List<Uint8List> _chunks = [];
+  int _headOffset = 0;
+  int _length = 0;
+
+  int get length => _length;
+
+  void add(List<int> bytes) {
+    if (bytes.isEmpty) return;
+    _chunks.add(bytes is Uint8List ? bytes : Uint8List.fromList(bytes));
+    _length += bytes.length;
+  }
+
+  Uint8List take(int count) {
+    if (count == 0) return Uint8List(0);
+    final first = _chunks.first;
+    if (_headOffset == 0 && first.length == count) {
+      _chunks.removeAt(0);
+      _length -= count;
+      return first;
+    }
+    if (first.length - _headOffset > count) {
+      final view = Uint8List.sublistView(
+        first,
+        _headOffset,
+        _headOffset + count,
+      );
+      _headOffset += count;
+      _length -= count;
+      return view;
+    }
+    final out = Uint8List(count);
+    var written = 0;
+    while (written < count) {
+      final head = _chunks.first;
+      final available = head.length - _headOffset;
+      final n = min(count - written, available);
+      out.setRange(written, written + n, head, _headOffset);
+      written += n;
+      _headOffset += n;
+      _length -= n;
+      if (_headOffset == head.length) {
+        _chunks.removeAt(0);
+        _headOffset = 0;
+      }
+    }
+    return out;
+  }
+}

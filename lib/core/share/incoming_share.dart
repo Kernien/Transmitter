@@ -1,23 +1,34 @@
 import 'dart:typed_data';
 
+import 'package:cross_file/cross_file.dart';
+
 /// Файл, которым поделились из другого приложения.
 class SharedFile {
   const SharedFile({
     required this.name,
     required this.size,
     this.bytes,
+    this.path,
     this.mimeType,
   });
 
   final String name;
   final int size;
 
-  /// `null`, если файл больше предельного размера и не был прочитан.
+  /// `null`, если файл передан через временный файл [path] или больше
+  /// предельного размера и не был прочитан.
   final Uint8List? bytes;
+
+  /// Путь к временному файлу для потокового чтения крупных файлов.
+  final String? path;
   final String? mimeType;
 
   /// Не помещается в лимит базы [limit] (или вообще не был прочитан).
-  bool exceeds(int limit) => bytes == null || size > limit;
+  bool exceeds(int limit) => (bytes == null && path == null) || size > limit;
+
+  /// Поток содержимого файла.
+  Stream<List<int>> openRead() =>
+      path != null ? XFile(path!).openRead() : Stream<List<int>>.value(bytes!);
 }
 
 /// То, чем поделились: текст или ссылка и/или файлы.

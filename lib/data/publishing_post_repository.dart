@@ -75,10 +75,35 @@ class PublishingPostRepository implements PostRepository {
   );
 
   @override
+  Future<Post> sendFileStream({
+    required String fileName,
+    required Stream<List<int>> stream,
+    required int size,
+    String? mimeType,
+    String caption = '',
+    ProgressCallback? onProgress,
+  }) => _changed(
+    _inner.sendFileStream(
+      fileName: fileName,
+      stream: stream,
+      size: size,
+      mimeType: mimeType,
+      caption: caption,
+      onProgress: onProgress,
+    ),
+  );
+
+  @override
   Future<Uint8List> downloadAttachment(
     Attachment attachment, {
     ProgressCallback? onProgress,
   }) => _inner.downloadAttachment(attachment, onProgress: onProgress);
+
+  @override
+  Stream<Uint8List> downloadAttachmentStream(
+    Attachment attachment, {
+    ProgressCallback? onProgress,
+  }) => _inner.downloadAttachmentStream(attachment, onProgress: onProgress);
 
   @override
   Future<void> deletePost(Post post) => _changed(_inner.deletePost(post));

@@ -32,19 +32,15 @@ class _ComposeBarState extends State<ComposeBar> {
           children: [
             if (context.read<FeedController>().canAttachMedia)
               IconButton(
-                tooltip: context.l10n.attachMediaTooltip(
-                  context.l10n.sizeLimitOf(
-                    context.read<FeedController>().maxFileSize,
-                  ),
+                tooltip: context.l10n.attachMediaTooltipOf(
+                  context.read<FeedController>().maxFileSize,
                 ),
                 onPressed: sending ? null : _attachMedia,
                 icon: const Icon(Icons.photo_library_outlined),
               ),
             IconButton(
-              tooltip: context.l10n.attachFileTooltip(
-                context.l10n.sizeLimitOf(
-                  context.read<FeedController>().maxFileSize,
-                ),
+              tooltip: context.l10n.attachFileTooltipOf(
+                context.read<FeedController>().maxFileSize,
               ),
               onPressed: sending ? null : _attach,
               icon: const Icon(Icons.attach_file),

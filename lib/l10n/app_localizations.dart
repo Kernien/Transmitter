@@ -230,6 +230,18 @@ abstract class AppLocalizations {
   /// **'{mb} MB'**
   String sizeLimit(int mb);
 
+  /// No description provided for @sizeLimitGb.
+  ///
+  /// In en, this message translates to:
+  /// **'{gb} GB'**
+  String sizeLimitGb(int gb);
+
+  /// No description provided for @sizeLimitUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'No limit'**
+  String get sizeLimitUnlimited;
+
   /// No description provided for @deviceNameTooltip.
   ///
   /// In en, this message translates to:
@@ -266,11 +278,23 @@ abstract class AppLocalizations {
   /// **'{provider} · files up to {limit}'**
   String vaultSubtitleConnected(String provider, String limit);
 
+  /// No description provided for @vaultSubtitleConnectedUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'{provider} · files without limit'**
+  String vaultSubtitleConnectedUnlimited(String provider);
+
   /// No description provided for @vaultSubtitleConnectedPlain.
   ///
   /// In en, this message translates to:
   /// **'{provider} · unencrypted · files up to {limit}'**
   String vaultSubtitleConnectedPlain(String provider, String limit);
+
+  /// No description provided for @vaultSubtitleConnectedPlainUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'{provider} · unencrypted · files without limit'**
+  String vaultSubtitleConnectedPlainUnlimited(String provider);
 
   /// No description provided for @vaultSubtitleNotConnected.
   ///
@@ -662,6 +686,12 @@ abstract class AppLocalizations {
   /// **'Release to send (up to {limit} per file)'**
   String dropHint(String limit);
 
+  /// No description provided for @dropHintUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Release to send'**
+  String get dropHintUnlimited;
+
   /// No description provided for @feedEmpty.
   ///
   /// In en, this message translates to:
@@ -674,11 +704,23 @@ abstract class AppLocalizations {
   /// **'Attach a file (up to {limit})'**
   String attachFileTooltip(String limit);
 
+  /// No description provided for @attachFileTooltipUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach a file'**
+  String get attachFileTooltipUnlimited;
+
   /// No description provided for @attachMediaTooltip.
   ///
   /// In en, this message translates to:
   /// **'Photo or video from the gallery (up to {limit})'**
   String attachMediaTooltip(String limit);
+
+  /// No description provided for @attachMediaTooltipUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo or video from the gallery'**
+  String get attachMediaTooltipUnlimited;
 
   /// No description provided for @composeHint.
   ///

@@ -151,15 +151,7 @@ class _VaultTile extends StatelessWidget {
       title: Text(vault.label.isEmpty ? l.untitled : vault.label),
       subtitle: Text(
         connected
-            ? (vault.isEncrypted
-                  ? l.vaultSubtitleConnected(
-                      vault.provider.title,
-                      l.sizeLimitOf(vault.maxFileSize),
-                    )
-                  : l.vaultSubtitleConnectedPlain(
-                      vault.provider.title,
-                      l.sizeLimitOf(vault.maxFileSize),
-                    ))
+            ? l.vaultConnectedSubtitle(vault)
             : (vault.isEncrypted
                   ? l.vaultSubtitleNotConnected(vault.provider.title)
                   : l.vaultSubtitleNotConnectedPlain(vault.provider.title)),
@@ -296,35 +288,41 @@ Future<String?> _askLabel(BuildContext context, String current) {
 /// Спрашивает новый лимит размера файла.
 Future<int?> _askFileSize(BuildContext context, int current) {
   final l = context.l10n;
+  final options = [
+    if (!VaultKey.maxFileSizeOptions.contains(current)) current,
+    ...VaultKey.maxFileSizeOptions,
+  ]..sort();
   return showDialog<int>(
     context: context,
     builder: (context) => AlertDialog(
       title: Text(l.maxFileSizeLabel),
       contentPadding: const EdgeInsets.symmetric(vertical: 12),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Text(l.fileSizeHelp),
-          ),
-          const SizedBox(height: 8),
-          RadioGroup<int>(
-            groupValue: current,
-            onChanged: (size) => Navigator.pop(context, size),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final size in VaultKey.maxFileSizeOptions)
-                  RadioListTile<int>(
-                    value: size,
-                    title: Text(l.sizeLimitOf(size)),
-                  ),
-              ],
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(l.fileSizeHelp),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            RadioGroup<int>(
+              groupValue: current,
+              onChanged: (size) => Navigator.pop(context, size),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final size in options)
+                    RadioListTile<int>(
+                      value: size,
+                      title: Text(l.sizeLimitOf(size)),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(

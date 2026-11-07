@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../core/errors/app_error.dart';
+import '../core/vault/vault_key.dart';
 import '../l10n/app_localizations.dart';
 
 export '../l10n/app_localizations.dart';
@@ -42,8 +43,45 @@ extension AppLocalizationsX on AppLocalizations {
     return '$text ${units[unit]}';
   }
 
-  /// Лимит размера в целых мегабайтах: «25 MB» / «25 МБ».
-  String sizeLimitOf(int bytes) => sizeLimit(bytes ~/ (1024 * 1024));
+  /// Лимит размера файла: «25 MB» / «25 МБ», «1 GB» / «1 ГБ», «No limit» / «Без лимита».
+  String sizeLimitOf(int bytes) {
+    if (bytes >= VaultKey.unlimitedFileSize) return sizeLimitUnlimited;
+    const gb = 1024 * 1024 * 1024;
+    if (bytes >= gb && bytes % gb == 0) return sizeLimitGb(bytes ~/ gb);
+    return sizeLimit(bytes ~/ (1024 * 1024));
+  }
+
+  /// Подпись подключённой базы в списке баз и на экране «Поделиться».
+  String vaultConnectedSubtitle(VaultKey vault) {
+    final provider = vault.provider.title;
+    final unlimited = vault.maxFileSize >= VaultKey.unlimitedFileSize;
+    if (vault.isEncrypted) {
+      return unlimited
+          ? vaultSubtitleConnectedUnlimited(provider)
+          : vaultSubtitleConnected(provider, sizeLimitOf(vault.maxFileSize));
+    }
+    return unlimited
+        ? vaultSubtitleConnectedPlainUnlimited(provider)
+        : vaultSubtitleConnectedPlain(provider, sizeLimitOf(vault.maxFileSize));
+  }
+
+  /// Подсказка при перетаскивании файлов в окно.
+  String dropHintOf(int maxFileSize) =>
+      maxFileSize >= VaultKey.unlimitedFileSize
+      ? dropHintUnlimited
+      : dropHint(sizeLimitOf(maxFileSize));
+
+  /// Всплывающая подсказка кнопки «Прикрепить файл».
+  String attachFileTooltipOf(int maxFileSize) =>
+      maxFileSize >= VaultKey.unlimitedFileSize
+      ? attachFileTooltipUnlimited
+      : attachFileTooltip(sizeLimitOf(maxFileSize));
+
+  /// Всплывающая подсказка кнопки «Галерея».
+  String attachMediaTooltipOf(int maxFileSize) =>
+      maxFileSize >= VaultKey.unlimitedFileSize
+      ? attachMediaTooltipUnlimited
+      : attachMediaTooltip(sizeLimitOf(maxFileSize));
 
   /// Текст ошибки для пользователя. Ошибки с кодом (см. ErrorCode)
   /// переводятся; остальные показываются как есть.

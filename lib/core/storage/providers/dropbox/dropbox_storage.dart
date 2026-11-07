@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../auth/bearer_request.dart';
@@ -15,13 +18,23 @@ import '../../public_sharing.dart';
 /// Публичные ссылки (для досок) требуют права `sharing.write`; у входа,
 /// сделанного до его появления, права нет — нужен новый вход.
 class DropboxStorage implements CloudStorage, PublicSharing {
-  DropboxStorage({required this._tokens, required this._client});
+  DropboxStorage({
+    required this._tokens,
+    required this._client,
+    @visibleForTesting this.uploadChunkSize = defaultUploadChunkSize,
+    @visibleForTesting this.retryDelay = const Duration(seconds: 1),
+  });
 
   static const String _rpcHost = 'https://api.dropboxapi.com/2';
   static const String _contentHost = 'https://content.dropboxapi.com/2';
 
+  /// Размер одного куска в сеансе загрузки Dropbox (8 МБ, кратно 4 МБ).
+  static const int defaultUploadChunkSize = 8 * 1024 * 1024;
+
   final OAuthTokenManager _tokens;
   final http.Client _client;
+  final int uploadChunkSize;
+  final Duration retryDelay;
 
   @override
   Future<void> ensureFolder(String path) async {
@@ -75,8 +88,16 @@ class DropboxStorage implements CloudStorage, PublicSharing {
     Uint8List bytes, {
     ProgressCallback? onProgress,
   }) async {
+    if (bytes.length > uploadChunkSize) {
+      return uploadStream(
+        path,
+        Stream.value(bytes),
+        length: bytes.length,
+        onProgress: onProgress,
+      );
+    }
     onProgress?.call(0, bytes.length);
-    final response = await _content('/files/upload', {
+    final response = await _contentWithRetry('/files/upload', {
       'path': _remote(path),
       'mode': 'overwrite',
       'mute': true,
@@ -86,7 +107,116 @@ class DropboxStorage implements CloudStorage, PublicSharing {
   }
 
   @override
+  Future<void> uploadStream(
+    String path,
+    Stream<List<int>> stream, {
+    required int length,
+    ProgressCallback? onProgress,
+  }) async {
+    onProgress?.call(0, length);
+    final commit = {
+      'path': _remote(path),
+      'mode': 'overwrite',
+      'mute': true,
+    };
+    final buffer = BytesBuilder(copy: false);
+    final chunks = <Uint8List>[];
+    String? sessionId;
+    var offset = 0;
+
+    Future<void> sendSessionChunk(Uint8List chunk, {required bool isLast}) async {
+      if (sessionId == null) {
+        if (isLast) {
+          final response = await _contentWithRetry(
+            '/files/upload',
+            commit,
+            body: chunk,
+          );
+          if (response.statusCode != 200) _fail(response);
+          offset += chunk.length;
+          onProgress?.call(offset, length);
+          return;
+        }
+        final start = await _contentWithRetry(
+          '/files/upload_session/start',
+          {'close': false},
+          body: chunk,
+        );
+        if (start.statusCode != 200) _fail(start);
+        sessionId =
+            (jsonDecode(start.body) as Map<String, dynamic>)['session_id']
+                as String;
+        offset += chunk.length;
+        onProgress?.call(offset, length);
+        return;
+      }
+      final cursor = {'session_id': sessionId, 'offset': offset};
+      if (isLast) {
+        final finish = await _contentWithRetry(
+          '/files/upload_session/finish',
+          {'cursor': cursor, 'commit': commit},
+          body: chunk,
+        );
+        if (finish.statusCode != 200) _fail(finish);
+      } else {
+        final append = await _contentWithRetry(
+          '/files/upload_session/append_v2',
+          {'cursor': cursor, 'close': false},
+          body: chunk,
+        );
+        if (append.statusCode != 200) _fail(append);
+      }
+      offset += chunk.length;
+      onProgress?.call(offset, length);
+    }
+
+    await for (final piece in stream) {
+      if (piece.isEmpty) continue;
+      buffer.add(piece);
+      while (buffer.length >= uploadChunkSize) {
+        final all = buffer.takeBytes();
+        var pos = 0;
+        while (all.length - pos >= uploadChunkSize) {
+          final slice = Uint8List.sublistView(all, pos, pos + uploadChunkSize);
+          pos += uploadChunkSize;
+          if (chunks.isNotEmpty) {
+            await sendSessionChunk(chunks.removeAt(0), isLast: false);
+          }
+          chunks.add(slice);
+        }
+        if (pos < all.length) {
+          buffer.add(Uint8List.sublistView(all, pos));
+        }
+      }
+    }
+
+    final tail = buffer.takeBytes();
+    if (tail.isNotEmpty) {
+      if (chunks.isNotEmpty) {
+        await sendSessionChunk(chunks.removeAt(0), isLast: false);
+      }
+      await sendSessionChunk(tail, isLast: true);
+    } else if (chunks.isNotEmpty) {
+      await sendSessionChunk(chunks.removeAt(0), isLast: true);
+    } else {
+      await sendSessionChunk(Uint8List(0), isLast: true);
+    }
+  }
+
+  @override
   Future<Uint8List> download(String path, {ProgressCallback? onProgress}) async {
+    final builder = BytesBuilder(copy: false);
+    await for (final chunk in downloadStream(path, onProgress: onProgress)) {
+      builder.add(chunk);
+    }
+    return builder.takeBytes();
+  }
+
+  @override
+  Stream<Uint8List> downloadStream(
+    String path, {
+    ProgressCallback? onProgress,
+  }) async* {
     final response = await _contentStream('/files/download', {
       'path': _remote(path),
     });
@@ -102,14 +232,13 @@ class DropboxStorage implements CloudStorage, PublicSharing {
       _failFromBody(response.statusCode, body);
     }
     final total = response.contentLength ?? 0;
-    final builder = BytesBuilder(copy: false);
     var received = 0;
     await for (final chunk in response.stream) {
-      builder.add(chunk);
-      received += chunk.length;
+      final bytes = chunk is Uint8List ? chunk : Uint8List.fromList(chunk);
+      received += bytes.length;
       onProgress?.call(received, total);
+      yield bytes;
     }
-    return builder.takeBytes();
   }
 
   @override
@@ -219,6 +348,30 @@ class DropboxStorage implements CloudStorage, PublicSharing {
           body: utf8.encode(jsonEncode(args)),
         ),
       );
+
+  Future<http.Response> _contentWithRetry(
+    String endpoint,
+    Map<String, Object?> arg, {
+    Uint8List? body,
+  }) async {
+    for (var attempt = 0; ; attempt++) {
+      try {
+        final response = await _content(endpoint, arg, body: body);
+        if ((response.statusCode == 500 ||
+                response.statusCode == 502 ||
+                response.statusCode == 503 ||
+                response.statusCode == 504) &&
+            attempt < 2) {
+          await Future<void>.delayed(retryDelay * pow(2, attempt));
+          continue;
+        }
+        return response;
+      } on http.ClientException {
+        if (attempt >= 2) rethrow;
+        await Future<void>.delayed(retryDelay * pow(2, attempt));
+      }
+    }
+  }
 
   Future<http.Response> _content(
     String endpoint,

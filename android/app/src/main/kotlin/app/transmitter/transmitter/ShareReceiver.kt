@@ -22,7 +22,10 @@ class ShareReceiver(private val activity: Activity, messenger: BinaryMessenger) 
     private val channel = MethodChannel(messenger, CHANNEL)
     private val io = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
-    private val reader = ContentReader(activity.contentResolver)
+    private val reader = ContentReader(
+        activity.contentResolver,
+        java.io.File(activity.cacheDir, "incoming"),
+    )
 
     private var maxSize: Long = 0
     private var dartReady = false

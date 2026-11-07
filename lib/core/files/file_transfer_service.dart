@@ -29,7 +29,19 @@ class PickedFile {
     required Uint8List bytes,
     this.mimeType,
   }) : _bytes = bytes,
+       _openRead = null,
        size = bytes.length;
+
+  /// Крупный файл, содержимое которого читается потоком с диска без загрузки
+  /// целиком в оперативную память.
+  const PickedFile.fromStream({
+    required this.name,
+    required this.size,
+    required Stream<List<int>> Function() openRead,
+    this.mimeType,
+  }) : _bytes = null,
+       // ignore: prefer_initializing_formals
+       _openRead = openRead;
 
   /// Файл больше допустимого лимита: его байты не читались в память,
   /// чтобы остальные выбранные файлы всё равно ушли, а для этого была
@@ -38,17 +50,26 @@ class PickedFile {
     required this.name,
     required this.size,
     this.mimeType,
-  }) : _bytes = null;
+  }) : _bytes = null,
+       _openRead = null;
 
   final String name;
   final int size;
   final Uint8List? _bytes;
+  final Stream<List<int>> Function()? _openRead;
   final String? mimeType;
 
   /// Превысил ли файл лимит размера (байты не читались в память).
-  bool get isTooLarge => _bytes == null;
+  bool get isTooLarge => _bytes == null && _openRead == null;
+
+  /// Находятся ли все байты файла уже в памяти.
+  bool get hasBytesInMemory => _bytes != null;
 
   Uint8List get bytes => _bytes!;
+
+  /// Поток содержимого файла.
+  Stream<List<int>> openRead() =>
+      _openRead != null ? _openRead() : Stream<List<int>>.value(_bytes!);
 }
 
 /// Выбор файлов на устройстве и сохранение полученного файла.

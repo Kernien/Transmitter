@@ -452,6 +452,26 @@ void main() {
       expect(await storage.download('big.bin'), data);
     });
 
+    test('потоковая загрузка и скачивание большого файла (uploadStream / downloadStream)', () async {
+      final server = FakeMega();
+      final storage = storageOn(server);
+      final data = bytesOf(2 * 1048576 + 777);
+      await storage.uploadStream(
+        'streamed.bin',
+        Stream.fromIterable([
+          data.sublist(0, 300000),
+          data.sublist(300000, 1200000),
+          data.sublist(1200000),
+        ]),
+        length: data.length,
+      );
+      final builder = BytesBuilder(copy: false);
+      await for (final chunk in storage.downloadStream('streamed.bin')) {
+        builder.add(chunk);
+      }
+      expect(builder.takeBytes(), data);
+    });
+
     test('другое устройство видит изменения через журнал /sc', () async {
       final server = FakeMega();
       final phone = storageOn(server);

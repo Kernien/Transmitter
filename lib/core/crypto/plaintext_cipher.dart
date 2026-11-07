@@ -16,4 +16,18 @@ class PlaintextCipher implements Cipher {
   @override
   Future<Uint8List> decrypt(List<int> ciphertext) async =>
       Uint8List.fromList(ciphertext);
+
+  @override
+  int encryptedLength(int plaintextLength) => plaintextLength;
+
+  @override
+  Stream<Uint8List> encryptStream(Stream<List<int>> plaintext) => plaintext.map(
+    (chunk) => chunk is Uint8List ? chunk : Uint8List.fromList(chunk),
+  );
+
+  @override
+  Stream<Uint8List> decryptStream(Stream<List<int>> ciphertext) =>
+      ciphertext.map(
+        (chunk) => chunk is Uint8List ? chunk : Uint8List.fromList(chunk),
+      );
 }

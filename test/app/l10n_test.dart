@@ -82,6 +82,10 @@ void main() {
     expect(en.fileSize(150 * 1024), '150 KB');
     expect(ru.fileSize(25 * 1024 * 1024), '25,0 МБ');
     expect(en.sizeLimitOf(100 * 1024 * 1024), '100 MB');
+    expect(ru.sizeLimitOf(1024 * 1024 * 1024), '1 ГБ');
+    expect(en.sizeLimitOf(2 * 1024 * 1024 * 1024), '2 GB');
+    expect(ru.sizeLimitOf(1024 * 1024 * 1024 * 1024), 'Без лимита');
+    expect(en.sizeLimitOf(1024 * 1024 * 1024 * 1024), 'No limit');
   });
 
   test('неподдерживаемый язык системы — английский', () {

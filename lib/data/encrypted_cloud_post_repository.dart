@@ -53,6 +53,10 @@ class EncryptedCloudPostRepository implements PostRepository {
   static const String _noteSeparator = '~';
   static const String _indexKey = 'index.json';
 
+  /// Порог для автоматического сохранения вложений в локальный кеш при
+  /// отправке/скачивании целиком в памяти (крупные файлы передаются потоком).
+  static const int maxCachedAttachmentSize = 32 * 1024 * 1024;
+
   @override
   final int maxFileSize;
 
@@ -293,7 +297,51 @@ class EncryptedCloudPostRepository implements PostRepository {
       encrypted,
       onProgress: onProgress,
     );
-    await _blobs.write(attachmentCacheKey(attachment.id), encrypted);
+    if (encrypted.length <= maxCachedAttachmentSize) {
+      await _blobs.write(attachmentCacheKey(attachment.id), encrypted);
+    }
+    return _publish(
+      _newPost(
+        kind: PostKind.file,
+        text: caption.trim(),
+        attachment: attachment,
+      ),
+    );
+  }
+
+  @override
+  Future<Post> sendFileStream({
+    required String fileName,
+    required Stream<List<int>> stream,
+    required int size,
+    String? mimeType,
+    String caption = '',
+    ProgressCallback? onProgress,
+  }) async {
+    if (size > maxFileSize) {
+      throw FileTooLargeException(size, maxFileSize);
+    }
+    if (!_filesDirReady) {
+      await _storage.ensureFolder(_filesDir);
+      _filesDirReady = true;
+    }
+    final attachmentId = plainFileNames
+        ? await _choosePlainFileName(fileName)
+        : _newId();
+    final attachment = Attachment(
+      id: attachmentId,
+      fileName: fileName,
+      size: size,
+      mimeType: mimeType,
+    );
+    final encryptedLength = _cipher.encryptedLength(size);
+    final encryptedStream = _cipher.encryptStream(stream);
+    await _storage.uploadStream(
+      _attachmentPath(attachment),
+      encryptedStream,
+      length: encryptedLength,
+      onProgress: onProgress,
+    );
     return _publish(
       _newPost(
         kind: PostKind.file,
@@ -324,8 +372,34 @@ class EncryptedCloudPostRepository implements PostRepository {
       onProgress: onProgress,
     );
     final bytes = await _cipher.decrypt(encrypted);
-    await _blobs.write(key, encrypted);
+    if (encrypted.length <= maxCachedAttachmentSize) {
+      await _blobs.write(key, encrypted);
+    }
     return bytes;
+  }
+
+  @override
+  Stream<Uint8List> downloadAttachmentStream(
+    Attachment attachment, {
+    ProgressCallback? onProgress,
+  }) async* {
+    final key = attachmentCacheKey(attachment.id);
+    final cached = await _blobs.read(key);
+    if (cached != null) {
+      try {
+        final result = await _cipher.decrypt(cached);
+        onProgress?.call(cached.length, cached.length);
+        yield result;
+        return;
+      } on DecryptionException {
+        await _blobs.delete(key);
+      }
+    }
+    final encryptedStream = _storage.downloadStream(
+      _attachmentPath(attachment),
+      onProgress: onProgress,
+    );
+    yield* _cipher.decryptStream(encryptedStream);
   }
 
   @override

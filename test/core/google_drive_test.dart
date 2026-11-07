@@ -164,11 +164,34 @@ class FakeDrive {
   }
 
   http.Response _finishResumable(http.Request r) {
-    final session = _sessions.remove(r.url.pathSegments.last)!;
+    final sessionId = r.url.pathSegments.last;
+    final session = _sessions[sessionId]!;
+    final buffer =
+        (session['buffer'] as BytesBuilder?) ??
+        (session['buffer'] = BytesBuilder());
+    buffer.add(r.bodyBytes);
+
+    final range = r.headers['Content-Range'];
+    if (range != null) {
+      final match = RegExp(r'^bytes (\d+)-(\d+)/(\d+)$').firstMatch(range);
+      if (match != null) {
+        final end = int.parse(match.group(2)!);
+        final total = int.parse(match.group(3)!);
+        if (end + 1 < total) {
+          return http.Response(
+            '',
+            308,
+            headers: {'range': 'bytes=0-$end'},
+          );
+        }
+      }
+    }
+
+    _sessions.remove(sessionId);
     final id = _store(
       session['fileId'] as String?,
       Map<String, dynamic>.from(session['meta'] as Map),
-      r.bodyBytes,
+      buffer.toBytes(),
     );
     return _json({'id': id});
   }
@@ -308,6 +331,38 @@ void main() {
       final back = await storage().download('v1/files/big.bin');
       expect(back.length, big.length);
       expect(back.last, 7);
+    });
+
+    test('потоковая возобновляемая загрузка кусками и скачивание потоком', () async {
+      final s = GoogleDriveStorage(
+        client: drive.client,
+        resumableChunkSize: 256 * 1024,
+        tokens: OAuthTokenManager(
+          initial: OAuthCredentials(
+            accessToken: 'tok',
+            refreshToken: 'ref',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refresher: (_) async => throw StateError('не должен вызываться'),
+        ),
+      );
+      final data = Uint8List.fromList(
+        List.generate(600 * 1024 + 17, (i) => (i * 13) & 0xff),
+      );
+      await s.uploadStream(
+        'v1/files/chunked.bin',
+        Stream.fromIterable([
+          data.sublist(0, 100 * 1024),
+          data.sublist(100 * 1024, 400 * 1024),
+          data.sublist(400 * 1024),
+        ]),
+        length: data.length,
+      );
+      final downloaded = BytesBuilder(copy: false);
+      await for (final chunk in s.downloadStream('v1/files/chunked.bin')) {
+        downloaded.add(chunk);
+      }
+      expect(downloaded.takeBytes(), data);
     });
 
     test(

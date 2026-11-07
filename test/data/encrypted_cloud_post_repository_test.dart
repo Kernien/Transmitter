@@ -110,6 +110,33 @@ void main() {
     expect(await receiver.downloadAttachment(post.attachment!), bytes);
   });
 
+  test('потоковая передача и скачивание большого файла (sendFileStream / downloadAttachmentStream)', () async {
+    final bytes = Uint8List.fromList(
+      List<int>.generate(AesGcmCipher.defaultChunkSize + 12345, (i) => (i * 7) & 0xff),
+    );
+    final sent = await device('A').sendFileStream(
+      fileName: 'video.mp4',
+      stream: Stream.fromIterable([
+        bytes.sublist(0, 1000000),
+        bytes.sublist(1000000, 3000000),
+        bytes.sublist(3000000),
+      ]),
+      size: bytes.length,
+      mimeType: 'video/mp4',
+    );
+    expect(sent.attachment!.size, bytes.length);
+
+    final receiver = device('B');
+    final post = (await receiver.fetchPosts()).single;
+    final builder = BytesBuilder(copy: false);
+    await for (final chunk in receiver.downloadAttachmentStream(post.attachment!)) {
+      builder.add(chunk);
+    }
+    expect(builder.takeBytes(), bytes);
+    // Обычный downloadAttachment также умеет расшифровывать потоковый формат v2.
+    expect(await receiver.downloadAttachment(post.attachment!), bytes);
+  });
+
   test('удаление поста с файлом удаляет и файл', () async {
     final a = device('A');
     final post = await a.sendFile(fileName: 'a.txt', bytes: Uint8List(10));

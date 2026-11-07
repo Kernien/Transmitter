@@ -176,32 +176,45 @@ class MegaApi {
   }) async {
     for (var attempt = 0; ; attempt++) {
       try {
-        final response = await _client
-            .send(http.Request('GET', Uri.parse(url)))
-            .timeout(stallTimeout);
-        if (response.statusCode != 200) {
-          throw http.ClientException(
-            'MEGA download HTTP ${response.statusCode}',
-            response.request?.url,
-          );
-        }
-        final total = response.contentLength ?? 0;
         final body = BytesBuilder(copy: false);
-        var received = 0;
-        await for (final chunk in response.stream.timeout(stallTimeout)) {
+        await for (final chunk in downloadStream(url, onProgress: onProgress)) {
           body.add(chunk);
-          received += chunk.length;
-          onProgress?.call(received, total);
         }
         return body.takeBytes();
-      } on TimeoutException {
-        throw const StorageException(ErrorCode.cloudStorageStalled, {
-          'provider': 'MEGA',
-        });
       } on http.ClientException {
         if (attempt >= 2) rethrow;
         await Future<void>.delayed(retryDelay * pow(2, attempt));
       }
+    }
+  }
+
+  /// Потоковое скачивание зашифрованного файла по временному адресу из `g`.
+  Stream<Uint8List> downloadStream(
+    String url, {
+    ProgressCallback? onProgress,
+  }) async* {
+    try {
+      final response = await _client
+          .send(http.Request('GET', Uri.parse(url)))
+          .timeout(stallTimeout);
+      if (response.statusCode != 200) {
+        throw http.ClientException(
+          'MEGA download HTTP ${response.statusCode}',
+          response.request?.url,
+        );
+      }
+      final total = response.contentLength ?? 0;
+      var received = 0;
+      await for (final chunk in response.stream.timeout(stallTimeout)) {
+        final bytes = chunk is Uint8List ? chunk : Uint8List.fromList(chunk);
+        received += bytes.length;
+        onProgress?.call(received, total);
+        yield bytes;
+      }
+    } on TimeoutException {
+      throw const StorageException(ErrorCode.cloudStorageStalled, {
+        'provider': 'MEGA',
+      });
     }
   }
 }

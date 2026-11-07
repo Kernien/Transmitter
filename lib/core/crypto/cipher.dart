@@ -11,6 +11,19 @@ abstract interface class Cipher {
 
   /// Бросает [DecryptionException], если данные повреждены или ключ неверный.
   Future<Uint8List> decrypt(List<int> ciphertext);
+
+  /// Размер результата [encryptStream] для открытого текста длиной
+  /// [plaintextLength] байт.
+  int encryptedLength(int plaintextLength);
+
+  /// Потоковое шифрование кусками для больших файлов: весь файл не держится
+  /// в памяти целиком.
+  Stream<Uint8List> encryptStream(Stream<List<int>> plaintext);
+
+  /// Потоковая расшифровка: поддерживает как кусковой формат, так и прежний
+  /// одноблочный. Бросает [DecryptionException], если любой кусок повреждён,
+  /// переставлен или поток оборван.
+  Stream<Uint8List> decryptStream(Stream<List<int>> ciphertext);
 }
 
 /// Данные повреждены или зашифрованы другим ключом.

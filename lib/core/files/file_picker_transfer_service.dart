@@ -9,6 +9,10 @@ import 'file_transfer_service.dart';
 class FilePickerTransferService implements FileTransferService {
   const FilePickerTransferService({this.saveDialogTitle = _englishSaveTitle});
 
+  /// Файлы больше этого порога не загружаются в память целиком, а читаются
+  /// потоком кусками при шифровании и отправке.
+  static const int inMemoryThreshold = 16 * 1024 * 1024;
+
   /// Заголовок диалога сохранения на текущем языке интерфейса.
   final String Function() saveDialogTitle;
 
@@ -31,6 +35,18 @@ class FilePickerTransferService implements FileTransferService {
             name: file.name,
             size: knownSize,
             mimeType: lookupMimeType(file.name),
+          ),
+        );
+        continue;
+      }
+      if (knownSize != null && knownSize > inMemoryThreshold) {
+        final xFile = file.xFile;
+        picked.add(
+          PickedFile.fromStream(
+            name: file.name,
+            size: knownSize,
+            openRead: xFile.openRead,
+            mimeType: await _detectMime(xFile, knownSize),
           ),
         );
         continue;
@@ -58,12 +74,34 @@ class FilePickerTransferService implements FileTransferService {
   Future<PickedFile> readFile(XFile file, {required int maxSize}) async {
     final size = await file.length();
     if (size > maxSize) throw FileTooLargeException(size, maxSize);
+    if (size > inMemoryThreshold) {
+      return PickedFile.fromStream(
+        name: file.name,
+        size: size,
+        openRead: file.openRead,
+        mimeType: await _detectMime(file, size),
+      );
+    }
     return _toPicked(
       file.name,
       await file.readAsBytes(),
       maxSize,
       mimeType: file.mimeType,
     );
+  }
+
+  static Future<String?> _detectMime(XFile file, int size) async {
+    if (file.mimeType != null && file.mimeType!.isNotEmpty) {
+      return file.mimeType;
+    }
+    if (size <= 0) return lookupMimeType(file.name);
+    final header = <int>[];
+    final end = size < 32 ? size : 32;
+    await for (final chunk in file.openRead(0, end)) {
+      header.addAll(chunk);
+      if (header.length >= 32) break;
+    }
+    return lookupMimeType(file.name, headerBytes: header);
   }
 
   static PickedFile _toPicked(

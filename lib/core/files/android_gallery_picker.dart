@@ -65,7 +65,17 @@ class AndroidGalleryPicker implements MediaPicker {
     final name = raw['name'] as String? ?? 'photo';
     final size = (raw['size'] as num?)?.toInt() ?? 0;
     final bytes = raw['bytes'] as Uint8List?;
+    final path = raw['path'] as String?;
     final declaredMime = raw['mimeType'] as String?;
+    if (path != null && size <= maxSize) {
+      final file = XFile(path, name: name, mimeType: declaredMime);
+      return PickedFile.fromStream(
+        name: name,
+        size: size,
+        openRead: file.openRead,
+        mimeType: declaredMime ?? lookupMimeType(name),
+      );
+    }
     if (bytes == null || bytes.length > maxSize) {
       final actualSize = bytes?.length ?? size;
       if (throwOnTooLarge) {

@@ -46,7 +46,24 @@ abstract interface class PostRepository {
     ProgressCallback? onProgress,
   });
 
+  /// Потоковая отправка файла известного размера [size] без загрузки всего
+  /// файла в память. Бросает [FileTooLargeException], если [size] больше [maxFileSize].
+  Future<Post> sendFileStream({
+    required String fileName,
+    required Stream<List<int>> stream,
+    required int size,
+    String? mimeType,
+    String caption = '',
+    ProgressCallback? onProgress,
+  });
+
   Future<Uint8List> downloadAttachment(
+    Attachment attachment, {
+    ProgressCallback? onProgress,
+  });
+
+  /// Потоковое скачивание и расшифровка файла вложения.
+  Stream<Uint8List> downloadAttachmentStream(
     Attachment attachment, {
     ProgressCallback? onProgress,
   });

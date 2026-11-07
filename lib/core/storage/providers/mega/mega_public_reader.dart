@@ -1,7 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-import '../../../errors/app_error.dart';
 import '../../cloud_provider_id.dart';
 import '../../cloud_storage.dart';
 import '../../public_sharing.dart';
@@ -10,6 +11,7 @@ import 'mega_api.dart';
 import 'mega_crypto.dart';
 import 'mega_links.dart';
 import 'mega_session.dart';
+import 'mega_storage.dart';
 
 /// Скачивание из открытой по ссылке папки MEGA без входа ([MegaFolderLink]).
 ///
@@ -36,6 +38,18 @@ class MegaPublicReader implements PublicFileReader {
     String locator, {
     ProgressCallback? onProgress,
   }) async {
+    final builder = BytesBuilder(copy: false);
+    await for (final chunk in downloadStream(locator, onProgress: onProgress)) {
+      builder.add(chunk);
+    }
+    return builder.takeBytes();
+  }
+
+  @override
+  Stream<Uint8List> downloadStream(
+    String locator, {
+    ProgressCallback? onProgress,
+  }) async* {
     final link = MegaFolderLink.parse(locator);
     if (link == null) throw StorageNotFoundException(locator);
     final api = MegaApi(_client, folder: link.publicHandle);
@@ -46,15 +60,21 @@ class MegaPublicReader implements PublicFileReader {
       file = listing.files[link.fileName];
     }
     if (file == null) throw StorageNotFoundException(locator);
+    ({String url, int size}) resolved;
     try {
-      return await _downloadFile(api, file, locator, onProgress: onProgress);
+      resolved = await _resolveFileUrl(api, file, locator);
     } on StorageNotFoundException {
       // Файл перезаписали после того, как мы получили список папки.
       listing = await _listing(api, link, reload: true);
       file = listing.files[link.fileName];
       if (file == null) rethrow;
-      return _downloadFile(api, file, locator, onProgress: onProgress);
+      resolved = await _resolveFileUrl(api, file, locator);
     }
+    yield* MegaStorage.decryptMegaStream(
+      api.downloadStream(resolved.url, onProgress: onProgress),
+      size: resolved.size,
+      nodeKey: file.key,
+    );
   }
 
   Future<_Listing> _listing(
@@ -114,12 +134,11 @@ class MegaPublicReader implements PublicFileReader {
     return null;
   }
 
-  Future<Uint8List> _downloadFile(
+  Future<({String url, int size})> _resolveFileUrl(
     MegaApi api,
     ({String handle, Uint8List key, int ts}) file,
-    String locator, {
-    ProgressCallback? onProgress,
-  }) async {
+    String locator,
+  ) async {
     final Object? info;
     try {
       info = await api.call({'a': 'g', 'g': 1, 'ssl': 2, 'n': file.handle});
@@ -131,18 +150,8 @@ class MegaPublicReader implements PublicFileReader {
     if (error is int && error < 0) throw _error(error, locator);
     final url = info['g'];
     if (url is! String) throw StorageNotFoundException(locator);
-    final encrypted = await api.downloadBytes(url, onProgress: onProgress);
-    final args = (
-      encrypted,
-      MegaCrypto.fileAesKey(file.key),
-      Uint8List.sublistView(file.key, 16, 24),
-      Uint8List.sublistView(file.key, 24, 32),
-    );
-    final plain = kIsWeb || encrypted.length < 256 * 1024
-        ? _decryptJob(args)
-        : await compute(_decryptJob, args);
-    if (plain == null) throw const StorageException(ErrorCode.decryptionFailed);
-    return plain;
+    final size = (info['s'] as num?)?.toInt() ?? 0;
+    return (url: url, size: size);
   }
 
   /// Ссылку закрыли или папку удалили — для читателя это «файла нет».
@@ -163,6 +172,3 @@ class _Listing {
 
   bool isFresh(DateTime now) => now.isBefore(_expires);
 }
-
-Uint8List? _decryptJob((Uint8List, Uint8List, Uint8List, Uint8List) args) =>
-    MegaCrypto.decryptFile(args.$1, args.$2, args.$3, args.$4);

@@ -195,6 +195,142 @@ abstract final class MegaCrypto {
     return ends;
   }
 
+  /// Границы кусков загрузки/MAC для кускового шифрования без буферизации
+  /// всего файла в памяти: объединяет куски MAC в пачки до [maxPieceBytes].
+  static List<int> pieceEnds(int size, int maxPieceBytes) {
+    final ends = chunkEnds(size);
+    final result = <int>[];
+    var pieceStart = 0;
+    for (var i = 0; i < ends.length; i++) {
+      final end = ends[i];
+      final last = i == ends.length - 1;
+      if (!last && end - pieceStart < maxPieceBytes) continue;
+      result.add(end);
+      pieceStart = end;
+    }
+    return result;
+  }
+
+  /// Шифрует диапазон файла `[pieceStart..pieceEnd)` (на границах кусков MAC)
+  /// и возвращает зашифрованный кусок вместе с промежуточным `fileMac` после
+  /// этого диапазона. Позволяет шифровать и отправлять большой файл по кускам
+  /// (каждый кусок — в `compute()`), не держа весь файл в памяти.
+  static ({Uint8List data, Uint8List fileMac}) encryptPiece({
+    required Uint8List plainPiece,
+    required int pieceStart,
+    required Uint8List key,
+    required Uint8List nonce,
+    required Uint8List previousFileMac,
+  }) {
+    final out = Uint8List(plainPiece.length);
+    final mac = _ctrAndMacPiece(
+      plainPiece,
+      out,
+      pieceStart,
+      key,
+      nonce,
+      previousFileMac,
+      encrypting: true,
+    );
+    return (data: out, fileMac: mac);
+  }
+
+  /// Расшифровывает диапазон файла `[pieceStart..pieceStart + encryptedPiece.length)`
+  /// (на границах кусков MAC) и возвращает расшифрованный кусок вместе с
+  /// обновлённым `fileMac`.
+  static ({Uint8List data, Uint8List fileMac}) decryptPiece({
+    required Uint8List encryptedPiece,
+    required int pieceStart,
+    required Uint8List key,
+    required Uint8List nonce,
+    required Uint8List previousFileMac,
+  }) {
+    final out = Uint8List(encryptedPiece.length);
+    final mac = _ctrAndMacPiece(
+      encryptedPiece,
+      out,
+      pieceStart,
+      key,
+      nonce,
+      previousFileMac,
+      encrypting: false,
+    );
+    return (data: out, fileMac: mac);
+  }
+
+  /// Сворачивает 16-байтный аккумулятор `fileMac` в 8-байтный MAC узла MEGA.
+  static Uint8List finalizeFileMac(Uint8List fileMac) => Uint8List.fromList([
+    for (var j = 0; j < 4; j++) fileMac[j] ^ fileMac[j + 4],
+    for (var j = 8; j < 12; j++) fileMac[j] ^ fileMac[j + 4],
+  ]);
+
+  /// Совпадает ли вычисленный 8-байтный MAC с [expectedMac].
+  static bool macEquals(Uint8List actualMac, Uint8List expectedMac) {
+    var diff = 0;
+    for (var i = 0; i < 8; i++) {
+      diff |= actualMac[i] ^ expectedMac[i];
+    }
+    return diff == 0;
+  }
+
+  static Uint8List _ctrAndMacPiece(
+    Uint8List input,
+    Uint8List output,
+    int pieceStart,
+    Uint8List key,
+    Uint8List nonce,
+    Uint8List previousFileMac, {
+    required bool encrypting,
+  }) {
+    final aes = MegaAes(key);
+    final counter = Uint8List(16)..setRange(0, 8, nonce);
+    final counterView = ByteData.sublistView(counter);
+    final stream = Uint8List(16);
+    final chunkMac = Uint8List(16);
+    final fileMac = Uint8List.fromList(previousFileMac);
+    final plainBlock = Uint8List(16);
+    final pieceEnd = pieceStart + input.length;
+    final subEnds = [
+      for (final end in chunkEnds(pieceEnd))
+        if (end > pieceStart || pieceEnd == 0) end,
+    ];
+    var block = pieceStart ~/ 16;
+    var globalStart = pieceStart;
+    for (final globalEnd in subEnds) {
+      final localStart = globalStart - pieceStart;
+      final localEnd = globalEnd - pieceStart;
+      chunkMac
+        ..setRange(0, 8, nonce)
+        ..setRange(8, 16, nonce);
+      for (var i = localStart; i < localEnd; i += 16) {
+        final n = min(16, localEnd - i);
+        counterView.setUint32(8, block ~/ 0x100000000);
+        counterView.setUint32(12, block % 0x100000000);
+        block++;
+        aes.encryptBlock(counter, 0, stream, 0);
+        for (var j = 0; j < n; j++) {
+          final x = input[i + j];
+          final y = x ^ stream[j];
+          output[i + j] = y;
+          plainBlock[j] = encrypting ? x : y;
+        }
+        for (var j = n; j < 16; j++) {
+          plainBlock[j] = 0;
+        }
+        for (var j = 0; j < 16; j++) {
+          chunkMac[j] ^= plainBlock[j];
+        }
+        aes.encryptBlock(chunkMac, 0, chunkMac, 0);
+      }
+      for (var j = 0; j < 16; j++) {
+        fileMac[j] ^= chunkMac[j];
+      }
+      aes.encryptBlock(fileMac, 0, fileMac, 0);
+      globalStart = globalEnd;
+    }
+    return fileMac;
+  }
+
   /// Шифрует файл (AES-CTR) и считает MAC MEGA (8 байт).
   static ({Uint8List data, Uint8List mac}) encryptFile(
     Uint8List plain,

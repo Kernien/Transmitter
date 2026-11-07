@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../auth/bearer_request.dart';
@@ -19,7 +22,12 @@ import '../../public_sharing.dart';
 /// Публичный доступ (для досок) — разрешение «все, у кого есть ссылка» на
 /// файл; `drive.file` позволяет это для файлов приложения.
 class GoogleDriveStorage implements CloudStorage, PublicSharing {
-  GoogleDriveStorage({required this._tokens, required this._client});
+  GoogleDriveStorage({
+    required this._tokens,
+    required this._client,
+    @visibleForTesting this.resumableChunkSize = defaultResumableChunkSize,
+    @visibleForTesting this.retryDelay = const Duration(seconds: 1),
+  });
 
   static const String rootFolderName = 'Transmitter';
   static const String _folderMime = 'application/vnd.google-apps.folder';
@@ -30,8 +38,13 @@ class GoogleDriveStorage implements CloudStorage, PublicSharing {
   /// возобновляемой загрузкой (так рекомендует Google).
   static const int multipartLimit = 5 * 1024 * 1024;
 
+  /// Размер одного куска при возобновляемой загрузке (8 МБ, кратно 256 КБ).
+  static const int defaultResumableChunkSize = 8 * 1024 * 1024;
+
   final OAuthTokenManager _tokens;
   final http.Client _client;
+  final int resumableChunkSize;
+  final Duration retryDelay;
   final Map<String, String> _folderIds = {};
   final Map<String, String> _fileIds = {};
 
@@ -89,20 +102,64 @@ class GoogleDriveStorage implements CloudStorage, PublicSharing {
         existingId: existingId,
         bytes: bytes,
       );
+      onProgress?.call(bytes.length, bytes.length);
     } else {
-      id = await _uploadResumable(
+      id = await _uploadResumableStream(
         name: name,
         parentId: parentId,
         existingId: existingId,
-        bytes: bytes,
+        stream: Stream.value(bytes),
+        length: bytes.length,
+        onProgress: onProgress,
       );
     }
     _fileIds[normalized] = id;
-    onProgress?.call(bytes.length, bytes.length);
+  }
+
+  @override
+  Future<void> uploadStream(
+    String path,
+    Stream<List<int>> stream, {
+    required int length,
+    ProgressCallback? onProgress,
+  }) async {
+    onProgress?.call(0, length);
+    if (length <= multipartLimit) {
+      final b = BytesBuilder(copy: false);
+      await for (final chunk in stream) {
+        b.add(chunk);
+      }
+      return upload(path, b.takeBytes(), onProgress: onProgress);
+    }
+    final normalized = _normalize(path);
+    final (parentPath, name) = _split(normalized);
+    final parentId = (await _folderId(parentPath, create: true))!;
+    final existingId = await _fileId(normalized);
+    final id = await _uploadResumableStream(
+      name: name,
+      parentId: parentId,
+      existingId: existingId,
+      stream: stream,
+      length: length,
+      onProgress: onProgress,
+    );
+    _fileIds[normalized] = id;
   }
 
   @override
   Future<Uint8List> download(String path, {ProgressCallback? onProgress}) async {
+    final builder = BytesBuilder(copy: false);
+    await for (final chunk in downloadStream(path, onProgress: onProgress)) {
+      builder.add(chunk);
+    }
+    return builder.takeBytes();
+  }
+
+  @override
+  Stream<Uint8List> downloadStream(
+    String path, {
+    ProgressCallback? onProgress,
+  }) async* {
     final normalized = _normalize(path);
     final id = await _fileId(normalized);
     if (id == null) throw StorageNotFoundException(path);
@@ -121,14 +178,13 @@ class GoogleDriveStorage implements CloudStorage, PublicSharing {
       _failFromBody(response.statusCode, body);
     }
     final total = response.contentLength ?? 0;
-    final builder = BytesBuilder(copy: false);
     var received = 0;
     await for (final chunk in response.stream) {
-      builder.add(chunk);
-      received += chunk.length;
+      final bytes = chunk is Uint8List ? chunk : Uint8List.fromList(chunk);
+      received += bytes.length;
       onProgress?.call(received, total);
+      yield bytes;
     }
-    return builder.takeBytes();
   }
 
   @override
@@ -376,11 +432,13 @@ class GoogleDriveStorage implements CloudStorage, PublicSharing {
     return (jsonDecode(response.body) as Map)['id'] as String;
   }
 
-  Future<String> _uploadResumable({
+  Future<String> _uploadResumableStream({
     required String name,
     required String parentId,
     required String? existingId,
-    required Uint8List bytes,
+    required Stream<List<int>> stream,
+    required int length,
+    ProgressCallback? onProgress,
   }) async {
     final metadata = existingId == null
         ? {
@@ -398,7 +456,7 @@ class GoogleDriveStorage implements CloudStorage, PublicSharing {
         ..._auth(token),
         'Content-Type': 'application/json',
         'X-Upload-Content-Type': 'application/octet-stream',
-        'X-Upload-Content-Length': '${bytes.length}',
+        'X-Upload-Content-Length': '$length',
       };
       final body = utf8.encode(jsonEncode(metadata));
       return existingId == null
@@ -412,16 +470,101 @@ class GoogleDriveStorage implements CloudStorage, PublicSharing {
         'provider': 'Google Drive',
       });
     }
-    // Адрес сессии загрузки сам служит разрешением — токен не нужен.
-    final response = await _client.put(
-      Uri.parse(location),
-      headers: {'Content-Type': 'application/octet-stream'},
-      body: bytes,
-    );
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      _fail(response);
+    final sessionUri = Uri.parse(location);
+    if (length == 0) {
+      final response = await _putChunkWithRetry(sessionUri, Uint8List(0), 0, 0);
+      onProgress?.call(0, 0);
+      return (jsonDecode(response.body) as Map)['id'] as String;
+    }
+
+    final buffer = BytesBuilder(copy: false);
+    var offset = 0;
+    http.Response? lastResponse;
+
+    Future<void> flushChunk(Uint8List chunk) async {
+      lastResponse = await _putChunkWithRetry(
+        sessionUri,
+        chunk,
+        offset,
+        length,
+      );
+      offset += chunk.length;
+      onProgress?.call(offset, length);
+    }
+
+    await for (final piece in stream) {
+      if (piece.isEmpty) continue;
+      buffer.add(piece);
+      while (buffer.length >= resumableChunkSize) {
+        final all = buffer.takeBytes();
+        var pos = 0;
+        while (all.length - pos >= resumableChunkSize) {
+          await flushChunk(
+            Uint8List.sublistView(all, pos, pos + resumableChunkSize),
+          );
+          pos += resumableChunkSize;
+        }
+        if (pos < all.length) {
+          buffer.add(Uint8List.sublistView(all, pos));
+        }
+      }
+    }
+
+    final tail = buffer.takeBytes();
+    if (tail.isNotEmpty) {
+      await flushChunk(tail);
+    }
+    final response = lastResponse;
+    if (response == null ||
+        (response.statusCode != 200 && response.statusCode != 201)) {
+      throw StorageException.request(
+        'Google Drive',
+        'resumable upload incomplete',
+      );
     }
     return (jsonDecode(response.body) as Map)['id'] as String;
+  }
+
+  /// Отправляет один кусок в сеансе возобновляемой загрузки Drive с повтором
+  /// при временных сбоях сети или ответах 5xx.
+  Future<http.Response> _putChunkWithRetry(
+    Uri sessionUri,
+    Uint8List chunk,
+    int offset,
+    int totalLength,
+  ) async {
+    final headers = <String, String>{
+      'Content-Type': 'application/octet-stream',
+      if (totalLength > 0)
+        'Content-Range':
+            'bytes $offset-${offset + chunk.length - 1}/$totalLength',
+    };
+    for (var attempt = 0; ; attempt++) {
+      try {
+        final response = await _client.put(
+          sessionUri,
+          headers: headers,
+          body: chunk,
+        );
+        if (response.statusCode == 200 ||
+            response.statusCode == 201 ||
+            response.statusCode == 308) {
+          return response;
+        }
+        if ((response.statusCode == 500 ||
+                response.statusCode == 502 ||
+                response.statusCode == 503 ||
+                response.statusCode == 504) &&
+            attempt < 2) {
+          await Future<void>.delayed(retryDelay * pow(2, attempt));
+          continue;
+        }
+        _fail(response);
+      } on http.ClientException {
+        if (attempt >= 2) rethrow;
+        await Future<void>.delayed(retryDelay * pow(2, attempt));
+      }
+    }
   }
 
   // ---- HTTP ----

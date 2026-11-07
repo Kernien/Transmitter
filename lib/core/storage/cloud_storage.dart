@@ -33,8 +33,20 @@ abstract interface class CloudStorage {
     ProgressCallback? onProgress,
   });
 
+  /// Потоковая загрузка файла известной длины [length] по кускам (с
+  /// повтором отдельного куска при временном сбое сети).
+  Future<void> uploadStream(
+    String path,
+    Stream<List<int>> stream, {
+    required int length,
+    ProgressCallback? onProgress,
+  });
+
   /// Бросает [StorageNotFoundException], если файла нет.
   Future<Uint8List> download(String path, {ProgressCallback? onProgress});
+
+  /// Потоковое скачивание файла без удержания всего содержимого в памяти.
+  Stream<Uint8List> downloadStream(String path, {ProgressCallback? onProgress});
 
   /// Удаляет файл. Если файла нет, ничего не делает.
   Future<void> delete(String path);

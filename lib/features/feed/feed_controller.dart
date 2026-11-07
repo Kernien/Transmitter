@@ -398,24 +398,38 @@ class FeedController extends ChangeNotifier {
           item.file,
           maxSize: _repository.maxFileSize,
         );
-        if (item.isImage && picked.bytes.length <= attachmentPreviewAutoLimit) {
+        if (item.isImage &&
+            picked.hasBytesInMemory &&
+            picked.bytes.length <= attachmentPreviewAutoLimit) {
           previews.remember(tempId, picked.bytes);
         }
         final tracker = TransferTracker(clock: _clock);
-        _transfers[tempId] = tracker.update(0, picked.bytes.length);
+        _transfers[tempId] = tracker.update(0, picked.size);
         _notify();
 
-        final realPost = await _repository.sendFile(
-          fileName: picked.name,
-          bytes: picked.bytes,
-          mimeType: picked.mimeType,
-          onProgress: (count, total) {
-            _transfers[tempId] = tracker.update(count, total);
-            _notify();
-          },
-        );
+        final realPost = picked.hasBytesInMemory
+            ? await _repository.sendFile(
+                fileName: picked.name,
+                bytes: picked.bytes,
+                mimeType: picked.mimeType,
+                onProgress: (count, total) {
+                  _transfers[tempId] = tracker.update(count, total);
+                  _notify();
+                },
+              )
+            : await _repository.sendFileStream(
+                fileName: picked.name,
+                stream: picked.openRead(),
+                size: picked.size,
+                mimeType: picked.mimeType,
+                onProgress: (count, total) {
+                  _transfers[tempId] = tracker.update(count, total);
+                  _notify();
+                },
+              );
         if (realPost.attachment case final realAttachment?
             when realAttachment.isImage &&
+                picked.hasBytesInMemory &&
                 picked.bytes.length <= attachmentPreviewAutoLimit) {
           previews.remember(realAttachment.id, picked.bytes);
         }
@@ -460,6 +474,7 @@ class FeedController extends ChangeNotifier {
         mimeType: file.mimeType,
       );
       if (!file.isTooLarge &&
+          file.hasBytesInMemory &&
           file.bytes.length <= attachmentPreviewAutoLimit &&
           attachment.isImage) {
         previews.remember(tempId, file.bytes);
@@ -495,21 +510,34 @@ class FeedController extends ChangeNotifier {
           throw FileTooLargeException(file.size, _repository.maxFileSize);
         }
         final tracker = TransferTracker(clock: _clock);
-        _transfers[tempId] = tracker.update(0, file.bytes.length);
+        _transfers[tempId] = tracker.update(0, file.size);
         _notify();
 
-        final realPost = await _repository.sendFile(
-          fileName: file.name,
-          bytes: file.bytes,
-          mimeType: file.mimeType,
-          caption: item.caption,
-          onProgress: (count, total) {
-            _transfers[tempId] = tracker.update(count, total);
-            _notify();
-          },
-        );
+        final realPost = file.hasBytesInMemory
+            ? await _repository.sendFile(
+                fileName: file.name,
+                bytes: file.bytes,
+                mimeType: file.mimeType,
+                caption: item.caption,
+                onProgress: (count, total) {
+                  _transfers[tempId] = tracker.update(count, total);
+                  _notify();
+                },
+              )
+            : await _repository.sendFileStream(
+                fileName: file.name,
+                stream: file.openRead(),
+                size: file.size,
+                mimeType: file.mimeType,
+                caption: item.caption,
+                onProgress: (count, total) {
+                  _transfers[tempId] = tracker.update(count, total);
+                  _notify();
+                },
+              );
         if (realPost.attachment case final realAttachment?
             when realAttachment.isImage &&
+                file.hasBytesInMemory &&
                 file.bytes.length <= attachmentPreviewAutoLimit) {
           previews.remember(realAttachment.id, file.bytes);
         }

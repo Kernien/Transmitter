@@ -82,4 +82,12 @@ class SharingCloudReader implements PublicFileReader {
     onProgress?.call(bytes.length, bytes.length);
     return Uint8List.fromList(bytes);
   }
+
+  @override
+  Stream<Uint8List> downloadStream(
+    String locator, {
+    ProgressCallback? onProgress,
+  }) async* {
+    yield await download(locator, onProgress: onProgress);
+  }
 }

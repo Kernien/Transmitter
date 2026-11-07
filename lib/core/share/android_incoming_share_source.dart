@@ -57,6 +57,7 @@ class AndroidIncomingShareSource implements IncomingShareSource {
     name: raw['name'] as String? ?? 'file',
     size: (raw['size'] as num?)?.toInt() ?? 0,
     bytes: raw['bytes'] as Uint8List?,
+    path: raw['path'] as String?,
     mimeType: raw['mimeType'] as String?,
   );
 }

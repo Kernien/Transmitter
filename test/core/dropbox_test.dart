@@ -241,6 +241,63 @@ void main() {
       expect(r.bodyBytes, [1, 2, 3]);
     });
 
+    test('uploadStream: сессия загрузки по частям и повтор при сбое куска', () async {
+      final uploaded = BytesBuilder();
+      var failedOnce = false;
+      final s = DropboxStorage(
+        uploadChunkSize: 4,
+        client: MockClient((r) async {
+          requests.add(r);
+          final path = r.url.path;
+          if (path.endsWith('/upload_session/start')) {
+            uploaded.add(r.bodyBytes);
+            return jsonResponse({'session_id': 'sid-1'});
+          }
+          if (path.endsWith('/upload_session/append_v2')) {
+            if (!failedOnce) {
+              failedOnce = true;
+              return http.Response('temporary error', 503);
+            }
+            final arg = jsonDecode(r.headers['Dropbox-API-Arg']!) as Map;
+            final cursor = arg['cursor'] as Map;
+            expect(cursor['session_id'], 'sid-1');
+            expect(cursor['offset'], uploaded.length);
+            uploaded.add(r.bodyBytes);
+            return http.Response('null', 200);
+          }
+          if (path.endsWith('/upload_session/finish')) {
+            final arg = jsonDecode(r.headers['Dropbox-API-Arg']!) as Map;
+            final cursor = arg['cursor'] as Map;
+            expect(cursor['session_id'], 'sid-1');
+            expect(cursor['offset'], uploaded.length);
+            uploaded.add(r.bodyBytes);
+            return jsonResponse({'name': 'big.bin'});
+          }
+          throw StateError('Unexpected $path');
+        }),
+        tokens: OAuthTokenManager(
+          initial: OAuthCredentials(
+            accessToken: 'tok',
+            refreshToken: 'ref',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refresher: (_) async => throw StateError('не должен вызываться'),
+        ),
+      );
+      final data = Uint8List.fromList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+      await s.uploadStream(
+        'v1/files/big.bin',
+        Stream.fromIterable([
+          [1, 2, 3],
+          [4, 5, 6, 7],
+          [8, 9, 10],
+        ]),
+        length: data.length,
+      );
+      expect(uploaded.toBytes(), data);
+      expect(failedOnce, isTrue);
+    });
+
     test('Dropbox-API-Arg экранирует не-ASCII символы', () async {
       handler = (r) async => jsonResponse({});
       await storage().upload('папка/файл', Uint8List(0));

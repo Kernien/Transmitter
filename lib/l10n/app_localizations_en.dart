@@ -80,6 +80,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String sizeLimitGb(int gb) {
+    return '$gb GB';
+  }
+
+  @override
+  String get sizeLimitUnlimited => 'No limit';
+
+  @override
   String deviceNameTooltip(String name) {
     return 'Device name: $name';
   }
@@ -104,8 +112,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String vaultSubtitleConnectedUnlimited(String provider) {
+    return '$provider · files without limit';
+  }
+
+  @override
   String vaultSubtitleConnectedPlain(String provider, String limit) {
     return '$provider · unencrypted · files up to $limit';
+  }
+
+  @override
+  String vaultSubtitleConnectedPlainUnlimited(String provider) {
+    return '$provider · unencrypted · files without limit';
   }
 
   @override
@@ -343,6 +361,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get dropHintUnlimited => 'Release to send';
+
+  @override
   String get feedEmpty => 'Nothing here yet. Send a link or drop a file here.';
 
   @override
@@ -351,9 +372,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get attachFileTooltipUnlimited => 'Attach a file';
+
+  @override
   String attachMediaTooltip(String limit) {
     return 'Photo or video from the gallery (up to $limit)';
   }
+
+  @override
+  String get attachMediaTooltipUnlimited => 'Photo or video from the gallery';
 
   @override
   String get composeHint => 'Link or text';

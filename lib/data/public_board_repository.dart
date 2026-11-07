@@ -12,6 +12,7 @@ import '../core/vault/reader_key.dart';
 import '../core/vault/vault_key.dart';
 import '../domain/post.dart';
 import 'board_manifest_codec.dart';
+import 'encrypted_cloud_post_repository.dart';
 import 'post_repository.dart';
 
 /// Владелец закрыл доступ к доске: опись по ссылке больше не открывается.
@@ -137,8 +138,36 @@ class PublicBoardRepository implements PostRepository {
     if (locator == null) throw StorageNotFoundException(attachment.fileName);
     final encrypted = await _reader.download(locator, onProgress: onProgress);
     final bytes = await _cipher.decrypt(encrypted);
-    await _blobs.write(key, encrypted);
+    if (encrypted.length <= EncryptedCloudPostRepository.maxCachedAttachmentSize) {
+      await _blobs.write(key, encrypted);
+    }
     return bytes;
+  }
+
+  @override
+  Stream<Uint8List> downloadAttachmentStream(
+    Attachment attachment, {
+    ProgressCallback? onProgress,
+  }) async* {
+    final key = attachmentCacheKey(attachment.id);
+    final cached = await _blobs.read(key);
+    if (cached != null) {
+      try {
+        final result = await _cipher.decrypt(cached);
+        onProgress?.call(cached.length, cached.length);
+        yield result;
+        return;
+      } on DecryptionException {
+        await _blobs.delete(key);
+      }
+    }
+    final locator = _files[attachment.id];
+    if (locator == null) throw StorageNotFoundException(attachment.fileName);
+    final encryptedStream = _reader.downloadStream(
+      locator,
+      onProgress: onProgress,
+    );
+    yield* _cipher.decryptStream(encryptedStream);
   }
 
   @override
@@ -148,6 +177,16 @@ class PublicBoardRepository implements PostRepository {
   Future<Post> sendFile({
     required String fileName,
     required Uint8List bytes,
+    String? mimeType,
+    String caption = '',
+    ProgressCallback? onProgress,
+  }) => _readOnly();
+
+  @override
+  Future<Post> sendFileStream({
+    required String fileName,
+    required Stream<List<int>> stream,
+    required int size,
     String? mimeType,
     String caption = '',
     ProgressCallback? onProgress,

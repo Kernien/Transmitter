@@ -24,6 +24,18 @@ class GooglePublicReader implements PublicFileReader {
     String locator, {
     ProgressCallback? onProgress,
   }) async {
+    final builder = BytesBuilder(copy: false);
+    await for (final chunk in downloadStream(locator, onProgress: onProgress)) {
+      builder.add(chunk);
+    }
+    return builder.takeBytes();
+  }
+
+  @override
+  Stream<Uint8List> downloadStream(
+    String locator, {
+    ProgressCallback? onProgress,
+  }) async* {
     final response = await _client.send(
       http.Request(
         'GET',
@@ -35,14 +47,14 @@ class GooglePublicReader implements PublicFileReader {
     );
     if (response.statusCode == 200) {
       final total = response.contentLength ?? 0;
-      final builder = BytesBuilder(copy: false);
       var received = 0;
       await for (final chunk in response.stream) {
-        builder.add(chunk);
-        received += chunk.length;
+        final bytes = chunk is Uint8List ? chunk : Uint8List.fromList(chunk);
+        received += bytes.length;
         onProgress?.call(received, total);
+        yield bytes;
       }
-      return builder.takeBytes();
+      return;
     }
     if (response.statusCode == 429) {
       throw const StorageException(ErrorCode.cloudRateLimited, {

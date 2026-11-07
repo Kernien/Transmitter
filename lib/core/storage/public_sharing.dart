@@ -22,4 +22,10 @@ abstract interface class PublicFileReader {
 
   /// Бросает `StorageNotFoundException`, если файла нет или доступ закрыт.
   Future<Uint8List> download(String locator, {ProgressCallback? onProgress});
+
+  /// Потоковое чтение открытого файла без удержания его целиком в памяти.
+  Stream<Uint8List> downloadStream(
+    String locator, {
+    ProgressCallback? onProgress,
+  });
 }
