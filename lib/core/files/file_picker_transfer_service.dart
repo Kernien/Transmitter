@@ -15,15 +15,43 @@ class FilePickerTransferService implements FileTransferService {
   static String _englishSaveTitle() => 'Save file';
 
   @override
-  Future<PickedFile?> pickFile({required int maxSize}) async {
-    final file = await FilePicker.pickFile();
-    if (file == null) return null;
+  Future<List<PickedFile>> pickFiles({required int maxSize}) async {
+    final files = await FilePicker.pickFiles();
+    if (files.isEmpty) return const [];
 
-    final knownSize = file.lengthSync() ?? await file.length();
-    if (knownSize != null && knownSize > maxSize) {
-      throw FileTooLargeException(knownSize, maxSize);
+    final picked = <PickedFile>[];
+    for (final file in files) {
+      final knownSize = file.lengthSync() ?? await file.length();
+      if (knownSize != null && knownSize > maxSize) {
+        if (files.length == 1) {
+          throw FileTooLargeException(knownSize, maxSize);
+        }
+        picked.add(
+          PickedFile.tooLarge(
+            name: file.name,
+            size: knownSize,
+            mimeType: lookupMimeType(file.name),
+          ),
+        );
+        continue;
+      }
+      final bytes = await file.readAsBytes();
+      if (bytes.length > maxSize) {
+        if (files.length == 1) {
+          throw FileTooLargeException(bytes.length, maxSize);
+        }
+        picked.add(
+          PickedFile.tooLarge(
+            name: file.name,
+            size: bytes.length,
+            mimeType: lookupMimeType(file.name),
+          ),
+        );
+        continue;
+      }
+      picked.add(_toPicked(file.name, bytes, maxSize));
     }
-    return _toPicked(file.name, await file.readAsBytes(), maxSize);
+    return picked;
   }
 
   @override

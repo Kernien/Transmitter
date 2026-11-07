@@ -5,16 +5,18 @@ import 'package:transmitter/core/files/file_transfer_service.dart';
 /// Имитация диалогов выбора и сохранения файла.
 class FakeFileTransferService implements FileTransferService {
   PickedFile? nextPick;
+  List<PickedFile>? nextPicks;
   Object? pickError;
   bool saveAccepted = true;
   final List<(String, Uint8List)> saved = [];
   int? lastMaxSize;
 
   @override
-  Future<PickedFile?> pickFile({required int maxSize}) async {
+  Future<List<PickedFile>> pickFiles({required int maxSize}) async {
     lastMaxSize = maxSize;
     if (pickError != null) throw pickError!;
-    return nextPick;
+    if (nextPicks != null) return nextPicks!;
+    return nextPick == null ? const [] : [nextPick!];
   }
 
   @override

@@ -24,19 +24,41 @@ class FileTooLargeException implements Exception, CodedError {
 
 /// Файл, выбранный пользователем для отправки.
 class PickedFile {
-  const PickedFile({required this.name, required this.bytes, this.mimeType});
+  const PickedFile({
+    required this.name,
+    required Uint8List bytes,
+    this.mimeType,
+  }) : _bytes = bytes,
+       size = bytes.length;
+
+  /// Файл больше допустимого лимита: его байты не читались в память,
+  /// чтобы остальные выбранные файлы всё равно ушли, а для этого была
+  /// показана понятная ошибка с именем файла.
+  const PickedFile.tooLarge({
+    required this.name,
+    required this.size,
+    this.mimeType,
+  }) : _bytes = null;
 
   final String name;
-  final Uint8List bytes;
+  final int size;
+  final Uint8List? _bytes;
   final String? mimeType;
+
+  /// Превысил ли файл лимит размера (байты не читались в память).
+  bool get isTooLarge => _bytes == null;
+
+  Uint8List get bytes => _bytes!;
 }
 
-/// Выбор файла на устройстве и сохранение полученного файла.
+/// Выбор файлов на устройстве и сохранение полученного файла.
 abstract interface class FileTransferService {
-  /// Показывает диалог выбора файла. `null`, если пользователь отменил выбор.
-  /// Бросает `FileTooLargeException`, если файл больше [maxSize]; в этом
-  /// случае файл не читается в память.
-  Future<PickedFile?> pickFile({required int maxSize});
+  /// Показывает диалог выбора одного или нескольких файлов.
+  /// Пустой список, если пользователь отменил выбор.
+  /// Если выбран один файл больше [maxSize], бросает `FileTooLargeException`
+  /// (не читая его в память); при выборе нескольких такие файлы помечаются
+  /// как [PickedFile.tooLarge].
+  Future<List<PickedFile>> pickFiles({required int maxSize});
 
   /// Читает уже выбранный файл (например, перетащенный в окно) с той же
   /// проверкой размера, что и [pickFile].

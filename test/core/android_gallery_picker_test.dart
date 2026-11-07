@@ -41,4 +41,38 @@ void main() {
       ),
     );
   });
+
+  test('мультивыбор в Галерее: нормальные файлы и слишком большой помечается tooLarge', () {
+    final files = AndroidGalleryPicker.parseList([
+      {
+        'name': 'IMG_0001.jpg',
+        'mimeType': 'image/jpeg',
+        'size': bytes.length,
+        'bytes': bytes,
+      },
+      {
+        'name': 'VID_HUGE.mp4',
+        'size': 300 << 20,
+        'bytes': null,
+      },
+      {
+        'name': 'IMG_0002.jpg',
+        'size': bytes.length,
+        'bytes': bytes,
+      },
+    ], maxSize: 25 << 20);
+
+    expect(files, hasLength(3));
+    expect(files[0].name, 'IMG_0001.jpg');
+    expect(files[0].isTooLarge, isFalse);
+    expect(files[0].bytes, bytes);
+
+    expect(files[1].name, 'VID_HUGE.mp4');
+    expect(files[1].isTooLarge, isTrue);
+    expect(files[1].size, 300 << 20);
+    expect(files[1].mimeType, 'video/mp4');
+
+    expect(files[2].name, 'IMG_0002.jpg');
+    expect(files[2].isTooLarge, isFalse);
+  });
 }

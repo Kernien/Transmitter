@@ -304,6 +304,75 @@ void main() {
       feed.dispose();
     });
 
+    test('несколько файлов через «Скрепку» сразу появляются на доске и уходят по очереди', () async {
+      final feed = controllerFor('A');
+      files.nextPicks = [
+        PickedFile(name: 'a.txt', bytes: bytes),
+        PickedFile.tooLarge(
+          name: 'big.iso',
+          size: VaultKey.defaultMaxFileSize + 100,
+        ),
+        PickedFile(name: 'b.txt', bytes: bytes),
+      ];
+
+      List<String>? initialIds;
+      feed.addListener(() {
+        if (initialIds == null && feed.posts.length == 3) {
+          initialIds = feed.posts.map((p) => p.id).toList();
+        }
+      });
+
+      expect(await feed.attachFile(caption: 'пачка'), isTrue);
+      expect(initialIds, hasLength(3));
+      expect(initialIds!.every((id) => id.startsWith('pending_')), isTrue);
+      expect(feed.posts.map((p) => p.attachment!.fileName), ['a.txt', 'b.txt']);
+      expect(feed.posts.map((p) => p.text), ['пачка', '']);
+      expect(
+        feed.error,
+        isA<FileError>()
+            .having((e) => e.fileName, 'файл', 'big.iso')
+            .having((e) => e.cause, 'причина', isA<FileTooLargeException>()),
+      );
+      feed.dispose();
+    });
+
+    test('несколько фото из Галереи сразу появляются на доске и уходят по очереди', () async {
+      final gallery = _FakeMediaPicker()
+        ..nextPicks = [
+          PickedFile(name: 'IMG_1.jpg', bytes: bytes, mimeType: 'image/jpeg'),
+          PickedFile(name: 'IMG_2.jpg', bytes: bytes, mimeType: 'image/jpeg'),
+        ];
+      final feed = FeedController(
+        EncryptedCloudPostRepository(
+          storage: cloud,
+          vaultId: 'v',
+          cipher: AesGcmCipher(List<int>.filled(32, 3)),
+          deviceName: 'A',
+        ),
+        files: files,
+        media: gallery,
+        pollInterval: const Duration(hours: 1),
+      );
+
+      List<String>? initialIds;
+      feed.addListener(() {
+        if (initialIds == null && feed.posts.length == 2) {
+          initialIds = feed.posts.map((p) => p.id).toList();
+        }
+      });
+
+      expect(await feed.attachMedia(caption: 'альбом'), isTrue);
+      expect(initialIds, hasLength(2));
+      expect(initialIds!.every((id) => id.startsWith('pending_')), isTrue);
+      expect(feed.posts.map((p) => p.attachment!.fileName), [
+        'IMG_1.jpg',
+        'IMG_2.jpg',
+      ]);
+      expect(feed.posts.map((p) => p.text), ['альбом', '']);
+      expect(feed.error, isNull);
+      feed.dispose();
+    });
+
     test('файл, удалённый из облака, — понятная ошибка', () async {
       final feed = controllerFor('A');
       files.nextPick = PickedFile(name: 'a.txt', bytes: bytes);
@@ -318,14 +387,16 @@ void main() {
 
 class _FakeMediaPicker implements MediaPicker {
   PickedFile? nextPick;
+  List<PickedFile>? nextPicks;
   int? lastMaxSize;
 
   @override
   bool get isAvailable => true;
 
   @override
-  Future<PickedFile?> pickMedia({required int maxSize}) async {
+  Future<List<PickedFile>> pickMedia({required int maxSize}) async {
     lastMaxSize = maxSize;
-    return nextPick;
+    if (nextPicks != null) return nextPicks!;
+    return nextPick == null ? const [] : [nextPick!];
   }
 }
