@@ -56,6 +56,7 @@ echo "== Сводка репозитория"
 # Без --generate-static-deltas: дельты кодируются base64 (содержат каталоги
 # вроде kA и KA), которые на файловой системе Windows (NTFS) вызывают коллизию имён.
 rm -rf "$WORK/repo/deltas" "$WORK/repo/delta-indexes"
+mkdir -p "$WORK/repo/refs/remotes" "$WORK/repo/refs/heads"
 flatpak build-update-repo --gpg-sign="$key" \
   --prune --prune-depth=2 --title=Transmitter \
   --default-branch="$BRANCH" "$WORK/repo"
@@ -70,7 +71,7 @@ cat > "$pub/transmitter.flatpakrepo" <<EOF
 Title=Transmitter
 Url=$SITE/repo/
 Homepage=https://github.com/Kernien/Transmitter
-Comment=Links and small files between your own devices
+Comment=Links and files between your own devices
 Icon=$icon
 GPGKey=$gpg_key
 EOF
