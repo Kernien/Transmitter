@@ -6,8 +6,8 @@
   <project_license>GPL-3.0-only</project_license>
 
   <name>Transmitter</name>
-  <summary>Links and small files between your own devices</summary>
-  <summary xml:lang="ru">Ссылки и небольшие файлы между своими устройствами</summary>
+  <summary>Links and files between your own devices</summary>
+  <summary xml:lang="ru">Ссылки и файлы между своими устройствами</summary>
 
   <developer id="io.github.kernien">
     <name>Kernien</name>
@@ -22,7 +22,7 @@
       only ever sees meaningless bytes.
     </p>
     <ul>
-      <li>Text, links and files up to 100 MB</li>
+      <li>Text, links and files of any size</li>
       <li>Photos, documents, video and music open right in the app</li>
       <li>Comments on items, editable from any device</li>
       <li>Read-only public boards to share a collection with others</li>
@@ -35,7 +35,7 @@
       шифруется прямо на устройстве — облако видит только бессмысленные байты.
     </p>
     <ul xml:lang="ru">
-      <li>Текст, ссылки и файлы до 100 МБ</li>
+      <li>Текст, ссылки и файлы любого размера</li>
       <li>Фото, документы, видео и музыка открываются прямо в приложении</li>
       <li>Комментарии к записям — изменить можно с любого устройства</li>
       <li>Публичные доски только для чтения — поделиться подборкой с другими</li>
@@ -86,6 +86,11 @@
   </content_rating>
 
   <releases>
+    <release version="1.0.0" date="2026-11-08">
+      <description>
+        <p>1.0.0 release: support for files of any size with streaming chunked encryption and resumable uploads, configurable vault file limits (25 MB up to unlimited), performance and stability improvements.</p>
+      </description>
+    </release>
     <release version="0.21.0" date="2026-11-07">
       <description>
         <p>Unencrypted vaults with real folder and file names in the cloud, transfer progress and speed indicator, and multi-file selection in the file picker and Android gallery.</p>

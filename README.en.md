@@ -2,7 +2,7 @@
 
 🌐 [Русский](README.md) · **English** · [Deutsch](README.de.md) · [中文](README.zh.md)
 
-**Links and small files between your own devices — no sign-up, no third-party
+**Links and files between your own devices — no sign-up, no third-party
 servers, end-to-end encrypted.**
 
 Copy a link on your phone — a couple of seconds later it's on your computer.
@@ -17,7 +17,7 @@ right on the device: the cloud only ever sees meaningless bytes.
 | 🐧 **Linux** | Flatpak with automatic updates, or AppImage — a single file, no installation; tested on Steam Deck |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — nothing to install |
 
-Version **0.21.0**. The interface is in **English and Russian** — it follows the
+Version **1.0.0**. The interface is in **English and Russian** — it follows the
 system language, or pick one in ⚙ *Settings*.
 
 ## Why
@@ -39,10 +39,8 @@ browser.
 ## Features
 
 - **Links.** Detected automatically and opened with a single tap.
-- **Files up to 100 MB** — photos, documents, archives. The limit (10, 25, 50
-  or 100 MB) is chosen for each vault when it is created. Use the 📎 button,
-  drag files into the window (Windows and browser) or “Share” from any app on
-  Android.
+- **Files of any size** — photos, documents, videos, archives. The limit (25 MB, 100 MB, 500 MB, 1 GB, 2 GB or “No limit”) is chosen for each vault when created and can be adjusted anytime (⋮ → *File size limit…*). Chunked streaming encryption (4 MB chunks), resumable chunked uploads, transfer progress and speed indicator. Use the 📎 button, drag files into the window (Windows and browser) or “Share” from any app on Android.
+- **Send multiple files at once.** Pick a batch of files via 📎 or photos/videos from Gallery — they appear immediately in the feed with transfer status and upload in sequence.
 - **“Share” both ways (Android).** From your browser, gallery or any app
   straight into Transmitter — and from Transmitter into any app.
 - **Several vaults.** For example, one for the “personal ↔ work profile” pair
@@ -109,9 +107,9 @@ browser.
 ### Android
 
 1. Download the APK from [**Releases**](https://github.com/Kernien/Transmitter/releases):
-   - `Transmitter-0.21.0-android-arm64.apk` — for most phones from recent
+   - `Transmitter-1.0.0-android-arm64.apk` — for most phones from recent
      years;
-   - `Transmitter-0.21.0-android-armv7.apk` — for older or budget models, if
+   - `Transmitter-1.0.0-android-armv7.apk` — for older or budget models, if
      the first one doesn't install.
 2. Open the file on your phone. Android will ask to allow installs from this
    source (your browser or file manager) — allow it.
@@ -122,14 +120,14 @@ the cloud in the work profile also needs a browser there — clone one as well.
 
 ### Windows
 
-1. Download `Transmitter-0.21.0-windows-setup.exe` from [**Releases**](https://github.com/Kernien/Transmitter/releases)
+1. Download `Transmitter-1.0.0-windows-setup.exe` from [**Releases**](https://github.com/Kernien/Transmitter/releases)
    and run it. It installs for your user only — no administrator rights
    needed — and adds Transmitter to the Start menu. Uninstall it in
    **Settings → Apps**; your keys and cloud sign-ins are kept.
 2. On first launch Windows may say “Windows protected your PC” — the app has
    no paid code-signing certificate. Click **More info → Run anyway**.
 
-Prefer no installation? `Transmitter-0.21.0-windows-x64.zip` is a portable
+Prefer no installation? `Transmitter-1.0.0-windows-x64.zip` is a portable
 version: unpack it anywhere and run `transmitter.exe`.
 
 ### Linux and Steam Deck
@@ -149,7 +147,7 @@ so add your vaults again.
 
 **AppImage — a single file, no installation:**
 
-1. Download `Transmitter-0.21.0-linux-x86_64.AppImage` from [**Releases**](https://github.com/Kernien/Transmitter/releases).
+1. Download `Transmitter-1.0.0-linux-x86_64.AppImage` from [**Releases**](https://github.com/Kernien/Transmitter/releases).
 2. Make the file executable — in the file manager, right-click →
    **Properties → Permissions → Is executable** (or
    `chmod +x Transmitter-*.AppImage`) — and run it.
@@ -161,7 +159,7 @@ Desktop). To launch Transmitter from Game Mode as well, right-click the file →
 There is no QR scanner on Linux — paste the key as a string. Keys and cloud
 sign-ins are stored in `~/.local/share/app.transmitter.transmitter`
 (accessible only to your user). There is also
-`Transmitter-0.21.0-linux-x64.tar.gz`: extract it and run `transmitter`.
+`Transmitter-1.0.0-linux-x64.tar.gz`: extract it and run `transmitter`.
 
 ### Browser
 

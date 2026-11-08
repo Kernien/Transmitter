@@ -2,7 +2,7 @@
 
 🌐 [Русский](README.md) · [English](README.en.md) · **Deutsch** · [中文](README.zh.md)
 
-**Links und kleine Dateien zwischen deinen eigenen Geräten — ohne
+**Links und Dateien zwischen deinen eigenen Geräten — ohne
 Registrierung, ohne fremde Server, mit Ende-zu-Ende-Verschlüsselung.**
 
 Einen Link auf dem Handy kopieren — ein paar Sekunden später ist er auf dem
@@ -18,7 +18,7 @@ Bytes.
 | 🐧 **Linux** | Flatpak mit automatischen Updates oder AppImage — eine einzige Datei ohne Installation; getestet auf dem Steam Deck |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — keine Installation nötig |
 
-Version **0.21.0**.
+Version **1.0.0**.
 
 > **Sprache der Oberfläche.** Die App gibt es auf Englisch und Russisch; auf
 > einem deutschen System ist sie auf Englisch (umschalten unter ⚙ „Settings“).
@@ -46,10 +46,8 @@ Computer und Browser.
 ## Funktionen
 
 - **Links.** Werden automatisch erkannt und mit einem Tippen geöffnet.
-- **Dateien bis 100 MB** — Fotos, Dokumente, Archive. Die Grenze (10, 25, 50
-  oder 100 MB) wird für jeden Tresor beim Anlegen festgelegt. Über die
-  📎-Schaltfläche, per Drag & Drop ins Fenster (Windows und Browser) oder mit
-  „Teilen“ aus jeder App unter Android.
+- **Dateien jeder Größe** — Fotos, Dokumente, Videos, Archive. Die Grenze (25 MB, 100 MB, 500 MB, 1 GB, 2 GB oder „Ohne Limit“) wird für jeden Tresor beim Anlegen festgelegt und lässt sich jederzeit anpassen (⋮ → „Dateigröße…“). Streaming-Verschlüsselung in 4-MB-Blöcken, fortsetzbarer Upload mit Wiederaufnahme bei Netzwerkfehlern, Fortschritts- und Geschwindigkeitsanzeige. Über die 📎-Schaltfläche, per Drag & Drop ins Fenster (Windows und Browser) oder mit „Teilen“ aus jeder App unter Android.
+- **Mehrere Dateien auf einmal senden.** Wähle mehrere Dateien über 📎 oder Fotos/Videos aus der Galerie — sie erscheinen sofort im Verlauf mit Übertragungsstatus und werden nacheinander hochgeladen.
 - **„Teilen“ in beide Richtungen (Android).** Aus Browser, Galerie oder jeder
   anderen App direkt in Transmitter — und aus Transmitter in jede App.
 - **Mehrere Tresore.** Zum Beispiel einer für das Paar „privates ↔
@@ -120,9 +118,9 @@ Computer und Browser.
 ### Android
 
 1. Lade die APK unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter:
-   - `Transmitter-0.21.0-android-arm64.apk` — für die meisten Handys der
+   - `Transmitter-1.0.0-android-arm64.apk` — für die meisten Handys der
      letzten Jahre;
-   - `Transmitter-0.21.0-android-armv7.apk` — für ältere oder günstige
+   - `Transmitter-1.0.0-android-armv7.apk` — für ältere oder günstige
      Modelle, falls sich die erste nicht installieren lässt.
 2. Öffne die Datei auf dem Handy. Android fragt, ob Installationen aus dieser
    Quelle (Browser oder Dateimanager) erlaubt sind — erlaube es.
@@ -134,7 +132,7 @@ klone ihn ebenfalls.
 
 ### Windows
 
-1. Lade `Transmitter-0.21.0-windows-setup.exe` unter [**Releases**](https://github.com/Kernien/Transmitter/releases)
+1. Lade `Transmitter-1.0.0-windows-setup.exe` unter [**Releases**](https://github.com/Kernien/Transmitter/releases)
    herunter und starte es. Die Installation gilt nur für deinen Benutzer —
    ohne Administratorrechte — und legt Transmitter im Startmenü an.
    Deinstallieren unter **Einstellungen → Apps**; Schlüssel und
@@ -144,7 +142,7 @@ klone ihn ebenfalls.
    Signaturzertifikat. Klicke auf **Weitere Informationen → Trotzdem
    ausführen**.
 
-Lieber ohne Installation? `Transmitter-0.21.0-windows-x64.zip` ist eine
+Lieber ohne Installation? `Transmitter-1.0.0-windows-x64.zip` ist eine
 portable Version: irgendwo entpacken und `transmitter.exe` starten.
 
 ### Linux und Steam Deck
@@ -164,7 +162,7 @@ sieht sie nicht, füge deine Tresore also erneut hinzu.
 
 **AppImage — eine einzige Datei ohne Installation:**
 
-1. Lade `Transmitter-0.21.0-linux-x86_64.AppImage` unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter.
+1. Lade `Transmitter-1.0.0-linux-x86_64.AppImage` unter [**Releases**](https://github.com/Kernien/Transmitter/releases) herunter.
 2. Mache die Datei ausführbar — im Dateimanager per Rechtsklick →
    **Eigenschaften → Berechtigungen → Ausführbar** (oder
    `chmod +x Transmitter-*.AppImage`) — und starte sie.
@@ -177,7 +175,7 @@ Bibliothek unter den Nicht-Steam-Spielen.
 Unter Linux gibt es keinen QR-Scanner — füge den Schlüssel als Text ein.
 Schlüssel und Cloud-Anmeldungen liegen in
 `~/.local/share/app.transmitter.transmitter` (nur für deinen Benutzer
-lesbar). Außerdem gibt es `Transmitter-0.21.0-linux-x64.tar.gz`: entpacken und
+lesbar). Außerdem gibt es `Transmitter-1.0.0-linux-x64.tar.gz`: entpacken und
 `transmitter` starten.
 
 ### Browser
