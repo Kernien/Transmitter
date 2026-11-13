@@ -107,10 +107,6 @@ class _VaultsScreenState extends State<VaultsScreen> {
 
   Future<void> _selectVault(VaultKey vault) async {
     final isWide = MediaQuery.sizeOf(context).width >= kWideScreenBreakpoint;
-    if (!isWide) {
-      await openVault(context, vault);
-      return;
-    }
     final connections = context.read<CloudConnectionService>();
     final messenger = ScaffoldMessenger.of(context);
     if (!connections.isSupported(vault.provider)) {
@@ -133,18 +129,25 @@ class _VaultsScreenState extends State<VaultsScreen> {
     if (_selectedId != nextId) {
       setState(() => _selectedId = nextId);
     }
+    if (!isWide) {
+      final vaults = context.read<VaultsController>();
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => FeedScreen.vault(vault)),
+      );
+      unawaited(vaults.refreshSettings(only: vault));
+      return;
+    }
     unawaited(context.read<VaultsController>().refreshSettings(only: vault));
   }
 
   Future<void> _selectBoard(ReaderKey board) async {
     final isWide = MediaQuery.sizeOf(context).width >= kWideScreenBreakpoint;
-    if (!isWide) {
-      await openBoard(context, board);
-      return;
-    }
     final nextId = VaultsController.idOfKey(board);
     if (_selectedId != nextId) {
       setState(() => _selectedId = nextId);
+    }
+    if (!isWide) {
+      await openBoard(context, board);
     }
   }
 

@@ -16,6 +16,7 @@ import '../../core/vault/vault_key.dart';
 import '../../data/post_repository.dart';
 import '../../data/public_board_repository.dart';
 import '../vaults/vaults_controller.dart';
+import '../vaults/vaults_screen.dart' show kWideScreenBreakpoint;
 import 'feed_controller.dart';
 import 'selection_exporter.dart';
 import 'widgets/compose_bar.dart';
@@ -64,6 +65,29 @@ class _FeedScreenState extends State<FeedScreen> {
   late final Future<PostRepository> _repository = widget._open(
     context.read<VaultSessionFactory>(),
   );
+  bool _poppingOnResize = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Если лента была открыта отдельным экраном в узком окне, а затем окно
+    // растянули до двухпанельного режима, закрываем этот маршрут, чтобы
+    // показать обе панели (список досок слева + эту же ленту справа).
+    if (!widget.embedded &&
+        !_poppingOnResize &&
+        MediaQuery.sizeOf(context).width >= kWideScreenBreakpoint) {
+      _poppingOnResize = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (ModalRoute.of(context)?.isCurrent == true &&
+            Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        } else {
+          _poppingOnResize = false;
+        }
+      });
+    }
+  }
 
   String get _title {
     final label = widget.liveLabel?.call(context) ?? widget.label;

@@ -294,6 +294,31 @@ void main() {
 
     expect(find.byType(FeedScreen), findsOneWidget);
     expect(find.text('Личное'), findsNWidgets(2)); // в списке и в заголовке ленты
+
+    // Сжимаем окно до узкого — правая панель исчезает, остаётся список досок.
+    tester.view.physicalSize = const Size(600, 800);
+    await tester.pumpAndSettle();
+    expect(find.byType(VerticalDivider), findsNothing);
+    expect(find.byType(FeedScreen), findsNothing);
+
+    // Открываем доску «Работа» в узком окне (отдельным маршрутом со стрелкой «Назад»).
+    await tester.tap(find.text('Работа'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.byType(FeedScreen), findsOneWidget);
+    expect(find.byIcon(Icons.arrow_back), findsOneWidget);
+
+    // Снова растягиваем окно до широкого — отдельный маршрут закрывается,
+    // и появляются обе панели (список досок слева + открытая доска «Работа» справа).
+    tester.view.physicalSize = const Size(1280, 800);
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(VerticalDivider), findsOneWidget);
+    expect(find.byType(FeedScreen), findsOneWidget);
+    expect(find.byIcon(Icons.arrow_back), findsNothing);
+    expect(find.text('Личное'), findsOneWidget);
+    expect(find.text('Работа'), findsNWidgets(2));
   });
 }
 
