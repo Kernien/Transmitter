@@ -1,4 +1,4 @@
-# Собирает релиз в build/dist: APK для Android (arm64, armv7) и zip для Windows.
+﻿# Собирает релиз в build/dist: APK для Android (arm64, armv7) и zip для Windows.
 # Перед сборкой прогоняет тесты. Версия берётся из pubspec.yaml.
 #   powershell -File tool/build_release.ps1
 $ErrorActionPreference = 'Stop'
