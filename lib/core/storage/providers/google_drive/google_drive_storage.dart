@@ -46,6 +46,7 @@ class GoogleDriveStorage implements CloudStorage, PublicSharing {
   final int resumableChunkSize;
   final Duration retryDelay;
   final Map<String, String> _folderIds = {};
+  final Map<String, Future<String?>> _folderIdInFlight = {};
   final Map<String, String> _fileIds = {};
 
   @override
@@ -307,8 +308,20 @@ class GoogleDriveStorage implements CloudStorage, PublicSharing {
 
   /// id папки по пути (`''` — корневая папка Transmitter). При [create]
   /// недостающие папки создаются; иначе `null`, если папки нет.
-  Future<String?> _folderId(String path, {required bool create}) async {
+  Future<String?> _folderId(String path, {required bool create}) {
     final normalized = _normalize(path);
+    final cached = _folderIds[normalized];
+    if (cached != null) return Future.value(cached);
+    if (!create) return _resolveFolderId(normalized, create: false);
+    final inFlight = _folderIdInFlight[normalized];
+    if (inFlight != null) return inFlight;
+    final future = _resolveFolderId(normalized, create: true).whenComplete(() {
+      _folderIdInFlight.remove(normalized);
+    });
+    return _folderIdInFlight[normalized] = future;
+  }
+
+  Future<String?> _resolveFolderId(String normalized, {required bool create}) async {
     final cached = _folderIds[normalized];
     if (cached != null) return cached;
 

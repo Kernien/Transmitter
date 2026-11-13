@@ -841,7 +841,16 @@ class FeedController extends ChangeNotifier {
       _transfers[post.id] = tracker.update(0, folder.totalSize);
       _notify();
 
-      var downloadedBefore = 0;
+      final progressByEntry = <String, int>{};
+      void updateFolderProgress() {
+        var sum = 0;
+        for (final v in progressByEntry.values) {
+          sum += v;
+        }
+        _transfers[post.id] = tracker.update(sum, folder.totalSize);
+        _notify();
+      }
+
       final saved = await _files.saveFolder(
         folderName: folder.name,
         entries: folder.files,
@@ -849,14 +858,15 @@ class FeedController extends ChangeNotifier {
           final bytes = await _repository.downloadAttachment(
             entryAttachment,
             onProgress: (count, total) {
-              _transfers[post.id] = tracker.update(
-                downloadedBefore + count,
-                folder.totalSize,
-              );
-              _notify();
+              progressByEntry[entryAttachment.id] =
+                  total > 0
+                      ? (count / total * entryAttachment.size).toInt()
+                      : count;
+              updateFolderProgress();
             },
           );
-          downloadedBefore += entryAttachment.size;
+          progressByEntry[entryAttachment.id] = entryAttachment.size;
+          updateFolderProgress();
           return bytes;
         },
       );

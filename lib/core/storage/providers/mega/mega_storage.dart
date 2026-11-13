@@ -102,9 +102,11 @@ class MegaStorage implements CloudStorage, PublicSharing {
     Stream<List<int>> stream, {
     required int length,
     ProgressCallback? onProgress,
-  }) => _serial(() async {
+  }) async {
     final (folder, name) = _split(path);
-    final parent = (await _folderHandle(folder, create: true))!;
+    final parent = await _serial(
+      () async => (await _folderHandle(folder, create: true))!,
+    );
     final key = MegaCrypto.randomBytes(16);
     final nonce = MegaCrypto.randomBytes(8);
 
@@ -135,25 +137,27 @@ class MegaStorage implements CloudStorage, PublicSharing {
     final completionB64 = MegaCrypto.b64(completion);
 
     final fileKey = MegaCrypto.packFileKey(key, nonce, mac);
-    final result = await _request({
-      'a': 'p',
-      't': parent,
-      'n': [
-        {
-          'h': completionB64,
-          't': 0,
-          'a': MegaCrypto.encryptAttributes({'n': name}, key),
-          'k': MegaCrypto.b64(_master.encryptEcb(fileKey)),
-        },
-      ],
-      'cr': ?await _keysForReaders(parent, completionB64, fileKey),
+    await _serial(() async {
+      final result = await _request({
+        'a': 'p',
+        't': parent,
+        'n': [
+          {
+            'h': completionB64,
+            't': 0,
+            'a': MegaCrypto.encryptAttributes({'n': name}, key),
+            'k': MegaCrypto.b64(_master.encryptEcb(fileKey)),
+          },
+        ],
+        'cr': ?await _keysForReaders(parent, completionB64, fileKey),
+      });
+      final added = _addNodes(result);
+      // Перезапись: прежние версии с тем же именем удаляются.
+      for (final old in _childrenNamed(parent, name)) {
+        if (!added.contains(old.handle)) await _deleteNode(old.handle);
+      }
     });
-    final added = _addNodes(result);
-    // Перезапись: прежние версии с тем же именем удаляются.
-    for (final old in _childrenNamed(parent, name)) {
-      if (!added.contains(old.handle)) await _deleteNode(old.handle);
-    }
-  });
+  }
 
   @override
   Future<Uint8List> download(String path, {ProgressCallback? onProgress}) async {

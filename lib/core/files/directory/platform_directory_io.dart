@@ -80,16 +80,45 @@ Future<bool> saveFolderToDirectory({
     await baseDir.create(recursive: true);
   }
 
-  for (final entry in entries) {
-    final filePath = '${baseDir.path}/${entry.relativePath}'
-        .replaceAll('/', Platform.pathSeparator);
-    final file = File(filePath);
-    final parent = file.parent;
-    if (!await parent.exists()) {
-      await parent.create(recursive: true);
+  const maxConcurrency = 6;
+  var nextIndex = 0;
+  Object? firstError;
+  StackTrace? firstStack;
+
+  Future<void> worker() async {
+    while (true) {
+      if (firstError != null) return;
+      final index = nextIndex++;
+      if (index >= entries.length) return;
+      final entry = entries[index];
+      try {
+        final filePath = '${baseDir.path}/${entry.relativePath}'
+            .replaceAll('/', Platform.pathSeparator);
+        final file = File(filePath);
+        final parent = file.parent;
+        if (!await parent.exists()) {
+          await parent.create(recursive: true);
+        }
+        final bytes = await getFileBytes(entry.toAttachment());
+        await file.writeAsBytes(bytes, flush: true);
+      } on Object catch (e, st) {
+        if (firstError == null) {
+          firstError = e;
+          firstStack = st;
+        }
+        return;
+      }
     }
-    final bytes = await getFileBytes(entry.toAttachment());
-    await file.writeAsBytes(bytes, flush: true);
+  }
+
+  final workerCount =
+      entries.length < maxConcurrency ? entries.length : maxConcurrency;
+  if (workerCount > 0) {
+    await Future.wait([for (var w = 0; w < workerCount; w++) worker()]);
+  }
+
+  if (firstError != null) {
+    Error.throwWithStackTrace(firstError!, firstStack!);
   }
   return true;
 }

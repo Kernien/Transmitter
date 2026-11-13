@@ -182,11 +182,45 @@ class FilePickerTransferService implements FileTransferService {
     }
 
     // В вебе или при отсутствии прямой файловой системы скачиваем zip-архив.
+    const maxConcurrency = 6;
+    final downloadedBytes = List<Uint8List?>.filled(entries.length, null);
+    var nextIndex = 0;
+    Object? firstError;
+    StackTrace? firstStack;
+
+    Future<void> worker() async {
+      while (true) {
+        if (firstError != null) return;
+        final index = nextIndex++;
+        if (index >= entries.length) return;
+        try {
+          downloadedBytes[index] = await getFileBytes(
+            entries[index].toAttachment(),
+          );
+        } on Object catch (e, st) {
+          if (firstError == null) {
+            firstError = e;
+            firstStack = st;
+          }
+          return;
+        }
+      }
+    }
+
+    final workerCount =
+        entries.length < maxConcurrency ? entries.length : maxConcurrency;
+    if (workerCount > 0) {
+      await Future.wait([for (var w = 0; w < workerCount; w++) worker()]);
+    }
+    if (firstError != null) {
+      Error.throwWithStackTrace(firstError!, firstStack!);
+    }
+
     final archive = Archive();
-    for (final entry in entries) {
-      final bytes = await getFileBytes(entry.toAttachment());
+    for (var i = 0; i < entries.length; i++) {
+      final bytes = downloadedBytes[i]!;
       archive.addFile(
-        ArchiveFile(entry.relativePath, bytes.length, bytes),
+        ArchiveFile(entries[i].relativePath, bytes.length, bytes),
       );
     }
     final zipData = ZipEncoder().encode(archive);

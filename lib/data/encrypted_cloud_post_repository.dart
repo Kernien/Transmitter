@@ -386,25 +386,40 @@ class EncryptedCloudPostRepository implements PostRepository {
     }
 
     const fileUnitWeight = 1024;
+    const maxConcurrency = 6;
     final totalUnits = files.fold(0, (sum, f) => sum + f.size + fileUnitWeight);
-    var uploadedUnitsBefore = 0;
 
-    final entries = <FolderEntry>[];
-    for (final file in files) {
-      if (isCancelled?.call() == true) {
-        throw const TransferCancelledException();
+    // Сразу распределяем идентификаторы файлов, чтобы параллельные потоки
+    // не пересекались по именам в существующем списке plainFileNames.
+    final attachments = <Attachment>[
+      for (final file in files)
+        Attachment(
+          id: plainFileNames
+              ? _choosePlainFileNameFromExisting(file.name, existingPlainNames!)
+              : _newId(),
+          fileName: file.name,
+          size: file.size,
+          mimeType: file.mimeType,
+        ),
+    ];
+
+    final fileProgress = List<int>.filled(files.length, 0);
+    void reportProgress() {
+      if (onProgress == null) return;
+      var currentTotal = 0;
+      for (var i = 0; i < fileProgress.length; i++) {
+        currentTotal += fileProgress[i];
       }
+      onProgress(currentTotal, totalUnits);
+    }
 
-      final attachmentId = plainFileNames
-          ? _choosePlainFileNameFromExisting(file.name, existingPlainNames!)
-          : _newId();
-      final attachment = Attachment(
-        id: attachmentId,
-        fileName: file.name,
-        size: file.size,
-        mimeType: file.mimeType,
-      );
+    var nextIndex = 0;
+    Object? firstError;
+    StackTrace? firstStack;
 
+    Future<void> uploadOne(int index) async {
+      final file = files[index];
+      final attachment = attachments[index];
       final fileUnits = file.size + fileUnitWeight;
 
       try {
@@ -420,8 +435,9 @@ class EncryptedCloudPostRepository implements PostRepository {
                       if (isCancelled?.call() == true) {
                         throw const TransferCancelledException();
                       }
-                      final part = total > 0 ? (count / total * file.size).toInt() : 0;
-                      onProgress(uploadedUnitsBefore + part, totalUnits);
+                      fileProgress[index] =
+                          total > 0 ? (count / total * file.size).toInt() : 0;
+                      reportProgress();
                     },
             ),
             isCancelled: isCancelled,
@@ -444,8 +460,9 @@ class EncryptedCloudPostRepository implements PostRepository {
                         if (isCancelled?.call() == true) {
                           throw const TransferCancelledException();
                         }
-                        final part = total > 0 ? (count / total * file.size).toInt() : 0;
-                        onProgress(uploadedUnitsBefore + part, totalUnits);
+                        fileProgress[index] =
+                            total > 0 ? (count / total * file.size).toInt() : 0;
+                        reportProgress();
                       },
               );
             },
@@ -468,22 +485,58 @@ class EncryptedCloudPostRepository implements PostRepository {
         }
       }
 
-      uploadedUnitsBefore += fileUnits;
-      onProgress?.call(uploadedUnitsBefore, totalUnits);
+      fileProgress[index] = fileUnits;
+      reportProgress();
+    }
 
-      entries.add(
-        FolderEntry(
-          id: attachmentId,
-          relativePath: file.pathInFolder,
-          size: file.size,
-          mimeType: file.mimeType,
-        ),
-      );
+    Future<void> worker() async {
+      while (true) {
+        if (firstError != null) return;
+        if (isCancelled?.call() == true) {
+          firstError ??= const TransferCancelledException();
+          return;
+        }
+        final index = nextIndex++;
+        if (index >= files.length) return;
+        try {
+          await uploadOne(index);
+        } on Object catch (e, st) {
+          if (firstError == null) {
+            firstError = e;
+            firstStack = st;
+          }
+          return;
+        }
+      }
+    }
+
+    final workerCount =
+        files.length < maxConcurrency ? files.length : maxConcurrency;
+    if (workerCount > 0) {
+      await Future.wait([for (var w = 0; w < workerCount; w++) worker()]);
+    }
+
+    if (firstError != null) {
+      if (firstError is TransferCancelledException ||
+          isCancelled?.call() == true) {
+        throw const TransferCancelledException();
+      }
+      Error.throwWithStackTrace(firstError!, firstStack!);
     }
 
     if (isCancelled?.call() == true) {
       throw const TransferCancelledException();
     }
+
+    final entries = <FolderEntry>[
+      for (var i = 0; i < files.length; i++)
+        FolderEntry(
+          id: attachments[i].id,
+          relativePath: files[i].pathInFolder,
+          size: files[i].size,
+          mimeType: files[i].mimeType,
+        ),
+    ];
 
     final folder = FolderAttachment(name: folderName, files: entries);
     return _publish(

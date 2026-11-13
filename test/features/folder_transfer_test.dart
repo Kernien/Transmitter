@@ -199,4 +199,62 @@ void main() {
 
     sender.dispose();
   });
+
+  test('sendFolder загружает файлы папки параллельно до 6 потоков и сохраняет порядок', () async {
+    final delayedCloud = _TrackingCloudStorage();
+    final repo = EncryptedCloudPostRepository(
+      storage: delayedCloud,
+      vaultId: 'v',
+      cipher: AesGcmCipher(List<int>.filled(32, 5)),
+      deviceName: 'PC',
+    );
+
+    final pickedFiles = [
+      for (var i = 0; i < 15; i++)
+        PickedFile(
+          name: 'file_$i.txt',
+          bytes: Uint8List.fromList(utf8.encode('content $i')),
+          relativePath: 'sub/file_$i.txt',
+        ),
+    ];
+
+    final post = await repo.sendFolder(
+      folderName: 'parallel_folder',
+      files: pickedFiles,
+    );
+
+    expect(delayedCloud.maxConcurrentUploads, greaterThan(1));
+    expect(delayedCloud.maxConcurrentUploads, lessThanOrEqualTo(6));
+    expect(post.folder!.files, hasLength(15));
+    for (var i = 0; i < 15; i++) {
+      expect(post.folder!.files[i].relativePath, 'sub/file_$i.txt');
+    }
+  });
+}
+
+class _TrackingCloudStorage extends InMemoryCloudStorage {
+  int _activeUploads = 0;
+  int maxConcurrentUploads = 0;
+
+  @override
+  Future<void> upload(
+    String path,
+    Uint8List bytes, {
+    void Function(int count, int total)? onProgress,
+  }) async {
+    if (path.contains('/files/')) {
+      _activeUploads++;
+      if (_activeUploads > maxConcurrentUploads) {
+        maxConcurrentUploads = _activeUploads;
+      }
+      try {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        await super.upload(path, bytes, onProgress: onProgress);
+      } finally {
+        _activeUploads--;
+      }
+    } else {
+      await super.upload(path, bytes, onProgress: onProgress);
+    }
+  }
 }
