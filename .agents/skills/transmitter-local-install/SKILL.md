@@ -17,7 +17,7 @@ Flutter: `C:\dev\flutter\bin`. Скрипты `.ps1` запускать с
 
 ## Windows
 
-1. `flutter build windows --release --dart-define-from-file=config/dev.json --dart-define-from-file=config/secrets.json`
+1. `flutter build windows --release --no-tree-shake-icons --dart-define-from-file=config/dev.json --dart-define-from-file=config/secrets.json`
    (в PATH — `%LOCALAPPDATA%\bin\NASM`).
 2. Установщик из свежей сборки (Inno Setup 6, версия из `pubspec.yaml`):
    `& "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" /Q /DAppVersion=<версия> /DSourceDir=(Resolve-Path build\windows\x64\runner\Release).Path /DOutputDir=(Resolve-Path build\local-install).Path installer\transmitter.iss`
