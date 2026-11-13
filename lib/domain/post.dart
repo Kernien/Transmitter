@@ -266,6 +266,30 @@ class Post {
     note: note,
   );
 
+  /// Та же запись с обновлённым прикреплённым файлом.
+  Post withAttachment(Attachment attachment) => Post(
+    id: id,
+    kind: kind,
+    createdAt: createdAt,
+    senderDevice: senderDevice,
+    text: text,
+    attachment: attachment,
+    folder: folder,
+    note: note,
+  );
+
+  /// Та же запись с обновлённой прикреплённой папкой.
+  Post withFolder(FolderAttachment folder) => Post(
+    id: id,
+    kind: kind,
+    createdAt: createdAt,
+    senderDevice: senderDevice,
+    text: text,
+    attachment: attachment,
+    folder: folder,
+    note: note,
+  );
+
   Map<String, dynamic> toJson() => {
     'v': 1,
     'id': id,

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 
@@ -915,6 +916,177 @@ class FeedController extends ChangeNotifier {
       return false;
     } finally {
       _notify();
+    }
+  }
+
+  /// Обновляет содержимое файла поста (например, после редактирования текста
+  /// прямо в приложении) и синхронизирует кеш превью.
+  Future<Post?> updateFileContent(
+    Post post,
+    Uint8List bytes, {
+    String? fileName,
+    String? mimeType,
+  }) async {
+    try {
+      final updated = await _repository.updateFileContent(
+        post: post,
+        bytes: bytes,
+        fileName: fileName,
+        mimeType: mimeType,
+      );
+      if (updated.attachment case final newAtt?) {
+        previews.remember(newAtt.id, bytes);
+      }
+      _posts = [for (final p in _posts) p.id == post.id ? updated : p];
+      _error = null;
+      _notify();
+      return updated;
+    } catch (e) {
+      _error = e;
+      _notify();
+      return null;
+    }
+  }
+
+  /// Обновляет структуру папки поста (переименование, перемещение или удаление
+  /// файлов и подпапок). Возвращает обновлённый пост или `null`, если папка
+  /// стала пустой и пост был удалён (или произошла ошибка).
+  Future<Post?> updateFolderStructure(
+    Post post,
+    FolderAttachment updatedFolder, {
+    List<String> removedEntryIds = const [],
+  }) async {
+    try {
+      final updated = await _repository.updateFolderStructure(
+        post: post,
+        updatedFolder: updatedFolder,
+        removedEntryIds: removedEntryIds,
+      );
+      if (updated == null) {
+        _posts = _posts.where((p) => p.id != post.id).toList();
+        _selected.remove(post.id);
+      } else {
+        _posts = [for (final p in _posts) p.id == post.id ? updated : p];
+      }
+      _error = null;
+      _notify();
+      return updated;
+    } catch (e) {
+      _error = e;
+      _notify();
+      return post;
+    }
+  }
+
+  /// Заменяет один файл [entryId] внутри папки поста новыми байтами [bytes]
+  /// (например, после редактирования текстового файла или выбора замены с диска).
+  Future<Post?> replaceFolderEntry(
+    Post post,
+    String entryId,
+    Uint8List bytes, {
+    String? newRelativePath,
+    String? mimeType,
+  }) async {
+    try {
+      final updated = await _repository.replaceFolderEntry(
+        post: post,
+        entryId: entryId,
+        bytes: bytes,
+        newRelativePath: newRelativePath,
+        mimeType: mimeType,
+      );
+      final newEntry = updated.folder?.files.firstWhere(
+        (e) =>
+            e.relativePath ==
+            (newRelativePath ??
+                post.folder?.files
+                    .firstWhere((old) => old.id == entryId)
+                    .relativePath),
+        orElse: () => updated.folder!.files.first,
+      );
+      if (newEntry != null) {
+        previews.remember(newEntry.id, bytes);
+      }
+      _posts = [for (final p in _posts) p.id == post.id ? updated : p];
+      _error = null;
+      _notify();
+      return updated;
+    } catch (e) {
+      _error = e;
+      _notify();
+      return null;
+    }
+  }
+
+  /// Предлагает выбрать один файл на устройстве и заменяет им элемент
+  /// [entry] внутри папки поста [post].
+  Future<Post?> pickAndReplaceFolderEntry(Post post, FolderEntry entry) async {
+    final List<PickedFile> picked;
+    try {
+      picked = await _files.pickFiles(maxSize: _repository.maxFileSize);
+    } catch (e) {
+      _error = e;
+      _notify();
+      return null;
+    }
+    if (picked.isEmpty) return null;
+    final file = picked.first;
+    if (file.isTooLarge || file.size > _repository.maxFileSize) {
+      _error = FileTooLargeException(file.size, _repository.maxFileSize);
+      _notify();
+      return null;
+    }
+    final Uint8List bytes;
+    if (file.hasBytesInMemory) {
+      bytes = file.bytes;
+    } else {
+      final builder = BytesBuilder(copy: false);
+      await for (final chunk in file.openRead()) {
+        builder.add(chunk);
+      }
+      bytes = builder.takeBytes();
+    }
+    final slash = entry.relativePath.lastIndexOf('/');
+    final dirPrefix = slash < 0 ? '' : entry.relativePath.substring(0, slash + 1);
+    final newPath = '$dirPrefix${file.name}';
+    return replaceFolderEntry(
+      post,
+      entry.id,
+      bytes,
+      newRelativePath: newPath,
+      mimeType: file.mimeType,
+    );
+  }
+
+  /// Предлагает выбрать один или несколько файлов на устройстве и добавляет их
+  /// в подкаталог [targetSubdir] папки поста [post].
+  Future<Post?> pickAndAddFilesToFolder(
+    Post post, {
+    String targetSubdir = '',
+  }) async {
+    final List<PickedFile> picked;
+    try {
+      picked = await _files.pickFiles(maxSize: _repository.maxFileSize);
+    } catch (e) {
+      _error = e;
+      _notify();
+      return null;
+    }
+    if (picked.isEmpty) return null;
+    try {
+      final updated = await _repository.addFilesToFolder(
+        post: post,
+        files: picked,
+        targetSubdir: targetSubdir,
+      );
+      _posts = [for (final p in _posts) p.id == post.id ? updated : p];
+      _error = null;
+      _notify();
+      return updated;
+    } catch (e) {
+      _error = e;
+      _notify();
+      return null;
     }
   }
 

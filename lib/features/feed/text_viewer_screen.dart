@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
@@ -37,21 +39,37 @@ class _WordDocument extends _Document {
 enum _MenuAction { monospace, source, copyAll }
 
 /// Документ прямо в приложении: простой текст, Markdown (с оформлением) или
-/// текст из `.docx`. Выделение и копирование, «Сохранить» и «Поделиться»;
+/// текст из `.docx`. Выделение и копирование, редактирование текстовых файлов
+/// с сохранением изменений обратно на доску, «Сохранить» и «Поделиться»;
 /// очень большие текстовые файлы показываются с начала.
 class TextViewerScreen extends StatefulWidget {
-  const TextViewerScreen({super.key, required this.feed, required this.post});
+  const TextViewerScreen({
+    super.key,
+    required this.feed,
+    required this.post,
+    this.onSaveContent,
+  });
 
   final FeedController feed;
   final Post post;
 
+  /// Пользовательский обработчик сохранения изменённого содержимого (например,
+  /// для файла внутри папки). Если не задан, но доска не в режиме чтения,
+  /// обновляется сам пост-файл [post] через [FeedController.updateFileContent].
+  final Future<Attachment?> Function(Uint8List bytes)? onSaveContent;
+
   static Future<void> open(
     BuildContext context,
     FeedController feed,
-    Post post,
-  ) => Navigator.of(context).push(
+    Post post, {
+    Future<Attachment?> Function(Uint8List bytes)? onSaveContent,
+  }) => Navigator.of(context).push(
     MaterialPageRoute(
-      builder: (_) => TextViewerScreen(feed: feed, post: post),
+      builder: (_) => TextViewerScreen(
+        feed: feed,
+        post: post,
+        onSaveContent: onSaveContent,
+      ),
     ),
   );
 
@@ -67,14 +85,9 @@ class _TextViewerScreenState extends State<TextViewerScreen> {
     'bat', 'ps1', 'sql', 'svg',
   };
 
-  late final Attachment _attachment = widget.post.attachment!;
-  late final Future<_Document> _document = widget.feed.previews
-      .load(_attachment)
-      .then<_Document>(
-        (bytes) => _attachment.isDocx
-            ? _WordDocument(parseDocx(bytes))
-            : _TextDocument(decodeTextPreview(bytes)),
-      );
+  late Attachment _attachment = widget.post.attachment!;
+  late Post _currentPost = widget.post;
+  late Future<_Document> _document = _loadDocument(_attachment);
 
   /// Код и таблицы читать удобнее моноширинным шрифтом.
   late bool _monospace = _codeExtensions.contains(
@@ -84,95 +97,298 @@ class _TextViewerScreenState extends State<TextViewerScreen> {
   /// Markdown: показать исходный текст вместо оформленного.
   bool _source = false;
 
+  bool _editing = false;
+  bool _savingEdit = false;
+  String _initialEditText = '';
+  final TextEditingController _editController = TextEditingController();
+
+  Future<_Document> _loadDocument(Attachment attachment) => widget.feed.previews
+      .load(attachment)
+      .then<_Document>(
+        (bytes) => attachment.isDocx
+            ? _WordDocument(parseDocx(bytes))
+            : _TextDocument(decodeTextPreview(bytes)),
+      );
+
+  @override
+  void dispose() {
+    _editController.dispose();
+    super.dispose();
+  }
+
+  bool _canEditDocument(_Document? doc) {
+    if (widget.feed.isReadOnly) return false;
+    if (_attachment.isDocx) return false;
+    if (doc is! _TextDocument) return false;
+    if (doc.preview.truncated) return false;
+    return true;
+  }
+
+  void _startEditing(_TextDocument doc) {
+    _initialEditText = doc.preview.text;
+    _editController.text = _initialEditText;
+    setState(() => _editing = true);
+  }
+
+  Future<bool> _confirmDiscardIfNeeded() async {
+    if (!_editing || _editController.text == _initialEditText) return true;
+    final l = context.l10n;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l.discardChangesTitle),
+        content: Text(l.discardChangesText),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l.discard),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
+  }
+
+  Future<void> _cancelEditing() async {
+    if (!await _confirmDiscardIfNeeded()) return;
+    if (!mounted) return;
+    setState(() => _editing = false);
+  }
+
+  Future<void> _saveEdit() async {
+    if (_savingEdit) return;
+    final newText = _editController.text;
+    if (newText == _initialEditText) {
+      setState(() => _editing = false);
+      return;
+    }
+
+    setState(() => _savingEdit = true);
+    final messenger = ScaffoldMessenger.of(context);
+    final l = context.l10n;
+    final bytes = Uint8List.fromList(utf8.encode(newText));
+
+    try {
+      Attachment? updatedAttachment;
+      if (widget.onSaveContent != null) {
+        updatedAttachment = await widget.onSaveContent!(bytes);
+      } else {
+        final updatedPost = await widget.feed.updateFileContent(
+          _currentPost,
+          bytes,
+        );
+        if (updatedPost != null) {
+          _currentPost = updatedPost;
+          updatedAttachment = updatedPost.attachment;
+        }
+      }
+
+      if (!mounted) return;
+      if (updatedAttachment != null) {
+        setState(() {
+          _attachment = updatedAttachment!;
+          _document = Future.value(
+            _TextDocument(decodeTextPreview(bytes)),
+          );
+          _editing = false;
+          _savingEdit = false;
+        });
+        messenger.showSnackBar(SnackBar(content: Text(l.saved)));
+      } else {
+        setState(() => _savingEdit = false);
+        final err = widget.feed.error;
+        if (err != null) {
+          messenger.showSnackBar(
+            SnackBar(content: Text(l.describeError(err))),
+          );
+        }
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _savingEdit = false);
+      messenger.showSnackBar(SnackBar(content: Text(l.describeError(e))));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final feed = widget.feed;
     final messenger = ScaffoldMessenger.of(context);
-    return CenteredPageFrame(
-      child: Scaffold(
-        appBar: AppBar(
-        title: Text(_attachment.fileName, overflow: TextOverflow.ellipsis),
-        actions: [
-          if (feed.canOpenExternally)
-            IconButton(
-              tooltip: l.openWith,
-              icon: const Icon(Icons.open_in_new),
-              onPressed: () => feed.openExternally(widget.post),
-            ),
-          if (feed.canShare)
-            IconButton(
-              tooltip: l.share,
-              icon: const Icon(Icons.share),
-              onPressed: () => feed.sharePost(widget.post),
-            ),
-          IconButton(
-            tooltip: l.save,
-            icon: const Icon(Icons.download),
-            onPressed: () async {
-              if (await feed.saveAttachment(widget.post)) {
-                messenger.showSnackBar(
-                  SnackBar(content: Text(l.savedFile(_attachment.fileName))),
-                );
-              }
-            },
-          ),
-          PopupMenuButton<_MenuAction>(
-            tooltip: l.actions,
-            onSelected: (action) async {
-              switch (action) {
-                case _MenuAction.monospace:
-                  setState(() => _monospace = !_monospace);
-                case _MenuAction.source:
-                  setState(() => _source = !_source);
-                case _MenuAction.copyAll:
-                  final text = (await _document).plainText;
-                  await Clipboard.setData(ClipboardData(text: text));
-                  messenger.showSnackBar(SnackBar(content: Text(l.copied)));
-              }
-            },
-            itemBuilder: (_) => [
-              if (!_attachment.isDocx && (!_attachment.isMarkdown || _source))
-                CheckedPopupMenuItem(
-                  value: _MenuAction.monospace,
-                  checked: _monospace,
-                  child: Text(l.monospaceFont),
-                ),
-              if (_attachment.isMarkdown)
-                CheckedPopupMenuItem(
-                  value: _MenuAction.source,
-                  checked: _source,
-                  child: Text(l.markdownSource),
-                ),
-              PopupMenuItem(value: _MenuAction.copyAll, child: Text(l.copyAll)),
-            ],
-          ),
-        ],
-      ),
-      body: FutureBuilder(
+
+    return PopScope(
+      canPop: !_editing,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        await _cancelEditing();
+      },
+      child: FutureBuilder<_Document>(
         future: _document,
         builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            final error = snapshot.error!;
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  error is FormatException
-                      ? l.documentUnreadable
-                      : l.describeError(error),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            );
-          }
           final document = snapshot.data;
-          if (document == null) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          return SelectionArea(child: _content(context, document));
+          final canEdit = _canEditDocument(document);
+
+          return CenteredPageFrame(
+            child: Scaffold(
+              appBar: AppBar(
+                leading: _editing
+                    ? IconButton(
+                        tooltip: l.cancel,
+                        icon: const Icon(Icons.close),
+                        onPressed: _savingEdit ? null : _cancelEditing,
+                      )
+                    : null,
+                title: Text(
+                  _attachment.fileName,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                actions: _editing
+                    ? [
+                        if (_savingEdit)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            child: Center(
+                              child: SizedBox.square(
+                                dimension: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            ),
+                          )
+                        else
+                          IconButton(
+                            tooltip: l.save,
+                            icon: const Icon(Icons.check),
+                            onPressed: _saveEdit,
+                          ),
+                      ]
+                    : [
+                        if (canEdit && document is _TextDocument)
+                          IconButton(
+                            tooltip: l.editText,
+                            icon: const Icon(Icons.edit_outlined),
+                            onPressed: () => _startEditing(document),
+                          ),
+                        if (feed.canOpenExternally)
+                          IconButton(
+                            tooltip: l.openWith,
+                            icon: const Icon(Icons.open_in_new),
+                            onPressed: () => feed.openExternally(_currentPost),
+                          ),
+                        if (feed.canShare)
+                          IconButton(
+                            tooltip: l.share,
+                            icon: const Icon(Icons.share),
+                            onPressed: () => feed.sharePost(_currentPost),
+                          ),
+                        IconButton(
+                          tooltip: l.save,
+                          icon: const Icon(Icons.download),
+                          onPressed: () async {
+                            if (await feed.saveAttachment(_currentPost)) {
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    l.savedFile(_attachment.fileName),
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                        PopupMenuButton<_MenuAction>(
+                          tooltip: l.actions,
+                          onSelected: (action) async {
+                            switch (action) {
+                              case _MenuAction.monospace:
+                                setState(() => _monospace = !_monospace);
+                              case _MenuAction.source:
+                                setState(() => _source = !_source);
+                              case _MenuAction.copyAll:
+                                final text = (await _document).plainText;
+                                await Clipboard.setData(
+                                  ClipboardData(text: text),
+                                );
+                                messenger.showSnackBar(
+                                  SnackBar(content: Text(l.copied)),
+                                );
+                            }
+                          },
+                          itemBuilder: (_) => [
+                            if (!_attachment.isDocx &&
+                                (!_attachment.isMarkdown || _source))
+                              CheckedPopupMenuItem(
+                                value: _MenuAction.monospace,
+                                checked: _monospace,
+                                child: Text(l.monospaceFont),
+                              ),
+                            if (_attachment.isMarkdown)
+                              CheckedPopupMenuItem(
+                                value: _MenuAction.source,
+                                checked: _source,
+                                child: Text(l.markdownSource),
+                              ),
+                            PopupMenuItem(
+                              value: _MenuAction.copyAll,
+                              child: Text(l.copyAll),
+                            ),
+                          ],
+                        ),
+                      ],
+              ),
+              body: Builder(
+                builder: (context) {
+                  if (snapshot.hasError) {
+                    final error = snapshot.error!;
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          error is FormatException
+                              ? l.documentUnreadable
+                              : l.describeError(error),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    );
+                  }
+                  if (document == null) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (_editing) {
+                    return Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: TextField(
+                        controller: _editController,
+                        enabled: !_savingEdit,
+                        autofocus: true,
+                        maxLines: null,
+                        expands: true,
+                        textAlignVertical: TextAlignVertical.top,
+                        style: _monospace || _attachment.isMarkdown
+                            ? const TextStyle(
+                                fontFamily: 'monospace',
+                                height: 1.4,
+                              )
+                            : const TextStyle(height: 1.4),
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.all(12),
+                        ),
+                      ),
+                    );
+                  }
+                  return SelectionArea(child: _content(context, document));
+                },
+              ),
+            ),
+          );
         },
-      ),
       ),
     );
   }

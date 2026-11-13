@@ -286,6 +286,110 @@ void main() {
 
     sender.dispose();
   });
+
+  test('управление файлами в загруженной папке: переименование, перемещение, замена, добавление и удаление', () async {
+    final sender = controllerFor('PC');
+    final receiver = controllerFor('Phone');
+
+    final initialFolder = PickedFolder(
+      name: 'NotesVault',
+      files: [
+        PickedFile(
+          name: 'draft.md',
+          bytes: Uint8List.fromList(utf8.encode('Черновик 1')),
+          relativePath: 'drafts/draft.md',
+        ),
+        PickedFile(
+          name: 'trash.tmp',
+          bytes: Uint8List.fromList(utf8.encode('мусор')),
+          relativePath: '.debris/trash.tmp',
+        ),
+      ],
+    );
+
+    await sender.sendFolder(initialFolder);
+    var post = sender.posts.single;
+    expect(post.folder!.files, hasLength(2));
+
+    // 1. Удаляем подпапку .debris и переименовываем/перемещаем draft.md -> ready/final.md
+    final draftEntry = post.folder!.files.firstWhere(
+      (f) => f.relativePath == 'drafts/draft.md',
+    );
+    final trashEntry = post.folder!.files.firstWhere(
+      (f) => f.relativePath == '.debris/trash.tmp',
+    );
+
+    post = (await sender.updateFolderStructure(
+      post,
+      FolderAttachment(
+        name: 'NotesVault',
+        files: [
+          FolderEntry(
+            id: draftEntry.id,
+            relativePath: 'ready/final.md',
+            size: draftEntry.size,
+            mimeType: draftEntry.mimeType,
+          ),
+        ],
+      ),
+      removedEntryIds: [trashEntry.id],
+    ))!;
+
+    expect(post.folder!.files, hasLength(1));
+    expect(post.folder!.files.single.relativePath, 'ready/final.md');
+    // Файл мусора реально удалён из облака
+    expect(
+      cloud.files.keys.any((k) => k.contains(trashEntry.id)),
+      isFalse,
+    );
+
+    // 2. Редактируем содержимое файла внутри папки (replaceFolderEntry)
+    final updatedContent = Uint8List.fromList(utf8.encode('Финальный текст'));
+    post = (await sender.replaceFolderEntry(
+      post,
+      draftEntry.id,
+      updatedContent,
+      newRelativePath: 'ready/final.md',
+    ))!;
+    expect(post.folder!.files, hasLength(1));
+    final replacedEntry = post.folder!.files.single;
+    expect(replacedEntry.id, isNot(equals(draftEntry.id)));
+    expect(
+      utf8.decode(await sender.downloadAttachment(replacedEntry.toAttachment())),
+      'Финальный текст',
+    );
+
+    // 3. Добавляем новый файл в подпапку ready
+    files.nextPick = PickedFile(
+      name: 'extra.txt',
+      bytes: Uint8List.fromList(utf8.encode('Дополнение')),
+    );
+    post = (await sender.pickAndAddFilesToFolder(
+      post,
+      targetSubdir: 'ready',
+    ))!;
+    expect(post.folder!.files, hasLength(2));
+    expect(
+      post.folder!.files.map((f) => f.relativePath),
+      containsAll(['ready/final.md', 'ready/extra.txt']),
+    );
+
+    // 4. Второе устройство при refresh() видит все изменения структуры и содержимого
+    await receiver.refresh();
+    expect(receiver.posts, hasLength(1));
+    final remoteFolder = receiver.posts.single.folder!;
+    expect(remoteFolder.files, hasLength(2));
+    final remoteFinal = remoteFolder.files.firstWhere(
+      (f) => f.relativePath == 'ready/final.md',
+    );
+    expect(
+      utf8.decode(await receiver.downloadAttachment(remoteFinal.toAttachment())),
+      'Финальный текст',
+    );
+
+    sender.dispose();
+    receiver.dispose();
+  });
 }
 
 class _TrackingCloudStorage extends InMemoryCloudStorage {

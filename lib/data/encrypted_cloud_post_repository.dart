@@ -194,9 +194,17 @@ class EncryptedCloudPostRepository implements PostRepository {
   List<Post>? get cachedPosts => _fetched ? _assemble() : null;
 
   /// Известные посты с комментариями, от старых к новым.
+  /// Если из-за прерванной правки в облаке осталось два файла `.post` одного
+  /// и того же поста (`post.id`), побеждает файл с более поздним именем.
   List<Post> _assemble() {
     final notes = _latestNotes();
-    return [for (final p in _cache.values) p.withNote(notes[p.id])]
+    final byId = <String, Post>{};
+    final sortedNames = _cache.keys.toList()..sort();
+    for (final name in sortedNames) {
+      final p = _cache[name]!;
+      byId[p.id] = p.withNote(notes[p.id]);
+    }
+    return byId.values.toList()
       ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
   }
 
@@ -623,10 +631,19 @@ class EncryptedCloudPostRepository implements PostRepository {
 
   @override
   Future<void> deletePost(Post post) async {
-    final fileName = _fileNameFor(post);
-    await _storage.delete('$_postsDir/$fileName');
-    _cache.remove(fileName);
-    await _blobs.delete(fileName);
+    final fileNames = [
+      for (final entry in _cache.entries)
+        if (entry.value.id == post.id) entry.key,
+    ];
+    final fallbackName = _fileNameFor(post);
+    if (!fileNames.contains(fallbackName)) {
+      fileNames.add(fallbackName);
+    }
+    for (final fileName in fileNames) {
+      await _storage.delete('$_postsDir/$fileName');
+      _cache.remove(fileName);
+      await _blobs.delete(fileName);
+    }
     if (post.attachment case final attachment?) {
       await _blobs.delete(attachmentCacheKey(attachment.id));
       await _storage.delete(_attachmentPath(attachment));
@@ -664,6 +681,401 @@ class EncryptedCloudPostRepository implements PostRepository {
     }
     await _deleteNotes(old.where((name) => !_isCurrent(name, note)));
     return post.withNote(note);
+  }
+
+  @override
+  Future<Post> updateFileContent({
+    required Post post,
+    required Uint8List bytes,
+    String? fileName,
+    String? mimeType,
+    ProgressCallback? onProgress,
+  }) async {
+    if (bytes.length > maxFileSize) {
+      throw FileTooLargeException(bytes.length, maxFileSize);
+    }
+    final oldAttachment = post.attachment;
+    if (oldAttachment == null) {
+      throw ArgumentError('Post has no attachment');
+    }
+    if (!_filesDirReady) {
+      await _storage.ensureFolder(_filesDir);
+      _filesDirReady = true;
+    }
+    final targetName = fileName ?? oldAttachment.fileName;
+    final newAttachmentId = plainFileNames
+        ? await _choosePlainFileName(targetName)
+        : _newId();
+    final newAttachment = Attachment(
+      id: newAttachmentId,
+      fileName: targetName,
+      size: bytes.length,
+      mimeType: mimeType ?? oldAttachment.mimeType,
+    );
+    final encrypted = await _cipher.encrypt(bytes);
+    await _storage.upload(
+      _attachmentPath(newAttachment),
+      encrypted,
+      onProgress: onProgress,
+    );
+    if (encrypted.length <= maxCachedAttachmentSize) {
+      await _blobs.write(attachmentCacheKey(newAttachment.id), encrypted);
+    }
+    final updatedPost = await _replacePostRecord(
+      post,
+      post.withAttachment(newAttachment),
+    );
+    if (oldAttachment.id != newAttachment.id) {
+      await _blobs.delete(attachmentCacheKey(oldAttachment.id));
+      await _storage.delete(_attachmentPath(oldAttachment));
+    }
+    return updatedPost;
+  }
+
+  @override
+  Future<Post?> updateFolderStructure({
+    required Post post,
+    required FolderAttachment updatedFolder,
+    List<String> removedEntryIds = const [],
+  }) async {
+    if (updatedFolder.files.isEmpty) {
+      final postWithRemoved = post.folder == null
+          ? post
+          : post.withFolder(
+              FolderAttachment(
+                name: updatedFolder.name,
+                files: [
+                  for (final id in removedEntryIds)
+                    FolderEntry(id: id, relativePath: id, size: 0),
+                ],
+              ),
+            );
+      await deletePost(postWithRemoved);
+      return null;
+    }
+    final updatedPost = await _replacePostRecord(
+      post,
+      post.withFolder(updatedFolder),
+    );
+    final remainingIds = updatedFolder.files.map((f) => f.id).toSet();
+    for (final removedId in removedEntryIds.toSet()) {
+      if (remainingIds.contains(removedId)) continue;
+      await _blobs.delete(attachmentCacheKey(removedId));
+      await _storage.delete(
+        attachmentPath(
+          _filesDir,
+          removedId,
+          plainFileNames: plainFileNames,
+          inFilesDir: true,
+        ),
+      );
+    }
+    return updatedPost;
+  }
+
+  @override
+  Future<Post> replaceFolderEntry({
+    required Post post,
+    required String entryId,
+    required Uint8List bytes,
+    String? newRelativePath,
+    String? mimeType,
+    ProgressCallback? onProgress,
+  }) async {
+    if (bytes.length > maxFileSize) {
+      throw FileTooLargeException(bytes.length, maxFileSize);
+    }
+    final folder = post.folder;
+    if (folder == null) {
+      throw ArgumentError('Post has no folder');
+    }
+    final oldIndex = folder.files.indexWhere((e) => e.id == entryId);
+    if (oldIndex < 0) {
+      throw ArgumentError('Folder entry not found: $entryId');
+    }
+    final oldEntry = folder.files[oldIndex];
+    final targetPath = (newRelativePath ?? oldEntry.relativePath)
+        .replaceAll('\\', '/');
+    final targetFileName = targetPath.split('/').last;
+
+    if (!_filesDirReady) {
+      await _storage.ensureFolder(_filesDir);
+      _filesDirReady = true;
+    }
+    final newId = plainFileNames
+        ? await _choosePlainFileName(targetFileName)
+        : _newId();
+    final newEntry = FolderEntry(
+      id: newId,
+      relativePath: targetPath,
+      size: bytes.length,
+      mimeType: mimeType ?? oldEntry.mimeType,
+    );
+    final newAttachment = newEntry.toAttachment();
+    final encrypted = await _cipher.encrypt(bytes);
+    await _storage.upload(
+      _attachmentPath(newAttachment),
+      encrypted,
+      onProgress: onProgress,
+    );
+    if (encrypted.length <= maxCachedAttachmentSize) {
+      await _blobs.write(attachmentCacheKey(newEntry.id), encrypted);
+    }
+
+    final updatedFiles = [...folder.files];
+    updatedFiles[oldIndex] = newEntry;
+    final updatedFolder = FolderAttachment(
+      name: folder.name,
+      files: updatedFiles,
+    );
+    final updatedPost = await _replacePostRecord(
+      post,
+      post.withFolder(updatedFolder),
+    );
+    if (oldEntry.id != newEntry.id) {
+      await _blobs.delete(attachmentCacheKey(oldEntry.id));
+      await _storage.delete(_attachmentPath(oldEntry.toAttachment()));
+    }
+    return updatedPost;
+  }
+
+  @override
+  Future<Post> addFilesToFolder({
+    required Post post,
+    required List<PickedFile> files,
+    String targetSubdir = '',
+    ProgressCallback? onProgress,
+    bool Function()? isCancelled,
+  }) async {
+    if (isCancelled?.call() == true) {
+      throw const TransferCancelledException();
+    }
+    final folder = post.folder;
+    if (folder == null) {
+      throw ArgumentError('Post has no folder');
+    }
+    if (files.isEmpty) return post;
+    for (final file in files) {
+      if (file.isTooLarge || file.size > maxFileSize) {
+        throw FileTooLargeException(file.size, maxFileSize);
+      }
+    }
+    if (!_filesDirReady) {
+      await _storage.ensureFolder(_filesDir);
+      _filesDirReady = true;
+    }
+
+    Set<String>? existingPlainNames;
+    if (plainFileNames) {
+      existingPlainNames = (await _storage.listFiles(_filesDir))
+          .map((f) => f.name.toLowerCase())
+          .toSet();
+    }
+
+    final cleanSubdir = targetSubdir
+        .replaceAll('\\', '/')
+        .split('/')
+        .where((s) => s.isNotEmpty)
+        .join('/');
+
+    final existingPaths = folder.files
+        .map((e) => e.relativePath.toLowerCase())
+        .toSet();
+
+    String chooseUniqueRelativePath(String rawPath) {
+      final full = cleanSubdir.isEmpty ? rawPath : '$cleanSubdir/$rawPath';
+      final slash = full.lastIndexOf('/');
+      final dirPart = slash < 0 ? '' : full.substring(0, slash + 1);
+      final namePart = slash < 0 ? full : full.substring(slash + 1);
+      final dot = namePart.lastIndexOf('.');
+      final (base, ext) = dot > 0
+          ? (namePart.substring(0, dot), namePart.substring(dot))
+          : (namePart, '');
+      var candidate = '$dirPart$namePart';
+      for (var i = 2; existingPaths.contains(candidate.toLowerCase()); i++) {
+        candidate = '$dirPart$base ($i)$ext';
+      }
+      existingPaths.add(candidate.toLowerCase());
+      return candidate;
+    }
+
+    final attachments = <Attachment>[];
+    final relativePaths = <String>[];
+    for (final file in files) {
+      final relPath = chooseUniqueRelativePath(file.pathInFolder);
+      relativePaths.add(relPath);
+      attachments.add(
+        Attachment(
+          id: plainFileNames
+              ? _choosePlainFileNameFromExisting(file.name, existingPlainNames!)
+              : _newId(),
+          fileName: file.name,
+          size: file.size,
+          mimeType: file.mimeType,
+        ),
+      );
+    }
+
+    const fileUnitWeight = 1024;
+    const maxConcurrency = 6;
+    final totalUnits = files.fold(0, (sum, f) => sum + f.size + fileUnitWeight);
+    final fileProgress = List<int>.filled(files.length, 0);
+
+    void reportProgress() {
+      if (onProgress == null) return;
+      var currentTotal = 0;
+      for (var i = 0; i < fileProgress.length; i++) {
+        currentTotal += fileProgress[i];
+      }
+      onProgress(currentTotal, totalUnits);
+    }
+
+    var nextIndex = 0;
+    Object? firstError;
+    StackTrace? firstStack;
+
+    Future<void> uploadOne(int index) async {
+      final file = files[index];
+      final attachment = attachments[index];
+      final fileUnits = file.size + fileUnitWeight;
+      if (file.hasBytesInMemory) {
+        final encrypted = await _cipher.encrypt(file.bytes);
+        await _uploadWithRetry(
+          () => _storage.upload(
+            _attachmentPath(attachment),
+            encrypted,
+            onProgress: onProgress == null
+                ? null
+                : (count, total) {
+                    if (isCancelled?.call() == true) {
+                      throw const TransferCancelledException();
+                    }
+                    fileProgress[index] =
+                        total > 0 ? (count / total * file.size).toInt() : 0;
+                    reportProgress();
+                  },
+          ),
+          isCancelled: isCancelled,
+        );
+        if (encrypted.length <= maxCachedAttachmentSize) {
+          await _blobs.write(attachmentCacheKey(attachment.id), encrypted);
+        }
+      } else {
+        final encryptedLength = _cipher.encryptedLength(file.size);
+        await _uploadWithRetry(
+          () {
+            final encryptedStream = _cipher.encryptStream(file.openRead());
+            return _storage.uploadStream(
+              _attachmentPath(attachment),
+              encryptedStream,
+              length: encryptedLength,
+              onProgress: onProgress == null
+                  ? null
+                  : (count, total) {
+                      if (isCancelled?.call() == true) {
+                        throw const TransferCancelledException();
+                      }
+                      fileProgress[index] =
+                          total > 0 ? (count / total * file.size).toInt() : 0;
+                      reportProgress();
+                    },
+            );
+          },
+          isCancelled: isCancelled,
+        );
+      }
+      fileProgress[index] = fileUnits;
+      reportProgress();
+    }
+
+    Future<void> worker() async {
+      while (true) {
+        if (firstError != null) return;
+        if (isCancelled?.call() == true) {
+          firstError ??= const TransferCancelledException();
+          return;
+        }
+        final index = nextIndex++;
+        if (index >= files.length) return;
+        try {
+          await uploadOne(index);
+        } on Object catch (e, st) {
+          if (firstError == null) {
+            firstError = e;
+            firstStack = st;
+          }
+          return;
+        }
+      }
+    }
+
+    final workerCount =
+        files.length < maxConcurrency ? files.length : maxConcurrency;
+    if (workerCount > 0) {
+      await Future.wait([for (var w = 0; w < workerCount; w++) worker()]);
+    }
+
+    if (firstError != null) {
+      if (firstError is TransferCancelledException ||
+          isCancelled?.call() == true) {
+        throw const TransferCancelledException();
+      }
+      Error.throwWithStackTrace(firstError!, firstStack!);
+    }
+
+    final newEntries = <FolderEntry>[
+      ...folder.files,
+      for (var i = 0; i < files.length; i++)
+        FolderEntry(
+          id: attachments[i].id,
+          relativePath: relativePaths[i],
+          size: files[i].size,
+          mimeType: files[i].mimeType,
+        ),
+    ];
+
+    return _replacePostRecord(
+      post,
+      post.withFolder(FolderAttachment(name: folder.name, files: newEntries)),
+    );
+  }
+
+  /// Записывает новую ревизию поста под новым именем файла в `_postsDir`,
+  /// чтобы другие устройства гарантированно увидели изменение при `fetchPosts`
+  /// (не читая устаревший локальный кеш старого файла `.post`), после чего
+  /// удаляет прежний файл `.post`.
+  Future<Post> _replacePostRecord(Post oldPost, Post updatedPost) async {
+    if (!_postsDirReady) {
+      await _storage.ensureFolder(_postsDir);
+      _postsDirReady = true;
+    }
+    final oldNames = [
+      for (final entry in _cache.entries)
+        if (entry.value.id == oldPost.id) entry.key,
+    ];
+    final fallbackOldName = _fileNameFor(oldPost);
+    if (!oldNames.contains(fallbackOldName)) {
+      oldNames.add(fallbackOldName);
+    }
+
+    final revToken = _newId().replaceAll('-', '').substring(0, 8);
+    final newFileName =
+        '${_timestamp(updatedPost.createdAt)}_${updatedPost.id}_$revToken$_postExtension';
+    final encrypted = await _cipher.encrypt(
+      utf8.encode(jsonEncode(updatedPost.toJson())),
+    );
+    await _storage.upload('$_postsDir/$newFileName', encrypted);
+    await _blobs.write(newFileName, encrypted);
+    _cache[newFileName] = updatedPost;
+
+    for (final oldName in oldNames) {
+      if (oldName == newFileName) continue;
+      await _storage.delete('$_postsDir/$oldName');
+      _cache.remove(oldName);
+      await _blobs.delete(oldName);
+    }
+    await _saveIndex();
+    return updatedPost.withNote(_latestNotes()[updatedPost.id]);
   }
 
   bool _isCurrent(String name, PostNote? note) =>

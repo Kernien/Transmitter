@@ -86,6 +86,45 @@ abstract interface class PostRepository {
   /// Задаёт комментарий к посту; пустой текст удаляет комментарий.
   /// Возвращает пост с новым комментарием.
   Future<Post> setNote(Post post, String text);
+
+  /// Заменяет содержимое отдельного поста-файла новыми байтами [bytes].
+  Future<Post> updateFileContent({
+    required Post post,
+    required Uint8List bytes,
+    String? fileName,
+    String? mimeType,
+    ProgressCallback? onProgress,
+  });
+
+  /// Обновляет структуру папки поста (переименование, перемещение или удаление
+  /// вложенных файлов и подпапок). Удаляет из облака файлы с идентификаторами
+  /// [removedEntryIds]. Если в [updatedFolder] не осталось ни одного файла,
+  /// удаляет сам пост и возвращает `null`.
+  Future<Post?> updateFolderStructure({
+    required Post post,
+    required FolderAttachment updatedFolder,
+    List<String> removedEntryIds = const [],
+  });
+
+  /// Заменяет один файл [entryId] внутри папки поста новыми байтами [bytes].
+  Future<Post> replaceFolderEntry({
+    required Post post,
+    required String entryId,
+    required Uint8List bytes,
+    String? newRelativePath,
+    String? mimeType,
+    ProgressCallback? onProgress,
+  });
+
+  /// Добавляет новые файлы [files] в существующую папку поста в подкаталог
+  /// [targetSubdir] (пустая строка — в корень папки).
+  Future<Post> addFilesToFolder({
+    required Post post,
+    required List<PickedFile> files,
+    String targetSubdir = '',
+    ProgressCallback? onProgress,
+    bool Function()? isCancelled,
+  });
 }
 
 /// Исключение при отмене передачи файлов пользователем.

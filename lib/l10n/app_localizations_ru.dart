@@ -434,6 +434,37 @@ class AppLocalizationsRu extends AppLocalizations {
   String get deleteFolderTitle => 'Удалить папку?';
 
   @override
+  String get moveItem => 'Переместить';
+
+  @override
+  String get moveToTitle => 'Переместить в папку';
+
+  @override
+  String get folderRoot => 'Корень папки';
+
+  @override
+  String get newSubfolderHint => 'Или укажите путь новой подпапки';
+
+  @override
+  String get replaceFile => 'Заменить файл';
+
+  @override
+  String get addFilesToFolder => 'Добавить файлы';
+
+  @override
+  String get editText => 'Редактировать';
+
+  @override
+  String get discardChangesTitle => 'Отменить изменения?';
+
+  @override
+  String get discardChangesText =>
+      'Несохранённые правки в тексте будут потеряны.';
+
+  @override
+  String get discard => 'Отменить правки';
+
+  @override
   String get cancelUpload => 'Отменить отправку';
 
   @override

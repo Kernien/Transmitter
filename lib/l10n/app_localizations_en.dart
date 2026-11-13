@@ -432,6 +432,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteFolderTitle => 'Delete folder?';
 
   @override
+  String get moveItem => 'Move';
+
+  @override
+  String get moveToTitle => 'Move to folder';
+
+  @override
+  String get folderRoot => 'Folder root';
+
+  @override
+  String get newSubfolderHint => 'Or enter a new subfolder path';
+
+  @override
+  String get replaceFile => 'Replace file';
+
+  @override
+  String get addFilesToFolder => 'Add files';
+
+  @override
+  String get editText => 'Edit';
+
+  @override
+  String get discardChangesTitle => 'Discard changes?';
+
+  @override
+  String get discardChangesText => 'Unsaved edits will be lost.';
+
+  @override
+  String get discard => 'Discard';
+
+  @override
   String get cancelUpload => 'Cancel upload';
 
   @override

@@ -100,4 +100,40 @@ void main() {
     expect(find.textContaining('всё готово'), findsOneWidget);
     feed.dispose();
   });
+
+  testWidgets('редактирование текстового файла и сохранение изменений на доску', (tester) async {
+    final feed = await openFile(
+      tester,
+      'заметка.md',
+      utf8.encode('Старый текст'),
+    );
+
+    // Иконка редактирования доступна в AppBar
+    expect(find.byIcon(Icons.edit_outlined), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.edit_outlined));
+    await tester.pumpAndSettle();
+
+    // Появляется текстовое поле с исходным текстом
+    expect(find.byType(TextField), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'Обновлённый текст заметки');
+    await tester.pump();
+
+    // Сохраняем изменения нажатием на галочку
+    await tester.tap(find.byIcon(Icons.check));
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TextField), findsNothing);
+    expect(find.textContaining('Обновлённый текст заметки'), findsOneWidget);
+
+    // Проверяем, что в репозитории обновились байты вложения
+    final updatedBytes = await tester.runAsync(
+      () => feed.downloadAttachment(feed.posts.single.attachment!),
+    );
+    expect(utf8.decode(updatedBytes!), 'Обновлённый текст заметки');
+
+    feed.dispose();
+  });
 }

@@ -800,6 +800,66 @@ abstract class AppLocalizations {
   /// **'Delete folder?'**
   String get deleteFolderTitle;
 
+  /// No description provided for @moveItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Move'**
+  String get moveItem;
+
+  /// No description provided for @moveToTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to folder'**
+  String get moveToTitle;
+
+  /// No description provided for @folderRoot.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder root'**
+  String get folderRoot;
+
+  /// No description provided for @newSubfolderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Or enter a new subfolder path'**
+  String get newSubfolderHint;
+
+  /// No description provided for @replaceFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace file'**
+  String get replaceFile;
+
+  /// No description provided for @addFilesToFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Add files'**
+  String get addFilesToFolder;
+
+  /// No description provided for @editText.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get editText;
+
+  /// No description provided for @discardChangesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes?'**
+  String get discardChangesTitle;
+
+  /// No description provided for @discardChangesText.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsaved edits will be lost.'**
+  String get discardChangesText;
+
+  /// No description provided for @discard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get discard;
+
   /// No description provided for @cancelUpload.
   ///
   /// In en, this message translates to:

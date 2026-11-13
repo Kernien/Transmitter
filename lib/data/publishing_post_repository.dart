@@ -129,6 +129,72 @@ class PublishingPostRepository implements PostRepository {
   Future<Post> setNote(Post post, String text) =>
       _changed(_inner.setNote(post, text));
 
+  @override
+  Future<Post> updateFileContent({
+    required Post post,
+    required Uint8List bytes,
+    String? fileName,
+    String? mimeType,
+    ProgressCallback? onProgress,
+  }) => _changed(
+    _inner.updateFileContent(
+      post: post,
+      bytes: bytes,
+      fileName: fileName,
+      mimeType: mimeType,
+      onProgress: onProgress,
+    ),
+  );
+
+  @override
+  Future<Post?> updateFolderStructure({
+    required Post post,
+    required FolderAttachment updatedFolder,
+    List<String> removedEntryIds = const [],
+  }) => _changed(
+    _inner.updateFolderStructure(
+      post: post,
+      updatedFolder: updatedFolder,
+      removedEntryIds: removedEntryIds,
+    ),
+  );
+
+  @override
+  Future<Post> replaceFolderEntry({
+    required Post post,
+    required String entryId,
+    required Uint8List bytes,
+    String? newRelativePath,
+    String? mimeType,
+    ProgressCallback? onProgress,
+  }) => _changed(
+    _inner.replaceFolderEntry(
+      post: post,
+      entryId: entryId,
+      bytes: bytes,
+      newRelativePath: newRelativePath,
+      mimeType: mimeType,
+      onProgress: onProgress,
+    ),
+  );
+
+  @override
+  Future<Post> addFilesToFolder({
+    required Post post,
+    required List<PickedFile> files,
+    String targetSubdir = '',
+    ProgressCallback? onProgress,
+    bool Function()? isCancelled,
+  }) => _changed(
+    _inner.addFilesToFolder(
+      post: post,
+      files: files,
+      targetSubdir: targetSubdir,
+      onProgress: onProgress,
+      isCancelled: isCancelled,
+    ),
+  );
+
   Future<T> _changed<T>(Future<T> change) async {
     final result = await change;
     // Лента уже в кеше репозитория: запрос — только список файлов.

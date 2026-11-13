@@ -207,6 +207,41 @@ class PublicBoardRepository implements PostRepository {
   @override
   Future<Post> setNote(Post post, String text) => _readOnly();
 
+  @override
+  Future<Post> updateFileContent({
+    required Post post,
+    required Uint8List bytes,
+    String? fileName,
+    String? mimeType,
+    ProgressCallback? onProgress,
+  }) => _readOnly();
+
+  @override
+  Future<Post?> updateFolderStructure({
+    required Post post,
+    required FolderAttachment updatedFolder,
+    List<String> removedEntryIds = const [],
+  }) => _readOnly();
+
+  @override
+  Future<Post> replaceFolderEntry({
+    required Post post,
+    required String entryId,
+    required Uint8List bytes,
+    String? newRelativePath,
+    String? mimeType,
+    ProgressCallback? onProgress,
+  }) => _readOnly();
+
+  @override
+  Future<Post> addFilesToFolder({
+    required Post post,
+    required List<PickedFile> files,
+    String targetSubdir = '',
+    ProgressCallback? onProgress,
+    bool Function()? isCancelled,
+  }) => _readOnly();
+
   static Never _readOnly() =>
       throw UnsupportedError('Public board is read-only');
 }
