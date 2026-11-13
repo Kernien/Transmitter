@@ -24,7 +24,13 @@ import 'vaults_controller.dart';
 const double kWideScreenBreakpoint = 840;
 
 /// Ширина левой панели со списком досок на широком экране.
-const double _kMasterPaneWidth = 360;
+const double _kMasterPaneWidth = 340;
+
+/// Максимальная общая ширина рабочей области на широкоформатном мониторе:
+/// левая панель + правая панель с лентой располагаются в центре вплотную
+/// друг к другу, без пустых дыр между списком досок и карточками постов.
+const double _kWorkspaceMaxWidth =
+    _kMasterPaneWidth + 1 + ContentWidth.defaultMaxWidth;
 
 /// Главный экран: список ключей баз (на широком мониторе — вместе с открытой лентой).
 class VaultsScreen extends StatefulWidget {
@@ -211,52 +217,73 @@ class _VaultsScreenState extends State<VaultsScreen> {
       );
     }
 
-    return Row(
-      children: [
-        SizedBox(
-          width: _kMasterPaneWidth,
-          child: Scaffold(
-            appBar: AppBar(
-              title: const Text('Transmitter'),
-              actions: appBarActions,
-            ),
-            body: buildList(),
-            floatingActionButton: fab,
-          ),
-        ),
-        const VerticalDivider(width: 1, thickness: 1),
-        Expanded(
-          child: switch (selected) {
-            VaultKey v => FeedScreen.vault(
-              v,
-              key: ValueKey(VaultsController.idOfKey(v)),
-              embedded: true,
-            ),
-            ReaderKey b => FeedScreen.board(
-              b,
-              key: ValueKey(VaultsController.idOfKey(b)),
-              embedded: true,
-              liveLabel: (context) =>
-                  context.watch<VaultsController>().boardLabel(b),
-              onOwnerLabel: (label) => controller.applyOwnerLabel(b, label),
-            ),
-            _ => Scaffold(
-              body: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Text(
-                    l.selectBoardHint,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
+    final dividerColor = Theme.of(context).dividerColor;
+
+    return ColoredBox(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: _kWorkspaceMaxWidth),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.symmetric(
+                vertical: BorderSide(color: dividerColor, width: 1),
               ),
             ),
-          },
+            child: Row(
+              children: [
+                SizedBox(
+                  width: _kMasterPaneWidth,
+                  child: Scaffold(
+                    appBar: AppBar(
+                      title: const Text('Transmitter'),
+                      actions: appBarActions,
+                    ),
+                    body: buildList(),
+                    floatingActionButton: fab,
+                  ),
+                ),
+                const VerticalDivider(width: 1, thickness: 1),
+                Expanded(
+                  child: switch (selected) {
+                    VaultKey v => FeedScreen.vault(
+                      v,
+                      key: ValueKey(VaultsController.idOfKey(v)),
+                      embedded: true,
+                    ),
+                    ReaderKey b => FeedScreen.board(
+                      b,
+                      key: ValueKey(VaultsController.idOfKey(b)),
+                      embedded: true,
+                      liveLabel: (context) =>
+                          context.watch<VaultsController>().boardLabel(b),
+                      onOwnerLabel: (label) =>
+                          controller.applyOwnerLabel(b, label),
+                    ),
+                    _ => Scaffold(
+                      body: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Text(
+                            l.selectBoardHint,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  },
+                ),
+              ],
+            ),
+          ),
         ),
-      ],
+      ),
     );
   }
 
