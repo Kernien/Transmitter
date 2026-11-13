@@ -172,6 +172,9 @@ class AppLocalizationsRu extends AppLocalizations {
       'Создайте новый ключ или добавьте ключ с другого устройства, отсканировав его QR-код.';
 
   @override
+  String get selectBoardHint => 'Выберите доску в списке слева';
+
+  @override
   String get keyNameLabel => 'Название, например «Работа»';
 
   @override

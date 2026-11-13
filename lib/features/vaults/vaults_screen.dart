@@ -19,7 +19,14 @@ import 'import_vault_screen.dart';
 import 'share_vault_sheet.dart';
 import 'vaults_controller.dart';
 
-/// Главный экран: список ключей баз.
+/// Порог ширины окна, начиная с которого список досок и открытая лента
+/// показываются рядом в двух панелях (Master-Detail).
+const double kWideScreenBreakpoint = 840;
+
+/// Ширина левой панели со списком досок на широком экране.
+const double _kMasterPaneWidth = 360;
+
+/// Главный экран: список ключей баз (на широком мониторе — вместе с открытой лентой).
 class VaultsScreen extends StatefulWidget {
   const VaultsScreen({super.key});
 
@@ -29,6 +36,9 @@ class VaultsScreen extends StatefulWidget {
 
 class _VaultsScreenState extends State<VaultsScreen> {
   bool _didOpenPinned = false;
+
+  /// Идентификатор выбранной доски в двухпанельном режиме (`VaultsController.idOfKey`).
+  String? _selectedId;
 
   @override
   void didChangeDependencies() {
@@ -47,15 +57,88 @@ class _VaultsScreenState extends State<VaultsScreen> {
 
     if (pinnedVault != null || pinnedBoard != null) {
       _didOpenPinned = true;
+      final isWide = MediaQuery.sizeOf(context).width >= kWideScreenBreakpoint;
+      if (isWide) {
+        if (pinnedVault != null) {
+          final connections = context.read<CloudConnectionService>();
+          if (connections.isSupported(pinnedVault.provider) &&
+              connections.isConnected(pinnedVault.provider)) {
+            _selectedId = VaultsController.idOfKey(pinnedVault);
+            return;
+          }
+        } else if (pinnedBoard != null) {
+          _selectedId = VaultsController.idOfKey(pinnedBoard);
+          return;
+        }
+      }
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         if (ModalRoute.of(context)?.isCurrent != true) return;
         if (pinnedVault != null) {
-          openVault(context, pinnedVault);
+          _selectVault(pinnedVault);
         } else if (pinnedBoard != null) {
-          openBoard(context, pinnedBoard);
+          _selectBoard(pinnedBoard);
         }
       });
+    }
+  }
+
+  /// Находит актуальный объект доски ([VaultKey] или [ReaderKey]) по [_selectedId].
+  Object? _resolveSelected(
+    List<VaultKey> vaults,
+    List<ReaderKey> boards,
+  ) {
+    final id = _selectedId;
+    if (id == null) return null;
+    for (final v in vaults) {
+      if (VaultsController.idOfKey(v) == id) return v;
+    }
+    for (final b in boards) {
+      if (VaultsController.idOfKey(b) == id) return b;
+    }
+    return null;
+  }
+
+  Future<void> _selectVault(VaultKey vault) async {
+    final isWide = MediaQuery.sizeOf(context).width >= kWideScreenBreakpoint;
+    if (!isWide) {
+      await openVault(context, vault);
+      return;
+    }
+    final connections = context.read<CloudConnectionService>();
+    final messenger = ScaffoldMessenger.of(context);
+    if (!connections.isSupported(vault.provider)) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.providerNotSupported(vault.provider.title)),
+        ),
+      );
+      return;
+    }
+    if (!connections.isConnected(vault.provider)) {
+      final connected = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (_) => ConnectCloudScreen(provider: vault.provider),
+        ),
+      );
+      if (connected != true || !mounted) return;
+    }
+    final nextId = VaultsController.idOfKey(vault);
+    if (_selectedId != nextId) {
+      setState(() => _selectedId = nextId);
+    }
+    unawaited(context.read<VaultsController>().refreshSettings(only: vault));
+  }
+
+  Future<void> _selectBoard(ReaderKey board) async {
+    final isWide = MediaQuery.sizeOf(context).width >= kWideScreenBreakpoint;
+    if (!isWide) {
+      await openBoard(context, board);
+      return;
+    }
+    final nextId = VaultsController.idOfKey(board);
+    if (_selectedId != nextId) {
+      setState(() => _selectedId = nextId);
     }
   }
 
@@ -65,40 +148,115 @@ class _VaultsScreenState extends State<VaultsScreen> {
     final controller = context.watch<VaultsController>();
     final vaults = controller.vaults;
     final boards = controller.boards;
+    final isWide = MediaQuery.sizeOf(context).width >= kWideScreenBreakpoint;
+    final selected = isWide ? _resolveSelected(vaults, boards) : null;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Transmitter'),
-        actions: [
-          // Оформление, язык и место на устройстве — в «Настройках».
-          IconButton(
-            tooltip: l.settings,
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => showSettingsSheet(context),
-          ),
-          IconButton(
-            tooltip: l.addKey,
-            icon: const Icon(Icons.qr_code_scanner),
-            onPressed: () => _import(context),
-          ),
-        ],
+    Widget buildList() {
+      if (vaults.isEmpty && boards.isEmpty) {
+        return const _EmptyState();
+      }
+      return ListView.separated(
+        itemCount: vaults.length + boards.length,
+        separatorBuilder: (_, _) => const Divider(height: 1),
+        itemBuilder: (context, i) {
+          if (i < vaults.length) {
+            final v = vaults[i];
+            return _VaultTile(
+              vault: v,
+              selected:
+                  isWide && _selectedId == VaultsController.idOfKey(v),
+              onTap: () => _selectVault(v),
+            );
+          } else {
+            final b = boards[i - vaults.length];
+            return _BoardTile(
+              board: b,
+              selected:
+                  isWide && _selectedId == VaultsController.idOfKey(b),
+              onTap: () => _selectBoard(b),
+            );
+          }
+        },
+      );
+    }
+
+    final appBarActions = [
+      // Оформление, язык и место на устройстве — в «Настройках».
+      IconButton(
+        tooltip: l.settings,
+        icon: const Icon(Icons.settings_outlined),
+        onPressed: () => showSettingsSheet(context),
       ),
-      body: ContentWidth(
-        child: vaults.isEmpty && boards.isEmpty
-            ? const _EmptyState()
-            : ListView.separated(
-                itemCount: vaults.length + boards.length,
-                separatorBuilder: (_, _) => const Divider(height: 1),
-                itemBuilder: (context, i) => i < vaults.length
-                    ? _VaultTile(vault: vaults[i])
-                    : _BoardTile(board: boards[i - vaults.length]),
+      IconButton(
+        tooltip: l.addKey,
+        icon: const Icon(Icons.qr_code_scanner),
+        onPressed: () => _import(context),
+      ),
+    ];
+
+    final fab = FloatingActionButton.extended(
+      icon: const Icon(Icons.add),
+      label: Text(l.newKey),
+      onPressed: () => _create(context),
+    );
+
+    if (!isWide) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Transmitter'),
+          actions: appBarActions,
+        ),
+        body: ContentWidth(child: buildList()),
+        floatingActionButton: fab,
+      );
+    }
+
+    return Row(
+      children: [
+        SizedBox(
+          width: _kMasterPaneWidth,
+          child: Scaffold(
+            appBar: AppBar(
+              title: const Text('Transmitter'),
+              actions: appBarActions,
+            ),
+            body: buildList(),
+            floatingActionButton: fab,
+          ),
+        ),
+        const VerticalDivider(width: 1, thickness: 1),
+        Expanded(
+          child: switch (selected) {
+            VaultKey v => FeedScreen.vault(
+              v,
+              key: ValueKey(VaultsController.idOfKey(v)),
+              embedded: true,
+            ),
+            ReaderKey b => FeedScreen.board(
+              b,
+              key: ValueKey(VaultsController.idOfKey(b)),
+              embedded: true,
+              liveLabel: (context) =>
+                  context.watch<VaultsController>().boardLabel(b),
+              onOwnerLabel: (label) => controller.applyOwnerLabel(b, label),
+            ),
+            _ => Scaffold(
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Text(
+                    l.selectBoardHint,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
               ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        icon: const Icon(Icons.add),
-        label: Text(l.newKey),
-        onPressed: () => _create(context),
-      ),
+            ),
+          },
+        ),
+      ],
     );
   }
 
@@ -119,9 +277,9 @@ class _VaultsScreenState extends State<VaultsScreen> {
     if (!context.mounted) return;
     switch (key) {
       case VaultKey():
-        await openVault(context, key);
+        await _selectVault(key);
       case ReaderKey():
-        await openBoard(context, key);
+        await _selectBoard(key);
     }
   }
 }
@@ -171,9 +329,15 @@ Future<void> openBoard(BuildContext context, ReaderKey key) {
 }
 
 class _VaultTile extends StatelessWidget {
-  const _VaultTile({required this.vault});
+  const _VaultTile({
+    required this.vault,
+    this.selected = false,
+    this.onTap,
+  });
 
   final VaultKey vault;
+  final bool selected;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -183,7 +347,10 @@ class _VaultTile extends StatelessWidget {
     final connected = context.watch<CloudConnectionService>().isConnected(
       vault.provider,
     );
+    final colorScheme = Theme.of(context).colorScheme;
     return ListTile(
+      selected: selected,
+      selectedTileColor: colorScheme.secondaryContainer.withValues(alpha: 0.5),
       leading: CircleAvatar(
         child: Icon(vault.isEncrypted ? Icons.key : Icons.folder_open_outlined),
       ),
@@ -201,7 +368,7 @@ class _VaultTile extends StatelessWidget {
               child: Icon(
                 Icons.push_pin,
                 size: 16,
-                color: Theme.of(context).colorScheme.primary,
+                color: colorScheme.primary,
               ),
             ),
         ],
@@ -213,7 +380,7 @@ class _VaultTile extends StatelessWidget {
                   ? l.vaultSubtitleNotConnected(vault.provider.title)
                   : l.vaultSubtitleNotConnectedPlain(vault.provider.title)),
       ),
-      onTap: () => openVault(context, vault),
+      onTap: onTap ?? () => openVault(context, vault),
       trailing: PopupMenuButton<_VaultAction>(
         onSelected: (action) => _onAction(context, action),
         itemBuilder: (_) => [
@@ -401,16 +568,25 @@ enum _VaultAction { share, board, pin, rename, fileSize, remove }
 
 /// Публичная доска, которую на этом устройстве можно только читать.
 class _BoardTile extends StatelessWidget {
-  const _BoardTile({required this.board});
+  const _BoardTile({
+    required this.board,
+    this.selected = false,
+    this.onTap,
+  });
 
   final ReaderKey board;
+  final bool selected;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final controller = context.watch<VaultsController>();
     final isPinned = controller.isPinned(board);
+    final colorScheme = Theme.of(context).colorScheme;
     return ListTile(
+      selected: selected,
+      selectedTileColor: colorScheme.secondaryContainer.withValues(alpha: 0.5),
       leading: const CircleAvatar(child: Icon(Icons.public)),
       title: Row(
         children: [
@@ -426,13 +602,13 @@ class _BoardTile extends StatelessWidget {
               child: Icon(
                 Icons.push_pin,
                 size: 16,
-                color: Theme.of(context).colorScheme.primary,
+                color: colorScheme.primary,
               ),
             ),
         ],
       ),
       subtitle: Text(l.boardSubtitle(board.provider.title)),
-      onTap: () => openBoard(context, board),
+      onTap: onTap ?? () => openBoard(context, board),
       trailing: PopupMenuButton<_BoardAction>(
         onSelected: (action) => _onAction(context, action),
         itemBuilder: (_) => [

@@ -5,22 +5,30 @@ import 'package:transmitter/app/cache_settings.dart';
 import 'package:transmitter/app/app_lock_controller.dart';
 import 'package:transmitter/app/language_controller.dart';
 import 'package:transmitter/app/theme_controller.dart';
+import 'package:transmitter/app/vault_session_factory.dart';
+import 'package:transmitter/core/files/external_opener.dart';
+import 'package:transmitter/core/files/file_transfer_service.dart';
+import 'package:transmitter/core/files/media_picker.dart';
 import 'package:transmitter/core/persistence/blob_cache.dart';
 import 'package:transmitter/core/device/device_identity.dart';
 import 'package:transmitter/core/persistence/key_value_store.dart';
+import 'package:transmitter/core/share/outgoing_share.dart';
 import 'package:transmitter/core/storage/cloud_connection_service.dart';
 import 'package:transmitter/core/storage/cloud_provider_adapter.dart';
 import 'package:transmitter/core/errors/app_error.dart';
 import 'package:transmitter/core/storage/cloud_provider_id.dart';
 import 'package:transmitter/core/storage/cloud_storage.dart';
+import 'package:transmitter/core/storage/in_memory_cloud_storage.dart';
 import 'package:transmitter/core/vault/vault_key.dart';
 import 'package:transmitter/core/vault/vault_key_store.dart';
 import 'package:transmitter/data/vault_settings.dart';
+import 'package:transmitter/features/feed/feed_screen.dart';
 import 'package:transmitter/features/vaults/vaults_controller.dart';
 import 'package:transmitter/features/vaults/vaults_screen.dart';
 import 'package:transmitter/l10n/app_localizations.dart';
 
 import '../core/device_identity_test.dart' show FakeSuggester;
+import '../support/fake_file_transfer_service.dart';
 
 /// Облачные настройки баз в памяти; [fail] — облако недоступно.
 class FakeSettings implements VaultSettingsRemote {
@@ -198,4 +206,114 @@ void main() {
     expect(find.byIcon(Icons.push_pin), findsNothing);
     expect(vaults.isPinned(vaults.vaults.first), isFalse);
   });
+
+  testWidgets('широкий монитор: список досок и открытая лента рядом (Master-Detail)', (tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final store = InMemoryKeyValueStore();
+    final storage = InMemoryCloudStorage();
+    final connections = CloudConnectionService(
+      CloudProviderRegistry([_FakeAdapter(storage)]),
+      store,
+    );
+    await connections.connect(CloudProviderId.dropbox);
+
+    final settings = FakeSettings();
+    final vaults = VaultsController(VaultKeyStore(store), settings: settings);
+    await vaults.create(
+      label: 'Работа',
+      provider: CloudProviderId.dropbox,
+      isEncrypted: false,
+    );
+    await vaults.create(
+      label: 'Личное',
+      provider: CloudProviderId.dropbox,
+      isEncrypted: false,
+    );
+
+    final sessions = VaultSessionFactory(
+      connections: connections,
+      deviceName: () => 'ПК',
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: connections),
+          ChangeNotifierProvider.value(value: vaults),
+          Provider<VaultSessionFactory>.value(value: sessions),
+          Provider<FileTransferService>(create: (_) => FakeFileTransferService()),
+          Provider<MediaPicker>.value(value: const NoMediaPicker()),
+          Provider<ExternalOpener>.value(value: const NoExternalOpener()),
+          Provider<ShareSender>.value(value: const DisabledShareSender()),
+          ChangeNotifierProvider(
+            create: (_) =>
+                DeviceIdentity(store, FakeSuggester(() async => 'ПК')),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => CacheSettings(const NoBlobCache(), store),
+          ),
+        ],
+        child: const MaterialApp(
+          locale: Locale('ru'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: VaultsScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Изначально справа подсказка выбора доски, а слева — список.
+    expect(find.text('Выберите доску в списке слева'), findsOneWidget);
+    expect(find.byType(VerticalDivider), findsOneWidget);
+    expect(find.text('Работа'), findsOneWidget);
+    expect(find.text('Личное'), findsOneWidget);
+
+    // Нажимаем на доску «Работа» — она открывается справа без перехода на новый экран.
+    await tester.tap(find.text('Работа'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.byType(FeedScreen), findsOneWidget);
+    expect(find.text('Выберите доску в списке слева'), findsNothing);
+    // Список слева по-прежнему виден рядом с лентой.
+    expect(find.text('Личное'), findsOneWidget);
+    // Стрелки «Назад» во встроенной ленте нет.
+    expect(find.byIcon(Icons.arrow_back), findsNothing);
+
+    // Переключаемся на доску «Личное».
+    await tester.tap(find.text('Личное'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.byType(FeedScreen), findsOneWidget);
+    expect(find.text('Личное'), findsNWidgets(2)); // в списке и в заголовке ленты
+  });
+}
+
+class _FakeAdapter implements CloudProviderAdapter {
+  _FakeAdapter(this.storage);
+
+  final CloudStorage storage;
+
+  @override
+  CloudProviderId get id => CloudProviderId.dropbox;
+
+  @override
+  bool get isConfigured => true;
+
+  @override
+  Future<String> signIn() async => 'token';
+
+  @override
+  CloudStorage createStorage(
+    String credentials, {
+    required CredentialsChanged onCredentialsChanged,
+  }) => storage;
 }

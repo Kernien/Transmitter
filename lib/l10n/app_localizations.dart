@@ -374,6 +374,12 @@ abstract class AppLocalizations {
   /// **'Create a new key or add a key from another device by scanning its QR code.'**
   String get vaultsEmpty;
 
+  /// No description provided for @selectBoardHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a board on the left'**
+  String get selectBoardHint;
+
   /// No description provided for @keyNameLabel.
   ///
   /// In en, this message translates to:

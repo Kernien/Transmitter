@@ -24,7 +24,7 @@ import 'widgets/post_tile.dart';
 /// Лента постов одной базы или публичной доски.
 class FeedScreen extends StatefulWidget {
   /// База владельца: всё можно.
-  FeedScreen.vault(VaultKey vault, {super.key})
+  FeedScreen.vault(VaultKey vault, {super.key, this.embedded = false})
     : label = vault.label,
       pollInterval = AppConfig.pollInterval,
       liveLabel = null,
@@ -41,6 +41,7 @@ class FeedScreen extends StatefulWidget {
     super.key,
     this.liveLabel,
     this.onOwnerLabel,
+    this.embedded = false,
   }) : label = board.label,
        pollInterval = AppConfig.boardPollInterval,
        boardKey = board,
@@ -51,6 +52,8 @@ class FeedScreen extends StatefulWidget {
   final void Function(String ownerLabel)? onOwnerLabel;
   final Duration pollInterval;
   final Object? boardKey;
+  /// Встроена ли лента в правую панель широкого экрана (без кнопки «Назад»).
+  final bool embedded;
   final Future<PostRepository> Function(VaultSessionFactory) _open;
 
   @override
@@ -69,13 +72,21 @@ class _FeedScreenState extends State<FeedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
+    final exportTexts = ExportTexts(
+      textFileName: l.exportTextFileName,
+      fileNote: l.exportFileNote,
+    );
     return FutureBuilder<PostRepository>(
       future: _repository,
       builder: (context, snapshot) {
         final repository = snapshot.data;
         if (repository == null) {
           return Scaffold(
-            appBar: AppBar(title: Text(_title)),
+            appBar: AppBar(
+              automaticallyImplyLeading: !widget.embedded,
+              title: Text(_title),
+            ),
             body: Center(
               child: snapshot.hasError
                   ? Text(
@@ -96,10 +107,7 @@ class _FeedScreenState extends State<FeedScreen> {
               opener: context.read<ExternalOpener>(),
               share: context.read<ShareSender>(),
               pollInterval: widget.pollInterval,
-              exportTexts: ExportTexts(
-                textFileName: context.l10n.exportTextFileName,
-                fileNote: context.l10n.exportFileNote,
-              ),
+              exportTexts: exportTexts,
             )..start();
             final onOwnerLabel = widget.onOwnerLabel;
             if (onOwnerLabel != null && repository is PublicBoardRepository) {
@@ -110,7 +118,11 @@ class _FeedScreenState extends State<FeedScreen> {
             }
             return feed;
           },
-          child: _FeedView(title: _title, boardKey: widget.boardKey),
+          child: _FeedView(
+            title: _title,
+            boardKey: widget.boardKey,
+            embedded: widget.embedded,
+          ),
         );
       },
     );
@@ -118,10 +130,15 @@ class _FeedScreenState extends State<FeedScreen> {
 }
 
 class _FeedView extends StatelessWidget {
-  const _FeedView({required this.title, this.boardKey});
+  const _FeedView({
+    required this.title,
+    this.boardKey,
+    this.embedded = false,
+  });
 
   final String title;
   final Object? boardKey;
+  final bool embedded;
 
   @override
   Widget build(BuildContext context) {
@@ -148,6 +165,7 @@ class _FeedView extends StatelessWidget {
     final isReadOnly = context.read<FeedController>().isReadOnly;
 
     return AppBar(
+      automaticallyImplyLeading: !embedded,
       title: Text(title),
       actions: [
         if (isReadOnly)

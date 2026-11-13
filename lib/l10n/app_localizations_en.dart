@@ -172,6 +172,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Create a new key or add a key from another device by scanning its QR code.';
 
   @override
+  String get selectBoardHint => 'Select a board on the left';
+
+  @override
   String get keyNameLabel => 'Name, e.g. “Work”';
 
   @override

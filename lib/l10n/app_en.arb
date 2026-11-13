@@ -60,6 +60,7 @@
   "removeKeyTitle": "Remove key?",
   "removeKeyText": "The key will be removed from this device only. The data in the cloud stays. If you have no copy of the key, access to the vault will be lost.",
   "vaultsEmpty": "Create a new key or add a key from another device by scanning its QR code.",
+  "selectBoardHint": "Select a board on the left",
 
   "keyNameLabel": "Name, e.g. “Work”",
   "cloudLabel": "Cloud",
