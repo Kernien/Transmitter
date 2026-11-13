@@ -230,6 +230,62 @@ void main() {
       expect(post.folder!.files[i].relativePath, 'sub/file_$i.txt');
     }
   });
+
+  test('refresh во время загрузки папки с тем же именем не удаляет pending-карточку из ленты', () async {
+    final delayedCloud = _TrackingCloudStorage();
+    final repo = EncryptedCloudPostRepository(
+      storage: delayedCloud,
+      vaultId: 'v',
+      cipher: AesGcmCipher(List<int>.filled(32, 5)),
+      deviceName: 'PC',
+    );
+    final sender = FeedController(
+      repo,
+      files: files,
+      pollInterval: const Duration(hours: 1),
+    );
+
+    final folder = PickedFolder(
+      name: 'Vault',
+      files: [
+        PickedFile(
+          name: 'doc.md',
+          bytes: Uint8List.fromList(utf8.encode('# Doc')),
+          relativePath: 'doc.md',
+        ),
+      ],
+    );
+
+    // Первая папка 'Vault' уже есть на доске.
+    await sender.sendFolder(folder);
+    expect(sender.posts, hasLength(1));
+    expect(sender.posts.single.folder?.name, 'Vault');
+
+    // Начинаем отправку второй папки с тем же именем 'Vault'.
+    final secondSend = sender.sendFolder(folder);
+    expect(
+      sender.posts.where((p) => p.id.startsWith('pending_')),
+      hasLength(1),
+    );
+
+    // Во время отправки срабатывает фоновый refresh().
+    await sender.refresh();
+
+    // Pending-пост должен остаться в ленте до завершения загрузки!
+    expect(
+      sender.posts.where((p) => p.id.startsWith('pending_')),
+      hasLength(1),
+    );
+
+    await secondSend;
+    expect(
+      sender.posts.where((p) => p.id.startsWith('pending_')),
+      isEmpty,
+    );
+    expect(sender.posts, hasLength(2));
+
+    sender.dispose();
+  });
 }
 
 class _TrackingCloudStorage extends InMemoryCloudStorage {

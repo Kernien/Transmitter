@@ -270,23 +270,12 @@ class FeedController extends ChangeNotifier {
       _error = _repository.backgroundError;
 
       // Сохраняем локальные временные записи, которые ещё загружаются.
+      // Важно не удалять их по совпадению имени файла или папки с уже
+      // существующими в ленте старыми постами, иначе при повторной отправке
+      // папки или файла с тем же именем карточка загрузки пропадёт из ленты.
       final pending = _posts.where((p) => p.id.startsWith('pending_')).toList();
-      final remoteAttachmentNames = remote
-          .where((p) => p.attachment != null)
-          .map((p) => p.attachment!.fileName)
-          .toSet();
-      final remoteFolderNames = remote
-          .where((p) => p.folder != null)
-          .map((p) => p.folder!.name)
-          .toSet();
       final activePending = pending.where((p) {
-        final name = p.attachment?.fileName;
-        if (name != null && remoteAttachmentNames.contains(name)) return false;
-        final folderName = p.folder?.name;
-        if (folderName != null && remoteFolderNames.contains(folderName)) {
-          return false;
-        }
-        return true;
+        return _transfers.containsKey(p.id) && !_cancelledTransfers.contains(p.id);
       }).toList();
 
       _posts = [...remote, ...activePending];
@@ -382,7 +371,12 @@ class FeedController extends ChangeNotifier {
         },
         isCancelled: () => isTransferCancelled(tempId),
       );
-      _posts = [for (final p in _posts) p.id == tempId ? realPost : p];
+      final hasPending = _posts.any((p) => p.id == tempId);
+      if (hasPending) {
+        _posts = [for (final p in _posts) p.id == tempId ? realPost : p];
+      } else {
+        _posts = [..._posts.where((p) => p.id != realPost.id), realPost];
+      }
       _transfers.remove(tempId);
       _error = null;
       _notify();
@@ -621,7 +615,12 @@ class FeedController extends ChangeNotifier {
                 picked.bytes.length <= attachmentPreviewAutoLimit) {
           previews.remember(realAttachment.id, picked.bytes);
         }
+        final hasPending = _posts.any((p) => p.id == tempId);
+      if (hasPending) {
         _posts = [for (final p in _posts) p.id == tempId ? realPost : p];
+      } else {
+        _posts = [..._posts.where((p) => p.id != realPost.id), realPost];
+      }
         _transfers.remove(tempId);
         _cancelledTransfers.remove(tempId);
         _notify();
@@ -746,7 +745,12 @@ class FeedController extends ChangeNotifier {
                 file.bytes.length <= attachmentPreviewAutoLimit) {
           previews.remember(realAttachment.id, file.bytes);
         }
+        final hasPending = _posts.any((p) => p.id == tempId);
+      if (hasPending) {
         _posts = [for (final p in _posts) p.id == tempId ? realPost : p];
+      } else {
+        _posts = [..._posts.where((p) => p.id != realPost.id), realPost];
+      }
         _transfers.remove(tempId);
         _cancelledTransfers.remove(tempId);
         _notify();
