@@ -31,7 +31,13 @@ Future<PickedFolder?> readDirectoryFromPath(
 
     final fileName = entity.uri.pathSegments.last;
     final mimeType = lookupMimeType(fileName);
-    final size = entity.lengthSync();
+    int size;
+    try {
+      size = entity.lengthSync();
+    } on FileSystemException {
+      // Пропускаем недоступные или удалённые временные файлы (например, блокировка ОС).
+      continue;
+    }
 
     if (size > maxSize) {
       files.add(
@@ -45,24 +51,13 @@ Future<PickedFolder?> readDirectoryFromPath(
       continue;
     }
 
-    if (size > inMemoryThreshold) {
-      files.add(
-        PickedFile.fromStream(
-          name: fileName,
-          size: size,
-          openRead: entity.openRead,
-          mimeType: mimeType,
-          relativePath: rel,
-        ),
-      );
-      continue;
-    }
-
-    final bytes = await entity.readAsBytes();
+    // Потоковое чтение по требованию: не читаем все файлы сразу в память
+    // при сканировании каталога, благодаря чему папка появляется на доске мгновенно.
     files.add(
-      PickedFile(
+      PickedFile.fromStream(
         name: fileName,
-        bytes: bytes,
+        size: size,
+        openRead: entity.openRead,
         mimeType: mimeType,
         relativePath: rel,
       ),

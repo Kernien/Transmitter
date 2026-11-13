@@ -125,6 +125,8 @@
   "folderEmpty": "Папка пуста",
   "folderTitle": "Папка",
   "deleteFolderTitle": "Удалить папку?",
+  "cancelUpload": "Отменить отправку",
+  "uploadCancelled": "Отправка отменена",
   "attachMediaTooltip": "Фото или видео из Галереи (до {limit})",
   "attachMediaTooltipUnlimited": "Фото или видео из Галереи",
   "composeHint": "Ссылка или текст",

@@ -68,6 +68,11 @@ void main() {
           relativePath: 'README.md',
         ),
         PickedFile(
+          name: 'empty.txt',
+          bytes: Uint8List(0),
+          relativePath: 'empty.txt',
+        ),
+        PickedFile(
           name: 'code.dart',
           bytes: Uint8List.fromList(utf8.encode('void main() {}')),
           relativePath: 'src/code.dart',
@@ -80,7 +85,7 @@ void main() {
     expect(sender.posts, hasLength(1));
     expect(sender.posts.single.kind, PostKind.folder);
     expect(sender.posts.single.folder?.name, 'archive_project');
-    expect(sender.posts.single.folder?.fileCount, 2);
+    expect(sender.posts.single.folder?.fileCount, 3);
 
     await receiver.refresh();
     expect(receiver.posts, hasLength(1));
@@ -92,8 +97,8 @@ void main() {
     expect(saved, isTrue);
     expect(files.savedFolders, hasLength(1));
     expect(files.savedFolders.single.$1, 'archive_project');
-    expect(files.savedFolders.single.$2, hasLength(2));
-    expect(files.saved, hasLength(2));
+    expect(files.savedFolders.single.$2, hasLength(3));
+    expect(files.saved, hasLength(3));
 
     // Сохранение отдельного файла
     final savedEntry = await receiver.saveFolderEntry(post.folder!.files.first);
@@ -104,7 +109,7 @@ void main() {
     receiver.dispose();
   });
 
-  testWidgets('отображение карточки папки в ленте и переход в FolderViewerScreen', (tester) async {
+  testWidgets('отображение структуры папок и навигация в FolderViewerScreen', (tester) async {
     final feed = controllerFor('PC');
     final post = Post(
       id: 'p1',
@@ -136,17 +141,62 @@ void main() {
 
     expect(find.text('documents'), findsOneWidget);
     expect(find.text('архив документов'), findsOneWidget);
-    expect(find.text('report.txt'), findsOneWidget);
-    expect(find.text('sub/data.csv'), findsOneWidget);
 
     // Тап на карточку папки открывает FolderViewerScreen
     await tester.tap(find.text('documents'));
     await tester.pumpAndSettle();
 
     expect(find.byType(FolderViewerScreen), findsOneWidget);
+    // На верхнем уровне виден report.txt и подпапка sub
     expect(find.text('report.txt'), findsOneWidget);
-    expect(find.text('sub/data.csv'), findsOneWidget);
+    expect(find.text('sub'), findsOneWidget);
+
+    // Тап по подпапке sub углубляется внутрь
+    await tester.tap(find.text('sub'));
+    await tester.pumpAndSettle();
+
+    // Внутри sub виден data.csv, а report.txt скрыт
+    expect(find.text('data.csv'), findsOneWidget);
+    expect(find.text('report.txt'), findsNothing);
+
+    // Возврат назад стрелкой
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pumpAndSettle();
+
+    // Снова на корневом уровне
+    expect(find.text('report.txt'), findsOneWidget);
+    expect(find.text('sub'), findsOneWidget);
 
     feed.dispose();
+  });
+
+  test('отмена отправки папки через cancelTransfer', () async {
+    final sender = controllerFor('Phone');
+
+    final folder = PickedFolder(
+      name: 'large_folder',
+      files: [
+        PickedFile(
+          name: 'large.bin',
+          bytes: Uint8List(1024 * 1024),
+          relativePath: 'large.bin',
+        ),
+      ],
+    );
+
+    // Начинаем отправку напрямую
+    final sendFuture = sender.sendFolder(folder);
+
+    // pendingPost добавляется сразу в sendFolder
+    final pendingPost =
+        sender.posts.firstWhere((p) => p.id.startsWith('pending_'));
+    sender.cancelTransfer(pendingPost.id);
+
+    final result = await sendFuture;
+    expect(result, isFalse);
+    expect(sender.posts, isEmpty);
+    expect(sender.error, isNull);
+
+    sender.dispose();
   });
 }

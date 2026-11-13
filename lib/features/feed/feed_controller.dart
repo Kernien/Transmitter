@@ -54,6 +54,7 @@ class FeedController extends ChangeNotifier {
   bool _bulkBusy = false;
   final Set<String> _saving = {};
   final Map<String, TransferProgress> _transfers = {};
+  final Set<String> _cancelledTransfers = {};
   final Set<String> _selected = {};
   Object? _error;
 
@@ -69,6 +70,29 @@ class FeedController extends ChangeNotifier {
 
   /// Прогресс передачи файла для этого поста (`null`, если передача не идёт).
   TransferProgress? transferProgress(Post post) => _transfers[post.id];
+
+  /// Проверяет, была ли отменена передача.
+  bool isTransferCancelled(String id) => _cancelledTransfers.contains(id);
+
+  /// Отменяет передачу конкретного файла или папки.
+  void cancelTransfer(String id) {
+    _cancelledTransfers.add(id);
+    _transfers.remove(id);
+    _posts = _posts.where((p) => p.id != id).toList();
+    _sending = _transfers.isNotEmpty;
+    _notify();
+  }
+
+  /// Отменяет текущую отправку.
+  void cancelActiveSend() {
+    for (final id in _transfers.keys.toList()) {
+      _cancelledTransfers.add(id);
+    }
+    _transfers.clear();
+    _posts = _posts.where((p) => !p.id.startsWith('pending_')).toList();
+    _sending = false;
+    _notify();
+  }
 
   // ---- Выделение нескольких постов ----
 
@@ -168,10 +192,7 @@ class FeedController extends ChangeNotifier {
 
   Future<void> _shareMany(List<Post> posts) async {
     final ordered = [...posts]
-      ..sort((a, b) {
-        final byTime = a.createdAt.compareTo(b.createdAt);
-        return byTime != 0 ? byTime : a.id.compareTo(b.id);
-      });
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
     final text = ordered
         .map((p) => p.text)
         .where((t) => t.isNotEmpty)
@@ -359,6 +380,7 @@ class FeedController extends ChangeNotifier {
           _transfers[tempId] = tracker.update(count, total);
           _notify();
         },
+        isCancelled: () => isTransferCancelled(tempId),
       );
       _posts = [for (final p in _posts) p.id == tempId ? realPost : p];
       _transfers.remove(tempId);
@@ -368,10 +390,13 @@ class FeedController extends ChangeNotifier {
     } catch (e) {
       _posts = _posts.where((p) => p.id != tempId).toList();
       _transfers.remove(tempId);
-      _error = e;
+      if (e is! TransferCancelledException && !isTransferCancelled(tempId)) {
+        _error = e;
+      }
       _notify();
       return false;
     } finally {
+      _cancelledTransfers.remove(tempId);
       _sending = _transfers.isNotEmpty;
       _notify();
     }
@@ -533,6 +558,13 @@ class FeedController extends ChangeNotifier {
     Object? lastError;
     for (final item in queue) {
       final tempId = item.tempId;
+      if (isTransferCancelled(tempId)) {
+        _cancelledTransfers.remove(tempId);
+        _transfers.remove(tempId);
+        _posts = _posts.where((p) => p.id != tempId).toList();
+        _notify();
+        continue;
+      }
       try {
         if (item.size > _repository.maxFileSize) {
           throw FileTooLargeException(item.size, _repository.maxFileSize);
@@ -541,6 +573,13 @@ class FeedController extends ChangeNotifier {
           item.file,
           maxSize: _repository.maxFileSize,
         );
+        if (isTransferCancelled(tempId)) {
+          _cancelledTransfers.remove(tempId);
+          _transfers.remove(tempId);
+          _posts = _posts.where((p) => p.id != tempId).toList();
+          _notify();
+          continue;
+        }
         if (item.isImage &&
             picked.hasBytesInMemory &&
             picked.bytes.length <= attachmentPreviewAutoLimit) {
@@ -556,6 +595,9 @@ class FeedController extends ChangeNotifier {
                 bytes: picked.bytes,
                 mimeType: picked.mimeType,
                 onProgress: (count, total) {
+                  if (isTransferCancelled(tempId)) {
+                    throw const TransferCancelledException();
+                  }
                   _transfers[tempId] = tracker.update(count, total);
                   _notify();
                 },
@@ -566,6 +608,9 @@ class FeedController extends ChangeNotifier {
                 size: picked.size,
                 mimeType: picked.mimeType,
                 onProgress: (count, total) {
+                  if (isTransferCancelled(tempId)) {
+                    throw const TransferCancelledException();
+                  }
                   _transfers[tempId] = tracker.update(count, total);
                   _notify();
                 },
@@ -578,12 +623,16 @@ class FeedController extends ChangeNotifier {
         }
         _posts = [for (final p in _posts) p.id == tempId ? realPost : p];
         _transfers.remove(tempId);
+        _cancelledTransfers.remove(tempId);
         _notify();
         sent++;
       } catch (e) {
         _posts = _posts.where((p) => p.id != tempId).toList();
         _transfers.remove(tempId);
-        lastError = e is FileError ? e : FileError(item.file.name, e);
+        if (e is! TransferCancelledException && !isTransferCancelled(tempId)) {
+          lastError = e is FileError ? e : FileError(item.file.name, e);
+        }
+        _cancelledTransfers.remove(tempId);
         _notify();
       }
     }
@@ -648,6 +697,13 @@ class FeedController extends ChangeNotifier {
     for (final item in queue) {
       final tempId = item.tempId;
       final file = item.file;
+      if (isTransferCancelled(tempId)) {
+        _cancelledTransfers.remove(tempId);
+        _transfers.remove(tempId);
+        _posts = _posts.where((p) => p.id != tempId).toList();
+        _notify();
+        continue;
+      }
       try {
         if (file.isTooLarge || file.size > _repository.maxFileSize) {
           throw FileTooLargeException(file.size, _repository.maxFileSize);
@@ -663,6 +719,9 @@ class FeedController extends ChangeNotifier {
                 mimeType: file.mimeType,
                 caption: item.caption,
                 onProgress: (count, total) {
+                  if (isTransferCancelled(tempId)) {
+                    throw const TransferCancelledException();
+                  }
                   _transfers[tempId] = tracker.update(count, total);
                   _notify();
                 },
@@ -674,6 +733,9 @@ class FeedController extends ChangeNotifier {
                 mimeType: file.mimeType,
                 caption: item.caption,
                 onProgress: (count, total) {
+                  if (isTransferCancelled(tempId)) {
+                    throw const TransferCancelledException();
+                  }
                   _transfers[tempId] = tracker.update(count, total);
                   _notify();
                 },
@@ -686,14 +748,18 @@ class FeedController extends ChangeNotifier {
         }
         _posts = [for (final p in _posts) p.id == tempId ? realPost : p];
         _transfers.remove(tempId);
+        _cancelledTransfers.remove(tempId);
         _notify();
         sent++;
       } catch (e) {
         _posts = _posts.where((p) => p.id != tempId).toList();
         _transfers.remove(tempId);
-        lastError = (picked.length > 1 && e is! FileError)
-            ? FileError(file.name, e)
-            : e;
+        if (e is! TransferCancelledException && !isTransferCancelled(tempId)) {
+          lastError = (picked.length > 1 && e is! FileError)
+              ? FileError(file.name, e)
+              : e;
+        }
+        _cancelledTransfers.remove(tempId);
         _notify();
       }
     }

@@ -431,6 +431,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get deleteFolderTitle => 'Удалить папку?';
 
   @override
+  String get cancelUpload => 'Отменить отправку';
+
+  @override
+  String get uploadCancelled => 'Отправка отменена';
+
+  @override
   String attachMediaTooltip(String limit) {
     return 'Фото или видео из Галереи (до $limit)';
   }

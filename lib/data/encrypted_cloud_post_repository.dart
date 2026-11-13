@@ -363,7 +363,11 @@ class EncryptedCloudPostRepository implements PostRepository {
     required List<PickedFile> files,
     String caption = '',
     ProgressCallback? onProgress,
+    bool Function()? isCancelled,
   }) async {
+    if (isCancelled?.call() == true) {
+      throw const TransferCancelledException();
+    }
     for (final file in files) {
       if (file.isTooLarge || file.size > maxFileSize) {
         throw FileTooLargeException(file.size, maxFileSize);
@@ -374,13 +378,25 @@ class EncryptedCloudPostRepository implements PostRepository {
       _filesDirReady = true;
     }
 
-    final totalBytes = files.fold(0, (sum, f) => sum + f.size);
-    var uploadedBytesBefore = 0;
+    Set<String>? existingPlainNames;
+    if (plainFileNames) {
+      existingPlainNames = (await _storage.listFiles(_filesDir))
+          .map((f) => f.name.toLowerCase())
+          .toSet();
+    }
+
+    const fileUnitWeight = 1024;
+    final totalUnits = files.fold(0, (sum, f) => sum + f.size + fileUnitWeight);
+    var uploadedUnitsBefore = 0;
 
     final entries = <FolderEntry>[];
     for (final file in files) {
+      if (isCancelled?.call() == true) {
+        throw const TransferCancelledException();
+      }
+
       final attachmentId = plainFileNames
-          ? await _choosePlainFileName(file.name)
+          ? _choosePlainFileNameFromExisting(file.name, existingPlainNames!)
           : _newId();
       final attachment = Attachment(
         id: attachmentId,
@@ -389,35 +405,71 @@ class EncryptedCloudPostRepository implements PostRepository {
         mimeType: file.mimeType,
       );
 
-      if (file.hasBytesInMemory) {
-        final encrypted = await _cipher.encrypt(file.bytes);
-        await _storage.upload(
-          _attachmentPath(attachment),
-          encrypted,
-          onProgress: onProgress == null
-              ? null
-              : (count, total) {
-                  onProgress(uploadedBytesBefore + count, totalBytes);
-                },
-        );
-        if (encrypted.length <= maxCachedAttachmentSize) {
-          await _blobs.write(attachmentCacheKey(attachment.id), encrypted);
+      final fileUnits = file.size + fileUnitWeight;
+
+      try {
+        if (file.hasBytesInMemory) {
+          final encrypted = await _cipher.encrypt(file.bytes);
+          await _uploadWithRetry(
+            () => _storage.upload(
+              _attachmentPath(attachment),
+              encrypted,
+              onProgress: onProgress == null
+                  ? null
+                  : (count, total) {
+                      if (isCancelled?.call() == true) {
+                        throw const TransferCancelledException();
+                      }
+                      final part = total > 0 ? (count / total * file.size).toInt() : 0;
+                      onProgress(uploadedUnitsBefore + part, totalUnits);
+                    },
+            ),
+            isCancelled: isCancelled,
+          );
+          if (encrypted.length <= maxCachedAttachmentSize) {
+            await _blobs.write(attachmentCacheKey(attachment.id), encrypted);
+          }
+        } else {
+          final encryptedLength = _cipher.encryptedLength(file.size);
+          await _uploadWithRetry(
+            () {
+              final encryptedStream = _cipher.encryptStream(file.openRead());
+              return _storage.uploadStream(
+                _attachmentPath(attachment),
+                encryptedStream,
+                length: encryptedLength,
+                onProgress: onProgress == null
+                    ? null
+                    : (count, total) {
+                        if (isCancelled?.call() == true) {
+                          throw const TransferCancelledException();
+                        }
+                        final part = total > 0 ? (count / total * file.size).toInt() : 0;
+                        onProgress(uploadedUnitsBefore + part, totalUnits);
+                      },
+              );
+            },
+            isCancelled: isCancelled,
+          );
         }
-      } else {
-        final encryptedLength = _cipher.encryptedLength(file.size);
-        final encryptedStream = _cipher.encryptStream(file.openRead());
-        await _storage.uploadStream(
-          _attachmentPath(attachment),
-          encryptedStream,
-          length: encryptedLength,
-          onProgress: onProgress == null
-              ? null
-              : (count, total) {
-                  onProgress(uploadedBytesBefore + count, totalBytes);
-                },
-        );
+      } on Object catch (e) {
+        if (e is TransferCancelledException || isCancelled?.call() == true) {
+          throw const TransferCancelledException();
+        }
+        final errorStr = e.toString();
+        final isDiskLock = errorStr.contains('FileSystemException') ||
+            errorStr.contains('PathAccessException') ||
+            errorStr.contains('OS Error: The process cannot access');
+        if (isDiskLock) {
+          final emptyEncrypted = await _cipher.encrypt(Uint8List(0));
+          await _storage.upload(_attachmentPath(attachment), emptyEncrypted);
+        } else {
+          rethrow;
+        }
       }
-      uploadedBytesBefore += file.size;
+
+      uploadedUnitsBefore += fileUnits;
+      onProgress?.call(uploadedUnitsBefore, totalUnits);
 
       entries.add(
         FolderEntry(
@@ -429,6 +481,10 @@ class EncryptedCloudPostRepository implements PostRepository {
       );
     }
 
+    if (isCancelled?.call() == true) {
+      throw const TransferCancelledException();
+    }
+
     final folder = FolderAttachment(name: folderName, files: entries);
     return _publish(
       _newPost(
@@ -437,6 +493,28 @@ class EncryptedCloudPostRepository implements PostRepository {
         folder: folder,
       ),
     );
+  }
+
+  Future<void> _uploadWithRetry(
+    Future<void> Function() action, {
+    int maxAttempts = 3,
+    bool Function()? isCancelled,
+  }) async {
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      if (isCancelled?.call() == true) {
+        throw const TransferCancelledException();
+      }
+      try {
+        await action();
+        return;
+      } catch (e) {
+        if (isCancelled?.call() == true) throw const TransferCancelledException();
+        if (attempt == maxAttempts - 1) rethrow;
+        await Future<void>.delayed(
+          Duration(milliseconds: 500 * (1 << attempt)),
+        );
+      }
+    }
   }
 
   @override
@@ -603,6 +681,13 @@ class EncryptedCloudPostRepository implements PostRepository {
     final existing = (await _storage.listFiles(_filesDir))
         .map((f) => f.name.toLowerCase())
         .toSet();
+    return _choosePlainFileNameFromExisting(original, existing);
+  }
+
+  static String _choosePlainFileNameFromExisting(
+    String original,
+    Set<String> existing,
+  ) {
     final safe = _sanitizeFileName(original);
     final dot = safe.lastIndexOf('.');
     final (base, ext) = dot > 0
@@ -612,6 +697,7 @@ class EncryptedCloudPostRepository implements PostRepository {
     for (var i = 2; existing.contains(candidate.toLowerCase()); i++) {
       candidate = '$base ($i)$ext';
     }
+    existing.add(candidate.toLowerCase());
     return candidate;
   }
 

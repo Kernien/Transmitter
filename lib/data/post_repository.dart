@@ -59,12 +59,14 @@ abstract interface class PostRepository {
   });
 
   /// Отправляет папку с файлами единым постом со структурой каталогов.
-  /// Бросает [FileTooLargeException], если какой-либо файл больше [maxFileSize].
+  /// Бросает [FileTooLargeException], если какой-либо файл больше [maxFileSize],
+  /// или [TransferCancelledException], если передача была отменена.
   Future<Post> sendFolder({
     required String folderName,
     required List<PickedFile> files,
     String caption = '',
     ProgressCallback? onProgress,
+    bool Function()? isCancelled,
   });
 
   Future<Uint8List> downloadAttachment(
@@ -84,4 +86,12 @@ abstract interface class PostRepository {
   /// Задаёт комментарий к посту; пустой текст удаляет комментарий.
   /// Возвращает пост с новым комментарием.
   Future<Post> setNote(Post post, String text);
+}
+
+/// Исключение при отмене передачи файлов пользователем.
+class TransferCancelledException implements Exception {
+  const TransferCancelledException();
+
+  @override
+  String toString() => 'Transfer cancelled';
 }

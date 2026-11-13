@@ -65,13 +65,12 @@ class _ComposeBarState extends State<ComposeBar> {
             ),
             const SizedBox(width: 8),
             IconButton.filled(
-              tooltip: context.l10n.send,
-              onPressed: sending ? null : _send,
+              tooltip: sending ? context.l10n.cancelUpload : context.l10n.send,
+              onPressed: sending
+                  ? () => context.read<FeedController>().cancelActiveSend()
+                  : _send,
               icon: sending
-                  ? const SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
+                  ? const Icon(Icons.close)
                   : const Icon(Icons.send),
             ),
           ],

@@ -367,12 +367,27 @@ class _FolderContent extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox.square(
-              dimension: 24,
-              child: CircularProgressIndicator(
-                value: transfer.fraction > 0 ? transfer.fraction : null,
-                strokeWidth: 2.5,
-              ),
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox.square(
+                  dimension: 26,
+                  child: CircularProgressIndicator(
+                    value: transfer.fraction > 0 ? transfer.fraction : null,
+                    strokeWidth: 2.5,
+                  ),
+                ),
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints:
+                      const BoxConstraints(minWidth: 26, minHeight: 26),
+                  iconSize: 15,
+                  tooltip: context.l10n.cancelUpload,
+                  icon: const Icon(Icons.close),
+                  onPressed: () =>
+                      context.read<FeedController>().cancelTransfer(post.id),
+                ),
+              ],
             ),
             const SizedBox(height: 4),
             Text(
@@ -788,12 +803,27 @@ class _FileContent extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox.square(
-              dimension: 24,
-              child: CircularProgressIndicator(
-                value: transfer.fraction > 0 ? transfer.fraction : null,
-                strokeWidth: 2.5,
-              ),
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox.square(
+                  dimension: 26,
+                  child: CircularProgressIndicator(
+                    value: transfer.fraction > 0 ? transfer.fraction : null,
+                    strokeWidth: 2.5,
+                  ),
+                ),
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints:
+                      const BoxConstraints(minWidth: 26, minHeight: 26),
+                  iconSize: 15,
+                  tooltip: context.l10n.cancelUpload,
+                  icon: const Icon(Icons.close),
+                  onPressed: () =>
+                      context.read<FeedController>().cancelTransfer(post.id),
+                ),
+              ],
             ),
             const SizedBox(height: 4),
             Text(

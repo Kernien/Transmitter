@@ -794,6 +794,18 @@ abstract class AppLocalizations {
   /// **'Delete folder?'**
   String get deleteFolderTitle;
 
+  /// No description provided for @cancelUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel upload'**
+  String get cancelUpload;
+
+  /// No description provided for @uploadCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload cancelled'**
+  String get uploadCancelled;
+
   /// No description provided for @attachMediaTooltip.
   ///
   /// In en, this message translates to:

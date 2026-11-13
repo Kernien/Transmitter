@@ -99,12 +99,14 @@ class PublishingPostRepository implements PostRepository {
     required List<PickedFile> files,
     String caption = '',
     ProgressCallback? onProgress,
+    bool Function()? isCancelled,
   }) => _changed(
     _inner.sendFolder(
       folderName: folderName,
       files: files,
       caption: caption,
       onProgress: onProgress,
+      isCancelled: isCancelled,
     ),
   );
 

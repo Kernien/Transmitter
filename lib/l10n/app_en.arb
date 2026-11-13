@@ -152,6 +152,8 @@
   "folderEmpty": "Folder is empty",
   "folderTitle": "Folder",
   "deleteFolderTitle": "Delete folder?",
+  "cancelUpload": "Cancel upload",
+  "uploadCancelled": "Upload cancelled",
   "attachMediaTooltip": "Photo or video from the gallery (up to {limit})",
   "@attachMediaTooltip": { "placeholders": { "limit": { "type": "String" } } },
   "attachMediaTooltipUnlimited": "Photo or video from the gallery",

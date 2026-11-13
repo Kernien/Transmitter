@@ -429,6 +429,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteFolderTitle => 'Delete folder?';
 
   @override
+  String get cancelUpload => 'Cancel upload';
+
+  @override
+  String get uploadCancelled => 'Upload cancelled';
+
+  @override
   String attachMediaTooltip(String limit) {
     return 'Photo or video from the gallery (up to $limit)';
   }

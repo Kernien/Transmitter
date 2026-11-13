@@ -198,6 +198,7 @@ class PublicBoardRepository implements PostRepository {
     required List<PickedFile> files,
     String caption = '',
     ProgressCallback? onProgress,
+    bool Function()? isCancelled,
   }) => _readOnly();
 
   @override
