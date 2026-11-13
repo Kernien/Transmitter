@@ -4,6 +4,7 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/l10n.dart';
+import '../../app/widgets/content_width.dart';
 import '../../core/utils/docx_text.dart';
 import '../../core/utils/text_decoding.dart';
 import '../../domain/post.dart';
@@ -88,8 +89,9 @@ class _TextViewerScreenState extends State<TextViewerScreen> {
     final l = context.l10n;
     final feed = widget.feed;
     final messenger = ScaffoldMessenger.of(context);
-    return Scaffold(
-      appBar: AppBar(
+    return CenteredPageFrame(
+      child: Scaffold(
+        appBar: AppBar(
         title: Text(_attachment.fileName, overflow: TextOverflow.ellipsis),
         actions: [
           if (feed.canOpenExternally)
@@ -170,6 +172,7 @@ class _TextViewerScreenState extends State<TextViewerScreen> {
           }
           return SelectionArea(child: _content(context, document));
         },
+      ),
       ),
     );
   }

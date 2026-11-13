@@ -32,11 +32,11 @@ class _ImportVaultScreenState extends State<ImportVaultScreen> {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    return Scaffold(
-      appBar: AppBar(title: Text(l.addKey)),
-      body: ContentWidth(
-        maxWidth: 600,
-        child: ListView(
+    return CenteredPageFrame(
+      maxWidth: 600,
+      child: Scaffold(
+        appBar: AppBar(title: Text(l.addKey)),
+        body: ListView(
           padding: const EdgeInsets.all(24),
           children: [
             if (_scannerAvailable) ...[

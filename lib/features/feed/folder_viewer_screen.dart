@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/l10n.dart';
+import '../../app/widgets/content_width.dart';
 import '../../domain/post.dart';
 import 'feed_controller.dart';
 import 'image_viewer_screen.dart';
@@ -93,8 +94,9 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
         if (didPop) return;
         _navigateUp();
       },
-      child: Scaffold(
-        appBar: AppBar(
+      child: CenteredPageFrame(
+        child: Scaffold(
+          appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () {
@@ -215,6 +217,7 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
                     ),
             ),
           ],
+        ),
         ),
       ),
     );

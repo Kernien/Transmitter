@@ -52,11 +52,11 @@ class _ConnectCloudScreenState extends State<ConnectCloudScreen> {
     final title = widget.provider.title;
     final withPassword = adapter is PasswordCloudAdapter;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l.connectTitle(title))),
-      body: ContentWidth(
-        maxWidth: 600,
-        child: ListView(
+    return CenteredPageFrame(
+      maxWidth: 600,
+      child: Scaffold(
+        appBar: AppBar(title: Text(l.connectTitle(title))),
+        body: ListView(
           padding: const EdgeInsets.all(24),
           children: [
             Text(
