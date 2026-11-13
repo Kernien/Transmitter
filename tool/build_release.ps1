@@ -1,4 +1,4 @@
-﻿# Собирает релиз в build/dist: APK для Android (arm64, armv7) и zip для Windows.
+# Собирает релиз в build/dist: APK для Android (arm64, armv7) и zip для Windows.
 # Перед сборкой прогоняет тесты. Версия берётся из pubspec.yaml.
 #   powershell -File tool/build_release.ps1
 $ErrorActionPreference = 'Stop'
@@ -26,10 +26,10 @@ Invoke-Step 'Android' { flutter build apk --release --split-per-abi @define }
 # Сборка Windows с нуля: при повторной сборке Flutter может оставить старый
 # урезанный шрифт иконок, и новые значки не отображаются. Шрифт кешируется
 # и в .dart_tool/flutter_build — чистим оба места.
-foreach ($dir in 'build/windows', '.dart_tool/flutter_build') {
+foreach ($dir in 'build/windows', '.dart_tool/flutter_build', 'build/flutter_assets') {
   if (Test-Path $dir) { Remove-Item -Recurse -Force $dir }
 }
-Invoke-Step 'Windows' { flutter build windows --release @define }
+Invoke-Step 'Windows' { flutter build windows --release --no-tree-shake-icons @define }
 
 $dist = 'build/dist'
 if (Test-Path $dist) { Remove-Item -Recurse -Force $dist }

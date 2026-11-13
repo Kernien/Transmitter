@@ -38,6 +38,7 @@ echo "== Тесты"
 echo "== Сборка"
 rm -rf build/linux
 "$FLUTTER" build linux --release \
+  --no-tree-shake-icons \
   --dart-define-from-file=config/dev.json \
   --dart-define-from-file=config/secrets.json
 bundle="build/linux/x64/release/bundle"
