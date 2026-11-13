@@ -275,19 +275,24 @@ class BoardPublisher {
   ) async {
     final files = <String, String>{};
     for (final post in posts) {
-      final attachment = post.attachment;
-      if (attachment == null) continue;
-      final known = state.fileLocators[attachment.id];
-      if (known != null) {
-        files[attachment.id] = known;
-        continue;
-      }
-      try {
-        files[attachment.id] = await _sharing.publish(
-          _attachmentPath(attachment.id),
-        );
-      } on StorageNotFoundException {
-        // Файл удалили, пока мы обновляли опись.
+      final attachments = [
+        if (post.attachment != null) post.attachment!,
+        if (post.folder != null)
+          ...post.folder!.files.map((e) => e.toAttachment()),
+      ];
+      for (final attachment in attachments) {
+        final known = state.fileLocators[attachment.id];
+        if (known != null) {
+          files[attachment.id] = known;
+          continue;
+        }
+        try {
+          files[attachment.id] = await _sharing.publish(
+            _attachmentPath(attachment.id),
+          );
+        } on StorageNotFoundException {
+          // Файл удалили, пока мы обновляли опись.
+        }
       }
     }
     return files;

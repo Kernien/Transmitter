@@ -1,0 +1,152 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:transmitter/app/l10n.dart';
+import 'package:transmitter/core/crypto/aes_gcm_cipher.dart';
+import 'package:transmitter/core/files/file_transfer_service.dart';
+import 'package:transmitter/core/storage/in_memory_cloud_storage.dart';
+import 'package:transmitter/data/encrypted_cloud_post_repository.dart';
+import 'package:transmitter/domain/post.dart';
+import 'package:transmitter/features/feed/feed_controller.dart';
+import 'package:transmitter/features/feed/folder_viewer_screen.dart';
+import 'package:transmitter/features/feed/widgets/post_tile.dart';
+
+import '../support/fake_file_transfer_service.dart';
+
+void main() {
+  late InMemoryCloudStorage cloud;
+  late FakeFileTransferService files;
+
+  FeedController controllerFor(String device) => FeedController(
+    EncryptedCloudPostRepository(
+      storage: cloud,
+      vaultId: 'v',
+      cipher: AesGcmCipher(List<int>.filled(32, 5)),
+      deviceName: device,
+    ),
+    files: files,
+    pollInterval: const Duration(hours: 1),
+  );
+
+  Widget testApp({required Widget child, required FeedController feed}) =>
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<FeedController>.value(value: feed),
+        ],
+        child: MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('ru'),
+          home: Scaffold(body: child),
+        ),
+      );
+
+  setUp(() {
+    cloud = InMemoryCloudStorage();
+    files = FakeFileTransferService();
+  });
+
+  test('отправка папки через FeedController и последующее сохранение', () async {
+    final sender = controllerFor('Phone');
+    final receiver = controllerFor('PC');
+
+    files.nextPickedFolder = PickedFolder(
+      name: 'archive_project',
+      files: [
+        PickedFile(
+          name: 'README.md',
+          bytes: Uint8List.fromList(utf8.encode('# Readme')),
+          relativePath: 'README.md',
+        ),
+        PickedFile(
+          name: 'code.dart',
+          bytes: Uint8List.fromList(utf8.encode('void main() {}')),
+          relativePath: 'src/code.dart',
+        ),
+      ],
+    );
+
+    final attached = await sender.attachFolder(caption: 'исходный код');
+    expect(attached, isTrue);
+    expect(sender.posts, hasLength(1));
+    expect(sender.posts.single.kind, PostKind.folder);
+    expect(sender.posts.single.folder?.name, 'archive_project');
+    expect(sender.posts.single.folder?.fileCount, 2);
+
+    await receiver.refresh();
+    expect(receiver.posts, hasLength(1));
+    final post = receiver.posts.single;
+    expect(post.folder?.name, 'archive_project');
+
+    // Сохранение всей папки
+    final saved = await receiver.saveFolder(post);
+    expect(saved, isTrue);
+    expect(files.savedFolders, hasLength(1));
+    expect(files.savedFolders.single.$1, 'archive_project');
+    expect(files.savedFolders.single.$2, hasLength(2));
+    expect(files.saved, hasLength(2));
+
+    // Сохранение отдельного файла
+    final savedEntry = await receiver.saveFolderEntry(post.folder!.files.first);
+    expect(savedEntry, isTrue);
+    expect(files.saved.last.$1, 'README.md');
+
+    sender.dispose();
+    receiver.dispose();
+  });
+
+  testWidgets('отображение карточки папки в ленте и переход в FolderViewerScreen', (tester) async {
+    final feed = controllerFor('PC');
+    final post = Post(
+      id: 'p1',
+      kind: PostKind.folder,
+      createdAt: DateTime.utc(2026, 3, 1),
+      senderDevice: 'MacBook',
+      text: 'архив документов',
+      folder: FolderAttachment(
+        name: 'documents',
+        files: [
+          FolderEntry(
+            id: 'f1',
+            relativePath: 'report.txt',
+            size: 1024,
+          ),
+          FolderEntry(
+            id: 'f2',
+            relativePath: 'sub/data.csv',
+            size: 2048,
+          ),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(
+      testApp(child: PostTile(post: post), feed: feed),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('documents'), findsOneWidget);
+    expect(find.text('архив документов'), findsOneWidget);
+    expect(find.text('report.txt'), findsOneWidget);
+    expect(find.text('sub/data.csv'), findsOneWidget);
+
+    // Тап на карточку папки открывает FolderViewerScreen
+    await tester.tap(find.text('documents'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FolderViewerScreen), findsOneWidget);
+    expect(find.text('report.txt'), findsOneWidget);
+    expect(find.text('sub/data.csv'), findsOneWidget);
+
+    feed.dispose();
+  });
+}

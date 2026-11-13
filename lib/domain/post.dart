@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-enum PostKind { text, link, file }
+enum PostKind { text, link, file, folder }
 
 /// Описание прикреплённого файла. Сами байты лежат в облаке отдельно.
 @immutable
@@ -99,6 +99,80 @@ class Attachment {
   };
 }
 
+/// Один файл внутри прикреплённой папки.
+@immutable
+class FolderEntry {
+  const FolderEntry({
+    required this.id,
+    required this.relativePath,
+    required this.size,
+    this.mimeType,
+  });
+
+  factory FolderEntry.fromJson(Map<String, dynamic> json) => FolderEntry(
+    id: json['id'] as String,
+    relativePath: json['path'] as String,
+    size: (json['size'] as num).toInt(),
+    mimeType: json['mime'] as String?,
+  );
+
+  final String id;
+
+  /// Относительный путь файла внутри папки (например, `sub/file.txt`),
+  /// разделитель всегда `/`.
+  final String relativePath;
+  final int size;
+  final String? mimeType;
+
+  /// Имя файла без пути.
+  String get fileName => relativePath.split('/').last;
+
+  /// Преобразует элемент папки во вложение [Attachment] для открытия
+  /// во встроенных просмотрщиках или сохранения отдельного файла.
+  Attachment toAttachment() => Attachment(
+    id: id,
+    fileName: fileName,
+    size: size,
+    mimeType: mimeType,
+  );
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'path': relativePath,
+    'size': size,
+    if (mimeType != null) 'mime': mimeType,
+  };
+}
+
+/// Прикреплённая папка со структурой файлов и каталогов.
+@immutable
+class FolderAttachment {
+  const FolderAttachment({
+    required this.name,
+    required this.files,
+  });
+
+  factory FolderAttachment.fromJson(Map<String, dynamic> json) =>
+      FolderAttachment(
+        name: json['name'] as String,
+        files: [
+          for (final item in (json['files'] as List))
+            FolderEntry.fromJson(item as Map<String, dynamic>),
+        ],
+      );
+
+  final String name;
+  final List<FolderEntry> files;
+
+  int get fileCount => files.length;
+  int get totalSize => files.fold(0, (sum, f) => sum + f.size);
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'files': [for (final f in files) f.toJson()],
+  };
+}
+
 /// Комментарий к записи: пояснение, которое можно добавить, изменить или
 /// удалить с любого устройства базы. Хранится отдельно от записи.
 @immutable
@@ -136,7 +210,7 @@ class PostNote {
   };
 }
 
-/// Одна запись в базе: текст, ссылка или файл.
+/// Одна запись в базе: текст, ссылка, файл или папка.
 @immutable
 class Post {
   const Post({
@@ -146,12 +220,13 @@ class Post {
     required this.senderDevice,
     this.text = '',
     this.attachment,
+    this.folder,
     this.note,
   });
 
   factory Post.fromJson(Map<String, dynamic> json) => Post(
     id: json['id'] as String,
-    kind: PostKind.values.byName(json['kind'] as String),
+    kind: PostKind.values.asNameMap()[json['kind'] as String] ?? PostKind.file,
     createdAt: DateTime.fromMillisecondsSinceEpoch(
       (json['ts'] as num).toInt(),
       isUtc: true,
@@ -161,6 +236,9 @@ class Post {
     attachment: json['file'] == null
         ? null
         : Attachment.fromJson(json['file'] as Map<String, dynamic>),
+    folder: json['folder'] == null
+        ? null
+        : FolderAttachment.fromJson(json['folder'] as Map<String, dynamic>),
   );
 
   final String id;
@@ -168,9 +246,10 @@ class Post {
   final DateTime createdAt;
   final String senderDevice;
 
-  /// Текст сообщения, адрес ссылки или подпись к файлу.
+  /// Текст сообщения, адрес ссылки или подпись к файлу/папке.
   final String text;
   final Attachment? attachment;
+  final FolderAttachment? folder;
 
   /// Комментарий к записи. В JSON записи не входит: хранится отдельно.
   final PostNote? note;
@@ -183,6 +262,7 @@ class Post {
     senderDevice: senderDevice,
     text: text,
     attachment: attachment,
+    folder: folder,
     note: note,
   );
 
@@ -194,5 +274,6 @@ class Post {
     'from': senderDevice,
     'text': text,
     if (attachment != null) 'file': attachment!.toJson(),
+    if (folder != null) 'folder': folder!.toJson(),
   };
 }

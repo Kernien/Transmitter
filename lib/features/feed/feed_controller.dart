@@ -168,19 +168,30 @@ class FeedController extends ChangeNotifier {
 
   Future<void> _shareMany(List<Post> posts) async {
     final ordered = [...posts]
-      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      ..sort((a, b) {
+        final byTime = a.createdAt.compareTo(b.createdAt);
+        return byTime != 0 ? byTime : a.id.compareTo(b.id);
+      });
     final text = ordered
         .map((p) => p.text)
         .where((t) => t.isNotEmpty)
         .join('\n\n');
     final files = <OutgoingFile>[
-      for (final post in ordered)
+      for (final post in ordered) ...[
         if (post.attachment case final attachment?)
           OutgoingFile(
             name: attachment.fileName,
             bytes: await _repository.downloadAttachment(attachment),
             mimeType: attachment.mimeType,
           ),
+        if (post.folder case final folder?)
+          for (final entry in folder.files)
+            OutgoingFile(
+              name: entry.fileName,
+              bytes: await _repository.downloadAttachment(entry.toAttachment()),
+              mimeType: entry.mimeType,
+            ),
+      ],
     ];
     await _share.share(text: text, files: files);
   }
@@ -243,9 +254,18 @@ class FeedController extends ChangeNotifier {
           .where((p) => p.attachment != null)
           .map((p) => p.attachment!.fileName)
           .toSet();
+      final remoteFolderNames = remote
+          .where((p) => p.folder != null)
+          .map((p) => p.folder!.name)
+          .toSet();
       final activePending = pending.where((p) {
         final name = p.attachment?.fileName;
-        return name == null || !remoteAttachmentNames.contains(name);
+        if (name != null && remoteAttachmentNames.contains(name)) return false;
+        final folderName = p.folder?.name;
+        if (folderName != null && remoteFolderNames.contains(folderName)) {
+          return false;
+        }
+        return true;
       }).toList();
 
       _posts = [...remote, ...activePending];
@@ -275,6 +295,87 @@ class FeedController extends ChangeNotifier {
     () => _files.pickFiles(maxSize: _repository.maxFileSize),
     caption: caption,
   );
+
+  /// Предлагает выбрать папку на устройстве и отправляет её как единый пост
+  /// со структурой файлов.
+  Future<bool> attachFolder({String caption = ''}) async {
+    if (_sending) return false;
+    final PickedFolder? folder;
+    try {
+      folder = await _files.pickFolder(maxSize: _repository.maxFileSize);
+    } catch (e) {
+      _error = e;
+      _notify();
+      return false;
+    }
+    if (folder == null || folder.files.isEmpty) return false;
+    return sendFolder(folder, caption: caption);
+  }
+
+  /// Отправляет папку со всеми файлами.
+  Future<bool> sendFolder(PickedFolder folder, {String caption = ''}) async {
+    final tempId =
+        'pending_${_clock().millisecondsSinceEpoch}_folder_${folder.name}';
+    final entries = [
+      for (var i = 0; i < folder.files.length; i++)
+        FolderEntry(
+          id: 'pending_entry_${i}_${folder.files[i].name}',
+          relativePath: folder.files[i].pathInFolder,
+          size: folder.files[i].size,
+          mimeType: folder.files[i].mimeType,
+        ),
+    ];
+    final folderAttachment = FolderAttachment(
+      name: folder.name,
+      files: entries,
+    );
+    final pendingPost = Post(
+      id: tempId,
+      kind: PostKind.folder,
+      createdAt: _clock(),
+      senderDevice: '',
+      text: caption.trim(),
+      folder: folderAttachment,
+    );
+    _posts = [..._posts, pendingPost];
+    _sending = true;
+    _transfers[tempId] = TransferProgress(
+      transferred: 0,
+      total: folder.totalSize,
+      bytesPerSecond: 0,
+    );
+    _notify();
+
+    try {
+      final tracker = TransferTracker(clock: _clock);
+      _transfers[tempId] = tracker.update(0, folder.totalSize);
+      _notify();
+
+      final realPost = await _repository.sendFolder(
+        folderName: folder.name,
+        files: folder.files,
+        caption: caption,
+        onProgress: (count, total) {
+          _transfers[tempId] = tracker.update(count, total);
+          _notify();
+        },
+      );
+      _posts = [for (final p in _posts) p.id == tempId ? realPost : p];
+      _transfers.remove(tempId);
+      _error = null;
+      _notify();
+      return true;
+    } catch (e) {
+      _posts = _posts.where((p) => p.id != tempId).toList();
+      _transfers.remove(tempId);
+      _error = e;
+      _notify();
+      return false;
+    } finally {
+      _sending = _transfers.isNotEmpty;
+      _notify();
+    }
+  }
 
   /// Можно ли выбрать фото или видео в Галерее (на телефоне).
   bool get canAttachMedia => _media.isAvailable;
@@ -320,6 +421,34 @@ class FeedController extends ChangeNotifier {
     }
   }
 
+  /// Открытие отдельного вложения внешней программой.
+  Future<void> openAttachmentExternally(Attachment attachment) async {
+    try {
+      final cached = previews.peek(attachment);
+      final Uint8List bytes;
+      if (cached != null) {
+        bytes = cached;
+      } else {
+        bytes = await _repository.downloadAttachment(attachment);
+      }
+      await _opener.open(
+        fileName: attachment.fileName,
+        bytes: bytes,
+        mimeType: attachment.mimeType,
+      );
+      _error = null;
+    } catch (e) {
+      _error = e;
+      _notify();
+    }
+  }
+
+  /// Скачивание байтов вложения (для вьюверов).
+  Future<Uint8List> downloadAttachment(
+    Attachment attachment, {
+    ProgressCallback? onProgress,
+  }) => _repository.downloadAttachment(attachment, onProgress: onProgress);
+
   /// Как [attachFile], но фото или видео выбираются в Галерее.
   Future<bool> attachMedia({String caption = ''}) => _attach(
     () => _media.pickMedia(maxSize: _repository.maxFileSize),
@@ -344,10 +473,24 @@ class FeedController extends ChangeNotifier {
   }
 
   /// Отправляет файлы, перетащенные в окно, по очереди.
+  /// Если перетащена папка, она отправляется как отдельный пост-папка.
   /// Все файлы сразу появляются на доске со статусом передачи.
   /// Возвращает, сколько файлов отправлено; ошибки попадают в [error].
   Future<int> sendDroppedFiles(List<XFile> files) async {
     if (files.isEmpty) return 0;
+
+    // Если перетащена ровно одна папка
+    if (files.length == 1 && files.first.path.isNotEmpty) {
+      final folder = await _files.readDirectory(
+        files.first.path,
+        maxSize: _repository.maxFileSize,
+      );
+      if (folder != null && folder.files.isNotEmpty) {
+        final ok = await sendFolder(folder);
+        return ok ? 1 : 0;
+      }
+    }
+
     final queue = <({XFile file, String tempId, int size, bool isImage})>[];
     final pendingPosts = <Post>[];
     for (var i = 0; i < files.length; i++) {
@@ -617,6 +760,65 @@ class FeedController extends ChangeNotifier {
       _saving.remove(post.id);
       _transfers.remove(post.id);
       _notify();
+    }
+  }
+
+  /// Скачивает и расшифровывает все файлы папки, сохраняя структуру каталогов на диск
+  /// (или единым zip-архивом в вебе).
+  Future<bool> saveFolder(Post post) async {
+    final folder = post.folder;
+    if (folder == null || _saving.contains(post.id)) return false;
+    _saving.add(post.id);
+    _notify();
+    try {
+      final tracker = TransferTracker(clock: _clock);
+      _transfers[post.id] = tracker.update(0, folder.totalSize);
+      _notify();
+
+      var downloadedBefore = 0;
+      final saved = await _files.saveFolder(
+        folderName: folder.name,
+        entries: folder.files,
+        getFileBytes: (entryAttachment) async {
+          final bytes = await _repository.downloadAttachment(
+            entryAttachment,
+            onProgress: (count, total) {
+              _transfers[post.id] = tracker.update(
+                downloadedBefore + count,
+                folder.totalSize,
+              );
+              _notify();
+            },
+          );
+          downloadedBefore += entryAttachment.size;
+          return bytes;
+        },
+      );
+      _error = null;
+      return saved;
+    } catch (e) {
+      _error = e;
+      return false;
+    } finally {
+      _saving.remove(post.id);
+      _transfers.remove(post.id);
+      _notify();
+    }
+  }
+
+  /// Сохраняет отдельный файл из папки.
+  Future<bool> saveFolderEntry(FolderEntry entry) async {
+    try {
+      final bytes = await _repository.downloadAttachment(entry.toAttachment());
+      return await _files.saveFile(
+        fileName: entry.fileName,
+        bytes: bytes,
+        mimeType: entry.mimeType,
+      );
+    } catch (e) {
+      _error = e;
+      _notify();
+      return false;
     }
   }
 

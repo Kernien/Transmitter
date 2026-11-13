@@ -4,7 +4,8 @@ import '../core/files/file_transfer_service.dart';
 import '../core/storage/cloud_storage.dart';
 import '../domain/post.dart';
 
-export '../core/files/file_transfer_service.dart' show FileTooLargeException;
+export '../core/files/file_transfer_service.dart'
+    show FileTooLargeException, PickedFile;
 export '../core/storage/cloud_storage.dart' show ProgressCallback;
 
 /// Работа с постами одной базы. UI зависит только от этого интерфейса.
@@ -53,6 +54,15 @@ abstract interface class PostRepository {
     required Stream<List<int>> stream,
     required int size,
     String? mimeType,
+    String caption = '',
+    ProgressCallback? onProgress,
+  });
+
+  /// Отправляет папку с файлами единым постом со структурой каталогов.
+  /// Бросает [FileTooLargeException], если какой-либо файл больше [maxFileSize].
+  Future<Post> sendFolder({
+    required String folderName,
+    required List<PickedFile> files,
     String caption = '',
     ProgressCallback? onProgress,
   });

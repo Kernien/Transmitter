@@ -116,6 +116,12 @@ class EncryptedCloudPostRepository implements PostRepository {
       if (!postNames.contains(entry.key) && attachment != null) {
         await _blobs.delete(attachmentCacheKey(attachment.id));
       }
+      final folder = entry.value.folder;
+      if (!postNames.contains(entry.key) && folder != null) {
+        for (final file in folder.files) {
+          await _blobs.delete(attachmentCacheKey(file.id));
+        }
+      }
     }
     _cache.removeWhere((name, _) => !postNames.contains(name));
     _notes.removeWhere((name, _) => !noteNames.contains(name));
@@ -352,6 +358,88 @@ class EncryptedCloudPostRepository implements PostRepository {
   }
 
   @override
+  Future<Post> sendFolder({
+    required String folderName,
+    required List<PickedFile> files,
+    String caption = '',
+    ProgressCallback? onProgress,
+  }) async {
+    for (final file in files) {
+      if (file.isTooLarge || file.size > maxFileSize) {
+        throw FileTooLargeException(file.size, maxFileSize);
+      }
+    }
+    if (!_filesDirReady) {
+      await _storage.ensureFolder(_filesDir);
+      _filesDirReady = true;
+    }
+
+    final totalBytes = files.fold(0, (sum, f) => sum + f.size);
+    var uploadedBytesBefore = 0;
+
+    final entries = <FolderEntry>[];
+    for (final file in files) {
+      final attachmentId = plainFileNames
+          ? await _choosePlainFileName(file.name)
+          : _newId();
+      final attachment = Attachment(
+        id: attachmentId,
+        fileName: file.name,
+        size: file.size,
+        mimeType: file.mimeType,
+      );
+
+      if (file.hasBytesInMemory) {
+        final encrypted = await _cipher.encrypt(file.bytes);
+        await _storage.upload(
+          _attachmentPath(attachment),
+          encrypted,
+          onProgress: onProgress == null
+              ? null
+              : (count, total) {
+                  onProgress(uploadedBytesBefore + count, totalBytes);
+                },
+        );
+        if (encrypted.length <= maxCachedAttachmentSize) {
+          await _blobs.write(attachmentCacheKey(attachment.id), encrypted);
+        }
+      } else {
+        final encryptedLength = _cipher.encryptedLength(file.size);
+        final encryptedStream = _cipher.encryptStream(file.openRead());
+        await _storage.uploadStream(
+          _attachmentPath(attachment),
+          encryptedStream,
+          length: encryptedLength,
+          onProgress: onProgress == null
+              ? null
+              : (count, total) {
+                  onProgress(uploadedBytesBefore + count, totalBytes);
+                },
+        );
+      }
+      uploadedBytesBefore += file.size;
+
+      entries.add(
+        FolderEntry(
+          id: attachmentId,
+          relativePath: file.pathInFolder,
+          size: file.size,
+          mimeType: file.mimeType,
+        ),
+      );
+    }
+
+    final folder = FolderAttachment(name: folderName, files: entries);
+    return _publish(
+      _newPost(
+        kind: PostKind.folder,
+        text: caption.trim(),
+        folder: folder,
+      ),
+    );
+  }
+
+  @override
   Future<Uint8List> downloadAttachment(
     Attachment attachment, {
     ProgressCallback? onProgress,
@@ -410,12 +498,15 @@ class EncryptedCloudPostRepository implements PostRepository {
     await _blobs.delete(fileName);
     if (post.attachment case final attachment?) {
       await _blobs.delete(attachmentCacheKey(attachment.id));
-    }
-    await _deleteNotes(_noteFilesFor(post));
-    final attachment = post.attachment;
-    if (attachment != null) {
       await _storage.delete(_attachmentPath(attachment));
     }
+    if (post.folder case final folder?) {
+      for (final file in folder.files) {
+        await _blobs.delete(attachmentCacheKey(file.id));
+        await _storage.delete(_attachmentPath(file.toAttachment()));
+      }
+    }
+    await _deleteNotes(_noteFilesFor(post));
   }
 
   @override
@@ -465,6 +556,7 @@ class EncryptedCloudPostRepository implements PostRepository {
     required PostKind kind,
     required String text,
     Attachment? attachment,
+    FolderAttachment? folder,
   }) => Post(
     id: _newId(),
     kind: kind,
@@ -472,6 +564,7 @@ class EncryptedCloudPostRepository implements PostRepository {
     senderDevice: _deviceName,
     text: text,
     attachment: attachment,
+    folder: folder,
   );
 
   Future<Post> _publish(Post post) async {

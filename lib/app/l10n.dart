@@ -77,6 +77,12 @@ extension AppLocalizationsX on AppLocalizations {
       ? attachFileTooltipUnlimited
       : attachFileTooltip(sizeLimitOf(maxFileSize));
 
+  /// Всплывающая подсказка кнопки «Прикрепить папку».
+  String attachFolderTooltipOf(int maxFileSize) =>
+      maxFileSize >= VaultKey.unlimitedFileSize
+      ? attachFolderTooltipUnlimited
+      : attachFolderTooltip(sizeLimitOf(maxFileSize));
+
   /// Всплывающая подсказка кнопки «Галерея».
   String attachMediaTooltipOf(int maxFileSize) =>
       maxFileSize >= VaultKey.unlimitedFileSize

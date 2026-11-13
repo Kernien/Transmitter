@@ -388,6 +388,49 @@ class AppLocalizationsRu extends AppLocalizations {
   String get attachFileTooltipUnlimited => 'Прикрепить файл';
 
   @override
+  String get attachFolder => 'Прикрепить папку';
+
+  @override
+  String attachFolderTooltip(String limit) {
+    return 'Прикрепить папку (файлы до $limit)';
+  }
+
+  @override
+  String get attachFolderTooltipUnlimited => 'Прикрепить папку';
+
+  @override
+  String get saveFolder => 'Сохранить папку';
+
+  @override
+  String savedFolder(String name) {
+    return 'Папка «$name» сохранена';
+  }
+
+  @override
+  String get openFolder => 'Открыть папку';
+
+  @override
+  String folderFilesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count файлов',
+      few: '$count файла',
+      one: '1 файл',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get folderEmpty => 'Папка пуста';
+
+  @override
+  String get folderTitle => 'Папка';
+
+  @override
+  String get deleteFolderTitle => 'Удалить папку?';
+
+  @override
   String attachMediaTooltip(String limit) {
     return 'Фото или видео из Галереи (до $limit)';
   }

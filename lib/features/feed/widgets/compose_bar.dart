@@ -24,26 +24,30 @@ class _ComposeBarState extends State<ComposeBar> {
   @override
   Widget build(BuildContext context) {
     final sending = context.select<FeedController, bool>((f) => f.isSending);
+    final maxFileSize = context.select<FeedController, int>((f) => f.maxFileSize);
+    final canAttachMedia = context.select<FeedController, bool>((f) => f.canAttachMedia);
+
     return SafeArea(
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(4, 4, 8, 8),
         child: Row(
           children: [
-            if (context.read<FeedController>().canAttachMedia)
+            if (canAttachMedia)
               IconButton(
-                tooltip: context.l10n.attachMediaTooltipOf(
-                  context.read<FeedController>().maxFileSize,
-                ),
+                tooltip: context.l10n.attachMediaTooltipOf(maxFileSize),
                 onPressed: sending ? null : _attachMedia,
                 icon: const Icon(Icons.photo_library_outlined),
               ),
             IconButton(
-              tooltip: context.l10n.attachFileTooltipOf(
-                context.read<FeedController>().maxFileSize,
-              ),
+              tooltip: context.l10n.attachFileTooltipOf(maxFileSize),
               onPressed: sending ? null : _attach,
               icon: const Icon(Icons.attach_file),
+            ),
+            IconButton(
+              tooltip: context.l10n.attachFolderTooltipOf(maxFileSize),
+              onPressed: sending ? null : _attachFolder,
+              icon: const Icon(Icons.create_new_folder_outlined),
             ),
             Expanded(
               child: TextField(
@@ -86,6 +90,13 @@ class _ComposeBarState extends State<ComposeBar> {
   /// Текст из поля ввода становится подписью к файлу.
   Future<void> _attach() async {
     final ok = await context.read<FeedController>().attachFile(
+      caption: _text.text,
+    );
+    if (ok) _text.clear();
+  }
+
+  Future<void> _attachFolder() async {
+    final ok = await context.read<FeedController>().attachFolder(
       caption: _text.text,
     );
     if (ok) _text.clear();

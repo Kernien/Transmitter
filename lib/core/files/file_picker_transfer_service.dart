@@ -1,8 +1,11 @@
 import 'dart:typed_data';
 
+import 'package:archive/archive.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:mime/mime.dart';
 
+import '../../domain/post.dart';
+import 'directory/platform_directory.dart' as platform_dir;
 import 'file_transfer_service.dart';
 
 /// Реализация через пакет file_picker (Android, Windows, Web).
@@ -71,6 +74,26 @@ class FilePickerTransferService implements FileTransferService {
   }
 
   @override
+  Future<PickedFolder?> pickFolder({required int maxSize}) async {
+    if (!platform_dir.isDirectorySupported) return null;
+    final path = await FilePicker.getDirectoryPath(
+      dialogTitle: saveDialogTitle(),
+    );
+    if (path == null) return null;
+    return readDirectory(path, maxSize: maxSize);
+  }
+
+  @override
+  Future<PickedFolder?> readDirectory(
+    String path, {
+    required int maxSize,
+  }) => platform_dir.readDirectoryFromPath(
+    path,
+    maxSize: maxSize,
+    inMemoryThreshold: inMemoryThreshold,
+  );
+
+  @override
   Future<PickedFile> readFile(XFile file, {required int maxSize}) async {
     final size = await file.length();
     if (size > maxSize) throw FileTooLargeException(size, maxSize);
@@ -137,5 +160,45 @@ class FilePickerTransferService implements FileTransferService {
       dialogTitle: saveDialogTitle(),
     );
     return saved != null;
+  }
+
+  @override
+  Future<bool> saveFolder({
+    required String folderName,
+    required List<FolderEntry> entries,
+    required Future<Uint8List> Function(Attachment) getFileBytes,
+  }) async {
+    if (platform_dir.isDirectorySupported) {
+      final targetPath = await FilePicker.getDirectoryPath(
+        dialogTitle: saveDialogTitle(),
+      );
+      if (targetPath == null) return false;
+      return platform_dir.saveFolderToDirectory(
+        targetPath: targetPath,
+        folderName: folderName,
+        entries: entries,
+        getFileBytes: getFileBytes,
+      );
+    }
+
+    // В вебе или при отсутствии прямой файловой системы скачиваем zip-архив.
+    final archive = Archive();
+    for (final entry in entries) {
+      final bytes = await getFileBytes(entry.toAttachment());
+      archive.addFile(
+        ArchiveFile(entry.relativePath, bytes.length, bytes),
+      );
+    }
+    final zipData = ZipEncoder().encode(archive);
+    final zipBytes = Uint8List.fromList(zipData);
+    final zipName =
+        folderName.toLowerCase().endsWith('.zip')
+            ? folderName
+            : '$folderName.zip';
+    return saveFile(
+      fileName: zipName,
+      bytes: zipBytes,
+      mimeType: 'application/zip',
+    );
   }
 }

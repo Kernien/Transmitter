@@ -734,6 +734,66 @@ abstract class AppLocalizations {
   /// **'Attach a file'**
   String get attachFileTooltipUnlimited;
 
+  /// No description provided for @attachFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach folder'**
+  String get attachFolder;
+
+  /// No description provided for @attachFolderTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach a folder (files up to {limit})'**
+  String attachFolderTooltip(String limit);
+
+  /// No description provided for @attachFolderTooltipUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach a folder'**
+  String get attachFolderTooltipUnlimited;
+
+  /// No description provided for @saveFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Save folder'**
+  String get saveFolder;
+
+  /// No description provided for @savedFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder saved: {name}'**
+  String savedFolder(String name);
+
+  /// No description provided for @openFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Open folder'**
+  String get openFolder;
+
+  /// No description provided for @folderFilesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 file} other{{count} files}}'**
+  String folderFilesCount(int count);
+
+  /// No description provided for @folderEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder is empty'**
+  String get folderEmpty;
+
+  /// No description provided for @folderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder'**
+  String get folderTitle;
+
+  /// No description provided for @deleteFolderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete folder?'**
+  String get deleteFolderTitle;
+
   /// No description provided for @attachMediaTooltip.
   ///
   /// In en, this message translates to:

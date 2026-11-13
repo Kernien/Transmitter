@@ -94,6 +94,21 @@ class PublishingPostRepository implements PostRepository {
   );
 
   @override
+  Future<Post> sendFolder({
+    required String folderName,
+    required List<PickedFile> files,
+    String caption = '',
+    ProgressCallback? onProgress,
+  }) => _changed(
+    _inner.sendFolder(
+      folderName: folderName,
+      files: files,
+      caption: caption,
+      onProgress: onProgress,
+    ),
+  );
+
+  @override
   Future<Uint8List> downloadAttachment(
     Attachment attachment, {
     ProgressCallback? onProgress,

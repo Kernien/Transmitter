@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:cross_file/cross_file.dart';
 
+import '../../domain/post.dart';
 import '../errors/app_error.dart';
 
 export 'package:cross_file/cross_file.dart' show XFile;
@@ -28,6 +29,7 @@ class PickedFile {
     required this.name,
     required Uint8List bytes,
     this.mimeType,
+    this.relativePath,
   }) : _bytes = bytes,
        _openRead = null,
        size = bytes.length;
@@ -39,6 +41,7 @@ class PickedFile {
     required this.size,
     required Stream<List<int>> Function() openRead,
     this.mimeType,
+    this.relativePath,
   }) : _bytes = null,
        // ignore: prefer_initializing_formals
        _openRead = openRead;
@@ -50,6 +53,7 @@ class PickedFile {
     required this.name,
     required this.size,
     this.mimeType,
+    this.relativePath,
   }) : _bytes = null,
        _openRead = null;
 
@@ -58,6 +62,12 @@ class PickedFile {
   final Uint8List? _bytes;
   final Stream<List<int>> Function()? _openRead;
   final String? mimeType;
+
+  /// Относительный путь внутри папки (если файл выбран в составе папки).
+  final String? relativePath;
+
+  /// Путь внутри папки или имя файла.
+  String get pathInFolder => relativePath ?? name;
 
   /// Превысил ли файл лимит размера (байты не читались в память).
   bool get isTooLarge => _bytes == null && _openRead == null;
@@ -72,6 +82,21 @@ class PickedFile {
       _openRead != null ? _openRead() : Stream<List<int>>.value(_bytes!);
 }
 
+/// Папка, выбранная пользователем для отправки.
+class PickedFolder {
+  const PickedFolder({
+    required this.name,
+    required this.files,
+  });
+
+  final String name;
+  final List<PickedFile> files;
+
+  int get totalSize => files.fold(0, (sum, f) => sum + f.size);
+  bool get hasTooLargeFiles => files.any((f) => f.isTooLarge);
+  List<PickedFile> get validFiles => files.where((f) => !f.isTooLarge).toList();
+}
+
 /// Выбор файлов на устройстве и сохранение полученного файла.
 abstract interface class FileTransferService {
   /// Показывает диалог выбора одного или нескольких файлов.
@@ -80,6 +105,14 @@ abstract interface class FileTransferService {
   /// (не читая его в память); при выборе нескольких такие файлы помечаются
   /// как [PickedFile.tooLarge].
   Future<List<PickedFile>> pickFiles({required int maxSize});
+
+  /// Выбор папки на устройстве (проводник / файловый диалог).
+  /// Возвращает `null`, если пользователь отменил выбор.
+  Future<PickedFolder?> pickFolder({required int maxSize});
+
+  /// Читает файлы папки по указанному пути на файловой системе (например,
+  /// перетащенной в окно).
+  Future<PickedFolder?> readDirectory(String path, {required int maxSize});
 
   /// Читает уже выбранный файл (например, перетащенный в окно) с той же
   /// проверкой размера, что и [pickFile].
@@ -91,5 +124,14 @@ abstract interface class FileTransferService {
     required String fileName,
     required Uint8List bytes,
     String? mimeType,
+  });
+
+  /// Сохраняет папку на диск: на компьютере запрашивает целевой каталог и
+  /// воссоздаёт структуру подпапок и файлов; в браузере или при отсутствии
+  /// прямого доступа к ФС скачивает в виде архива .zip.
+  Future<bool> saveFolder({
+    required String folderName,
+    required List<FolderEntry> entries,
+    required Future<Uint8List> Function(Attachment) getFileBytes,
   });
 }

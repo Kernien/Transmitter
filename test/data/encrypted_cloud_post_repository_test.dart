@@ -333,5 +333,57 @@ void main() {
         ],
       );
     });
+
+    test('отправка папки сохраняет структуру файлов и читается на другом устройстве', () async {
+      final phone = device('Android');
+      final pc = device('Windows');
+
+      final files = [
+        PickedFile(
+          name: 'doc.txt',
+          bytes: Uint8List.fromList(utf8.encode('hello world')),
+          relativePath: 'doc.txt',
+        ),
+        PickedFile(
+          name: 'sub.txt',
+          bytes: Uint8List.fromList(utf8.encode('sub file')),
+          relativePath: 'nested/sub.txt',
+        ),
+      ];
+
+      final sent = await phone.sendFolder(
+        folderName: 'my_project',
+        files: files,
+        caption: 'исходники проекта',
+      );
+
+      expect(sent.kind, PostKind.folder);
+      expect(sent.text, 'исходники проекта');
+      expect(sent.folder, isNotNull);
+      expect(sent.folder!.name, 'my_project');
+      expect(sent.folder!.fileCount, 2);
+      expect(sent.folder!.files.first.relativePath, 'doc.txt');
+      expect(sent.folder!.files.last.relativePath, 'nested/sub.txt');
+
+      final posts = await pc.fetchPosts();
+      expect(posts, hasLength(1));
+      final received = posts.single;
+      expect(received.kind, PostKind.folder);
+      expect(received.folder!.name, 'my_project');
+      expect(received.folder!.fileCount, 2);
+
+      final entry1 = received.folder!.files.first;
+      final bytes1 = await pc.downloadAttachment(entry1.toAttachment());
+      expect(utf8.decode(bytes1), 'hello world');
+
+      final entry2 = received.folder!.files.last;
+      final bytes2 = await pc.downloadAttachment(entry2.toAttachment());
+      expect(utf8.decode(bytes2), 'sub file');
+
+      // Удаление папки удаляет и пост, и все вложенные файлы
+      await pc.deletePost(received);
+      expect(await phone.fetchPosts(), isEmpty);
+      expect(cloud.files.keys.where((k) => k.contains('/files/')), isEmpty);
+    });
   });
 }

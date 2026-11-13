@@ -5,8 +5,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/l10n.dart';
 import '../../../domain/post.dart';
-import '../feed_controller.dart';
 import '../attachment_previews.dart';
+import '../feed_controller.dart';
+import '../folder_viewer_screen.dart';
 import '../image_viewer_screen.dart';
 import '../media_player_screen.dart';
 import '../text_viewer_screen.dart';
@@ -16,6 +17,7 @@ enum _PostAction {
   note,
   share,
   save,
+  openFolder,
   openWith,
   copy,
   selectText,
@@ -40,6 +42,10 @@ class PostTile extends StatelessWidget {
     if (canShare) _PostAction.share,
     if (post.attachment != null) _PostAction.save,
     if (post.attachment != null && canOpen) _PostAction.openWith,
+    if (post.folder != null) ...[
+      _PostAction.openFolder,
+      _PostAction.save,
+    ],
     if (post.text.isNotEmpty) _PostAction.copy,
     if (post.text.isNotEmpty || post.note != null) _PostAction.selectText,
     if (!readOnly) _PostAction.delete,
@@ -90,6 +96,11 @@ class PostTile extends StatelessWidget {
                         (post.attachment?.isAudio ?? false) =>
                   () => _play(context),
                 PostKind.file => () => _perform(context, _PostAction.save),
+                PostKind.folder => () => FolderViewerScreen.open(
+                  context,
+                  context.read<FeedController>(),
+                  post,
+                ),
                 PostKind.text => null,
               },
         onLongPress: toggle,
@@ -151,6 +162,7 @@ class PostTile extends StatelessWidget {
                                   child: _ActionLabel(
                                     action,
                                     hasNote: post.note != null,
+                                    isFolder: post.folder != null,
                                   ),
                                 ),
                             ],
@@ -185,6 +197,7 @@ class PostTile extends StatelessWidget {
       ],
     ),
     PostKind.file => _FileContent(post: post),
+    PostKind.folder => _FolderContent(post: post),
   };
 
   Future<void> _openLink(String url) =>
@@ -205,10 +218,16 @@ class PostTile extends StatelessWidget {
         if (text != null) await feed.setNote(post, text);
       case _PostAction.share:
         await feed.sharePost(post);
+      case _PostAction.openFolder:
+        await FolderViewerScreen.open(context, feed, post);
       case _PostAction.openWith:
         await feed.openExternally(post);
       case _PostAction.save:
-        await _save(context, post);
+        if (post.folder != null) {
+          await _saveFolder(context, post);
+        } else {
+          await _save(context, post);
+        }
       case _PostAction.selectText:
         await showDialog<void>(
           context: context,
@@ -243,6 +262,18 @@ class PostTile extends StatelessWidget {
     }
   }
 
+  static Future<void> _saveFolder(BuildContext context, Post post) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l = context.l10n;
+    final folder = post.folder;
+    if (folder == null) return;
+    if (await context.read<FeedController>().saveFolder(post)) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l.savedFolder(folder.name))),
+      );
+    }
+  }
+
   Future<bool> _confirmDelete(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -250,6 +281,8 @@ class PostTile extends StatelessWidget {
         title: Text(
           post.kind == PostKind.file
               ? context.l10n.deleteFileTitle
+              : post.kind == PostKind.folder
+              ? context.l10n.deleteFolderTitle
               : context.l10n.deleteItemTitle,
         ),
         content: Text(context.l10n.deleteItemText),
@@ -270,10 +303,15 @@ class PostTile extends StatelessWidget {
 }
 
 class _ActionLabel extends StatelessWidget {
-  const _ActionLabel(this.action, {required this.hasNote});
+  const _ActionLabel(
+    this.action, {
+    required this.hasNote,
+    this.isFolder = false,
+  });
 
   final _PostAction action;
   final bool hasNote;
+  final bool isFolder;
 
   @override
   Widget build(BuildContext context) {
@@ -285,7 +323,11 @@ class _ActionLabel extends StatelessWidget {
         hasNote ? l.actionEditNote : l.actionAddNote,
       ),
       _PostAction.share => (Icons.share, l.share),
-      _PostAction.save => (Icons.download, l.actionSaveFile),
+      _PostAction.openFolder => (Icons.folder_open, l.openFolder),
+      _PostAction.save => (
+        Icons.download,
+        isFolder ? l.saveFolder : l.actionSaveFile,
+      ),
       _PostAction.openWith => (Icons.open_in_new, l.openWith),
       _PostAction.copy => (Icons.copy, l.actionCopyText),
       _PostAction.selectText => (Icons.text_fields, l.actionSelectText),
@@ -297,6 +339,178 @@ class _ActionLabel extends StatelessWidget {
         const SizedBox(width: 12),
         // Длинные надписи (крупный шрифт, узкий экран) переносятся.
         Flexible(child: Text(text)),
+      ],
+    );
+  }
+}
+
+/// Карточка прикреплённой папки: иконка, название, число файлов, общий размер
+/// и превью структуры файлов.
+class _FolderContent extends StatelessWidget {
+  const _FolderContent({required this.post});
+
+  final Post post;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final folder = post.folder;
+    final (saving, transfer) = context.select(
+      (FeedController f) => (f.isSaving(post), f.transferProgress(post)),
+    );
+
+    Widget trailing;
+    if (transfer != null) {
+      trailing = Padding(
+        key: const ValueKey('transfer'),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox.square(
+              dimension: 24,
+              child: CircularProgressIndicator(
+                value: transfer.fraction > 0 ? transfer.fraction : null,
+                strokeWidth: 2.5,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${transfer.percent}%',
+              style: theme.textTheme.labelSmall?.copyWith(fontSize: 10),
+            ),
+            if (transfer.bytesPerSecond > 0)
+              Text(
+                context.l10n.transferSpeed(transfer.bytesPerSecond),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontSize: 9,
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+          ],
+        ),
+      );
+    } else if (saving) {
+      trailing = const Padding(
+        key: ValueKey('saving'),
+        padding: EdgeInsets.all(12),
+        child: SizedBox.square(
+          dimension: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    } else {
+      trailing = IconButton(
+        key: const ValueKey('save'),
+        tooltip: context.l10n.saveFolder,
+        icon: const Icon(Icons.download),
+        onPressed: () => PostTile._saveFolder(context, post),
+      );
+    }
+
+    final fileCount = folder?.fileCount ?? 0;
+    final totalSize = folder?.totalSize ?? 0;
+    final filesPreview = folder?.files.take(3).toList() ?? const [];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.folder,
+              size: 32,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    folder?.name ?? context.l10n.folderTitle,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    '${context.l10n.folderFilesCount(fileCount)} · ${context.l10n.fileSize(totalSize)}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              width: 52,
+              child: Center(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: trailing,
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (filesPreview.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final file in filesPreview)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.insert_drive_file_outlined,
+                          size: 14,
+                          color: theme.colorScheme.outline,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            file.relativePath,
+                            style: theme.textTheme.bodySmall,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          context.l10n.fileSize(file.size),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.outline,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (fileCount > filesPreview.length)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      '… +${fileCount - filesPreview.length}',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.outline,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+        if (post.text.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(post.text),
+        ],
       ],
     );
   }
@@ -340,7 +554,7 @@ class _SelectTextDialog extends StatelessWidget {
         ),
       ),
       actions: [
-        TextButton(
+        FilledButton(
           onPressed: () => Navigator.pop(context),
           child: Text(l.closeAction),
         ),
@@ -349,7 +563,7 @@ class _SelectTextDialog extends StatelessWidget {
   }
 }
 
-/// Комментарий под записью.
+/// Комментарий под записью: текст и кем/когда изменён.
 class _NoteView extends StatelessWidget {
   const _NoteView({required this.note});
 
@@ -358,31 +572,48 @@ class _NoteView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = context.l10n;
+    final time = TimeOfDay.fromDateTime(note.editedAt.toLocal()).format(context);
+    final date = MaterialLocalizations.of(context).formatShortDate(
+      note.editedAt.toLocal(),
+    );
     return Padding(
-      padding: const EdgeInsets.only(top: 8, right: 8),
+      padding: const EdgeInsets.only(top: 8),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
+          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Icon(
-                Icons.comment_outlined,
-                size: 16,
-                color: theme.colorScheme.outline,
-              ),
+            Row(
+              children: [
+                Icon(
+                  Icons.comment_outlined,
+                  size: 14,
+                  color: theme.colorScheme.outline,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  l.noteTitle,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.outline,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Tooltip(
-                message: context.l10n.noteEditedBy(note.editorDevice),
-                child: Text(note.text, style: theme.textTheme.bodyMedium),
+            const SizedBox(height: 4),
+            Text(note.text, style: theme.textTheme.bodyMedium),
+            const SizedBox(height: 2),
+            Text(
+              '${l.noteEditedBy(note.editorDevice)} · $date $time',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.outline,
+                fontSize: 10,
               ),
             ),
           ],
@@ -392,8 +623,6 @@ class _NoteView extends StatelessWidget {
   }
 }
 
-/// Добавление или изменение комментария. Возвращает новый текст
-/// (пустой — удалить комментарий) или `null`, если пользователь отменил.
 class _NoteDialog extends StatefulWidget {
   const _NoteDialog({required this.initial});
 

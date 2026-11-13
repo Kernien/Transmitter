@@ -387,6 +387,48 @@ class AppLocalizationsEn extends AppLocalizations {
   String get attachFileTooltipUnlimited => 'Attach a file';
 
   @override
+  String get attachFolder => 'Attach folder';
+
+  @override
+  String attachFolderTooltip(String limit) {
+    return 'Attach a folder (files up to $limit)';
+  }
+
+  @override
+  String get attachFolderTooltipUnlimited => 'Attach a folder';
+
+  @override
+  String get saveFolder => 'Save folder';
+
+  @override
+  String savedFolder(String name) {
+    return 'Folder saved: $name';
+  }
+
+  @override
+  String get openFolder => 'Open folder';
+
+  @override
+  String folderFilesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count files',
+      one: '1 file',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get folderEmpty => 'Folder is empty';
+
+  @override
+  String get folderTitle => 'Folder';
+
+  @override
+  String get deleteFolderTitle => 'Delete folder?';
+
+  @override
   String attachMediaTooltip(String limit) {
     return 'Photo or video from the gallery (up to $limit)';
   }

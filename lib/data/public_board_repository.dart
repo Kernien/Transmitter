@@ -193,6 +193,14 @@ class PublicBoardRepository implements PostRepository {
   }) => _readOnly();
 
   @override
+  Future<Post> sendFolder({
+    required String folderName,
+    required List<PickedFile> files,
+    String caption = '',
+    ProgressCallback? onProgress,
+  }) => _readOnly();
+
+  @override
   Future<void> deletePost(Post post) => _readOnly();
 
   @override
