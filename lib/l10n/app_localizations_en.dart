@@ -137,6 +137,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get pinVault => 'Pin';
+
+  @override
+  String get unpinVault => 'Unpin';
+
+  @override
+  String get pinnedVault => 'Pinned';
+
+  @override
+  String get pinVaultHint => 'Open by default when launching the app';
+
+  @override
   String get showKeyQr => 'Show key / QR';
 
   @override

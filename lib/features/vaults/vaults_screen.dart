@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/app_lock_controller.dart';
 import '../../app/l10n.dart';
 import '../../app/widgets/content_width.dart';
 import '../../app/vault_session_factory.dart';
@@ -19,8 +20,44 @@ import 'share_vault_sheet.dart';
 import 'vaults_controller.dart';
 
 /// Главный экран: список ключей баз.
-class VaultsScreen extends StatelessWidget {
+class VaultsScreen extends StatefulWidget {
   const VaultsScreen({super.key});
+
+  @override
+  State<VaultsScreen> createState() => _VaultsScreenState();
+}
+
+class _VaultsScreenState extends State<VaultsScreen> {
+  bool _didOpenPinned = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkOpenPinned();
+  }
+
+  void _checkOpenPinned() {
+    if (_didOpenPinned) return;
+    final appLock = Provider.of<AppLockController?>(context);
+    if (appLock != null && appLock.isLocked) return;
+
+    final controller = context.read<VaultsController>();
+    final pinnedVault = controller.pinnedVault;
+    final pinnedBoard = controller.pinnedBoard;
+
+    if (pinnedVault != null || pinnedBoard != null) {
+      _didOpenPinned = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (ModalRoute.of(context)?.isCurrent != true) return;
+        if (pinnedVault != null) {
+          openVault(context, pinnedVault);
+        } else if (pinnedBoard != null) {
+          openBoard(context, pinnedBoard);
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -141,6 +178,8 @@ class _VaultTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    final controller = context.watch<VaultsController>();
+    final isPinned = controller.isPinned(vault);
     final connected = context.watch<CloudConnectionService>().isConnected(
       vault.provider,
     );
@@ -148,7 +187,25 @@ class _VaultTile extends StatelessWidget {
       leading: CircleAvatar(
         child: Icon(vault.isEncrypted ? Icons.key : Icons.folder_open_outlined),
       ),
-      title: Text(vault.label.isEmpty ? l.untitled : vault.label),
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              vault.label.isEmpty ? l.untitled : vault.label,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (isPinned)
+            Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: Icon(
+                Icons.push_pin,
+                size: 16,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+        ],
+      ),
       subtitle: Text(
         connected
             ? l.vaultConnectedSubtitle(vault)
@@ -164,6 +221,10 @@ class _VaultTile extends StatelessWidget {
           PopupMenuItem(
             value: _VaultAction.board,
             child: Text(l.boardAccessAction),
+          ),
+          PopupMenuItem(
+            value: _VaultAction.pin,
+            child: Text(isPinned ? l.unpinVault : l.pinVault),
           ),
           PopupMenuItem(value: _VaultAction.rename, child: Text(l.rename)),
           PopupMenuItem(
@@ -186,6 +247,8 @@ class _VaultTile extends StatelessWidget {
         await showShareVaultSheet(context, vault);
       case _VaultAction.board:
         await showBoardAccessSheet(context, vault);
+      case _VaultAction.pin:
+        await controller.togglePinned(vault);
       case _VaultAction.rename:
         final label = await _askLabel(context, vault.label);
         if (label == null || !context.mounted) return;
@@ -334,7 +397,7 @@ Future<int?> _askFileSize(BuildContext context, int current) {
   );
 }
 
-enum _VaultAction { share, board, rename, fileSize, remove }
+enum _VaultAction { share, board, pin, rename, fileSize, remove }
 
 /// Публичная доска, которую на этом устройстве можно только читать.
 class _BoardTile extends StatelessWidget {
@@ -345,15 +408,39 @@ class _BoardTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    final controller = context.watch<VaultsController>();
+    final isPinned = controller.isPinned(board);
     return ListTile(
       leading: const CircleAvatar(child: Icon(Icons.public)),
-      title: Text(board.label.isEmpty ? l.untitled : board.label),
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              board.label.isEmpty ? l.untitled : board.label,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (isPinned)
+            Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: Icon(
+                Icons.push_pin,
+                size: 16,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+        ],
+      ),
       subtitle: Text(l.boardSubtitle(board.provider.title)),
       onTap: () => openBoard(context, board),
       trailing: PopupMenuButton<_BoardAction>(
         onSelected: (action) => _onAction(context, action),
         itemBuilder: (_) => [
           PopupMenuItem(value: _BoardAction.share, child: Text(l.showKeyQr)),
+          PopupMenuItem(
+            value: _BoardAction.pin,
+            child: Text(isPinned ? l.unpinVault : l.pinVault),
+          ),
           PopupMenuItem(value: _BoardAction.rename, child: Text(l.rename)),
           PopupMenuItem(
             value: _BoardAction.remove,
@@ -370,6 +457,8 @@ class _BoardTile extends StatelessWidget {
     switch (action) {
       case _BoardAction.share:
         await showReaderKeySheet(context, board);
+      case _BoardAction.pin:
+        await controller.togglePinned(board);
       case _BoardAction.rename:
         final label = await _askLabel(context, board.label);
         if (label != null) await controller.renameBoard(board, label);
@@ -396,7 +485,7 @@ class _BoardTile extends StatelessWidget {
   }
 }
 
-enum _BoardAction { share, rename, remove }
+enum _BoardAction { share, pin, rename, remove }
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState();

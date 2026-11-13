@@ -9,6 +9,7 @@ class VaultKeyStore {
   const VaultKeyStore(this._store, [this._codec = const VaultKeyCodec()]);
 
   static const String _storeKey = 'vault_keys';
+  static const String _pinnedKey = 'pinned_vault_id';
 
   final SecureKeyValueStore _store;
   final VaultKeyCodec _codec;
@@ -26,4 +27,11 @@ class VaultKeyStore {
     _storeKey,
     jsonEncode([for (final k in keys) _codec.toJson(k)]),
   );
+
+  /// Идентификатор закреплённой доски на этом устройстве (если есть).
+  Future<String?> loadPinnedId() => _store.read(_pinnedKey);
+
+  /// Сохраняет или сбрасывает идентификатор закреплённой доски.
+  Future<void> savePinnedId(String? id) =>
+      id == null ? _store.delete(_pinnedKey) : _store.write(_pinnedKey, id);
 }

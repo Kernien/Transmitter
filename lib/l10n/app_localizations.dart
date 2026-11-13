@@ -308,6 +308,30 @@ abstract class AppLocalizations {
   /// **'{provider} · unencrypted · not connected'**
   String vaultSubtitleNotConnectedPlain(String provider);
 
+  /// No description provided for @pinVault.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin'**
+  String get pinVault;
+
+  /// No description provided for @unpinVault.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin'**
+  String get unpinVault;
+
+  /// No description provided for @pinnedVault.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned'**
+  String get pinnedVault;
+
+  /// No description provided for @pinVaultHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Open by default when launching the app'**
+  String get pinVaultHint;
+
   /// No description provided for @showKeyQr.
   ///
   /// In en, this message translates to:

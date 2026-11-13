@@ -201,6 +201,17 @@ void main() {
       expect(c.selected, isNull);
       expect(c.canSend, isFalse);
     });
+
+    test('закреплённая база выбирается первой, если доступна', () {
+      final c = ShareTargetController(
+        content: const SharedContent(text: 'x'),
+        vaults: [dropbox, gdrive],
+        isUsable: (_) => true,
+        openVault: (_) async => repo('A'),
+        pinnedVault: gdrive,
+      );
+      expect(c.selected, gdrive);
+    });
   });
 
   group('Поделиться из ленты', () {

@@ -116,4 +116,51 @@ void main() {
     expect(await store.read('reader_keys'), '[]');
     expect(await store.read('reader_custom_labels'), '[]');
   });
+
+  test('закрепление доски: только одна, смена открепляет старую, переживает перезапуск', () async {
+    final c = controller();
+    await c.load();
+    final vault1 = await c.create(label: 'База 1', provider: CloudProviderId.dropbox);
+    final vault2 = await c.create(label: 'База 2', provider: CloudProviderId.googleDrive);
+    await c.importAny(const ReaderKeyCodec().encode(readerKey));
+
+    expect(c.pinnedVault, isNull);
+    expect(c.pinnedBoard, isNull);
+    expect(c.isPinned(vault1), isFalse);
+
+    // Закрепляем первую базу.
+    await c.togglePinned(vault1);
+    expect(c.isPinned(vault1), isTrue);
+    expect(c.isPinned(vault2), isFalse);
+    expect(c.pinnedVault?.sameVaultAs(vault1), isTrue);
+
+    // Закрепление второй базы автоматически открепляет первую.
+    await c.togglePinned(vault2);
+    expect(c.isPinned(vault1), isFalse);
+    expect(c.isPinned(vault2), isTrue);
+    expect(c.pinnedVault?.sameVaultAs(vault2), isTrue);
+
+    // Закрепление публичной доски открепляет базу.
+    await c.togglePinned(readerKey);
+    expect(c.isPinned(vault2), isFalse);
+    expect(c.isPinned(readerKey), isTrue);
+    expect(c.pinnedBoard?.sameBoardAs(readerKey), isTrue);
+    expect(c.pinnedVault, isNull);
+
+    // Перезапуск сохраняет закрепление.
+    final reloaded = controller();
+    await reloaded.load();
+    expect(reloaded.isPinned(readerKey), isTrue);
+
+    // Повторное переключение открепляет.
+    await reloaded.togglePinned(readerKey);
+    expect(reloaded.isPinned(readerKey), isFalse);
+    expect(reloaded.pinnedKey, isNull);
+
+    // Удаление закреплённой доски сбрасывает закрепление.
+    await reloaded.togglePinned(vault1);
+    expect(reloaded.isPinned(vault1), isTrue);
+    await reloaded.remove(vault1);
+    expect(reloaded.pinnedKey, isNull);
+  });
 }

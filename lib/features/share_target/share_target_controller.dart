@@ -13,9 +13,14 @@ class ShareTargetController extends ChangeNotifier {
     required List<VaultKey> vaults,
     required bool Function(VaultKey) isUsable,
     required this._openVault,
+    VaultKey? pinnedVault,
   }) : vaults = List.unmodifiable(vaults),
        _isUsable = isUsable {
-    _selected = this.vaults.where(isUsable).firstOrNull;
+    if (pinnedVault != null && isUsable(pinnedVault)) {
+      _selected = pinnedVault;
+    } else {
+      _selected = this.vaults.where(isUsable).firstOrNull;
+    }
   }
 
   final SharedContent content;

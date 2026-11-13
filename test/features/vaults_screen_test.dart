@@ -166,4 +166,36 @@ void main() {
     expect(find.textContaining('без шифрования'), findsOneWidget);
     expect(find.byIcon(Icons.folder_open_outlined), findsOneWidget);
   });
+
+  testWidgets('закрепление базы: переключение в меню и значок булавки', (tester) async {
+    final settings = FakeSettings();
+    final vaults = await pumpScreen(tester, settings);
+
+    // Изначально значка булавки нет.
+    expect(find.byIcon(Icons.push_pin), findsNothing);
+
+    // Открываем меню базы.
+    await tester.tap(find.byIcon(Icons.more_vert).first);
+    await tester.pumpAndSettle();
+    expect(find.text('Закрепить'), findsOneWidget);
+
+    // Закрепляем базу.
+    await tester.tap(find.text('Закрепить'));
+    await tester.pumpAndSettle();
+
+    // Появился значок булавки.
+    expect(find.byIcon(Icons.push_pin), findsOneWidget);
+    expect(vaults.isPinned(vaults.vaults.first), isTrue);
+
+    // В меню теперь пункт «Открепить».
+    await tester.tap(find.byIcon(Icons.more_vert).first);
+    await tester.pumpAndSettle();
+    expect(find.text('Открепить'), findsOneWidget);
+
+    // Открепляем.
+    await tester.tap(find.text('Открепить'));
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.push_pin), findsNothing);
+    expect(vaults.isPinned(vaults.vaults.first), isFalse);
+  });
 }

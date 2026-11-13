@@ -137,6 +137,18 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get pinVault => 'Закрепить';
+
+  @override
+  String get unpinVault => 'Открепить';
+
+  @override
+  String get pinnedVault => 'Закреплено';
+
+  @override
+  String get pinVaultHint => 'Открывать по умолчанию при запуске';
+
+  @override
   String get showKeyQr => 'Показать ключ / QR';
 
   @override

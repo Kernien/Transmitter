@@ -53,6 +53,7 @@ class _IncomingShareListenerState extends State<IncomingShareListener> {
           create: (_) => ShareTargetController(
             content: content,
             vaults: context.read<VaultsController>().vaults,
+            pinnedVault: context.read<VaultsController>().pinnedVault,
             isUsable: (key) =>
                 connections.isSupported(key.provider) &&
                 connections.isConnected(key.provider),

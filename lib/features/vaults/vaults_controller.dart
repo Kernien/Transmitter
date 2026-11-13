@@ -37,16 +37,79 @@ class VaultsController extends ChangeNotifier {
   /// Адреса досок, которые читатель переименовал сам.
   Set<String> _customLabels = const {};
 
+  /// Идентификатор закреплённой доски на этом устройстве.
+  String? _pinnedId;
+
   List<VaultKey> get vaults => List.unmodifiable(_vaults);
 
   /// Публичные доски, которые на этом устройстве можно только читать.
   List<ReaderKey> get boards => List.unmodifiable(_boards);
+
+  /// Идентификатор закреплённой доски (если есть).
+  String? get pinnedId => _pinnedId;
+
+  /// Закреплена ли доска (база [VaultKey] или публичная доска [ReaderKey]).
+  bool isPinned(Object key) => _pinnedId != null && _pinnedId == idOfKey(key);
+
+  /// Закреплённая база (если есть).
+  VaultKey? get pinnedVault =>
+      _vaults.where((v) => isPinned(v)).firstOrNull;
+
+  /// Закреплённая публичная доска (если есть).
+  ReaderKey? get pinnedBoard =>
+      _boards.where((b) => isPinned(b)).firstOrNull;
+
+  /// Закреплённый ключ: [VaultKey] или [ReaderKey], либо `null`.
+  Object? get pinnedKey => pinnedVault ?? pinnedBoard;
+
+  /// Переключает закрепление доски на этом устройстве. Если была закреплена
+  /// эта же — открепляет. Если другая — закрепляет эту и открепляет старую.
+  Future<void> togglePinned(Object key) async {
+    if (isPinned(key)) {
+      await setPinned(null);
+    } else {
+      await setPinned(key);
+    }
+  }
+
+  /// Устанавливает или сбрасывает закреплённую доску на этом устройстве.
+  Future<void> setPinned(Object? key) async {
+    final nextId = key != null ? idOfKey(key) : null;
+    if (_pinnedId == nextId) return;
+    _pinnedId = nextId;
+    await _store.savePinnedId(nextId);
+    notifyListeners();
+  }
+
+  /// Детерминированный идентификатор доски, не зависящий от переименований.
+  static String idOfKey(Object key) {
+    if (key is VaultKey) {
+      final hex = key.secret
+          .map((b) => b.toRadixString(16).padLeft(2, '0'))
+          .join();
+      return 'vault_${key.provider.code}_${key.isEncrypted ? 'enc' : 'plain'}_$hex';
+    } else if (key is ReaderKey) {
+      return 'board_${key.provider.code}_${key.locator}';
+    }
+    throw ArgumentError('Unsupported key type: $key');
+  }
 
   Future<void> load() async {
     _vaults = await _store.loadAll();
     final stored = await _readers?.loadAll();
     _boards = stored?.keys ?? const [];
     _customLabels = stored?.customLabels ?? const {};
+    final savedPinned = await _store.loadPinnedId();
+    if (savedPinned != null) {
+      final exists = _vaults.any((v) => idOfKey(v) == savedPinned) ||
+          _boards.any((b) => idOfKey(b) == savedPinned);
+      _pinnedId = exists ? savedPinned : null;
+      if (!exists) {
+        await _store.savePinnedId(null);
+      }
+    } else {
+      _pinnedId = null;
+    }
     notifyListeners();
   }
 
@@ -177,18 +240,29 @@ class VaultsController extends ChangeNotifier {
   }
 
   /// Удаляет ключ только с этого устройства. Данные в облаке остаются.
-  Future<void> remove(VaultKey key) =>
-      _save(_vaults.where((k) => !k.sameVaultAs(key)).toList());
+  Future<void> remove(VaultKey key) async {
+    if (isPinned(key)) {
+      await setPinned(null);
+    }
+    await _save(_vaults.where((k) => !k.sameVaultAs(key)).toList());
+  }
 
-  Future<void> removeBoard(ReaderKey key) => _saveBoards(
-    _boards.where((k) => !k.sameBoardAs(key)).toList(),
-    customLabels: _customLabels.difference({key.locator}),
-  );
+  Future<void> removeBoard(ReaderKey key) async {
+    if (isPinned(key)) {
+      await setPinned(null);
+    }
+    await _saveBoards(
+      _boards.where((k) => !k.sameBoardAs(key)).toList(),
+      customLabels: _customLabels.difference({key.locator}),
+    );
+  }
 
   /// Сбрасывает ключи баз и читателей только на этом устройстве.
   /// Данные и учётные записи облаков не затрагиваются.
   Future<void> clearLocalKeys() async {
     await _store.saveAll(const []);
+    await _store.savePinnedId(null);
+    _pinnedId = null;
     final readers = _readers;
     if (readers != null) await readers.saveAll(const [], const {});
     _vaults = const [];

@@ -15,6 +15,7 @@ import '../../core/vault/reader_key.dart';
 import '../../core/vault/vault_key.dart';
 import '../../data/post_repository.dart';
 import '../../data/public_board_repository.dart';
+import '../vaults/vaults_controller.dart';
 import 'feed_controller.dart';
 import 'selection_exporter.dart';
 import 'widgets/compose_bar.dart';
@@ -28,6 +29,7 @@ class FeedScreen extends StatefulWidget {
       pollInterval = AppConfig.pollInterval,
       liveLabel = null,
       onOwnerLabel = null,
+      boardKey = vault,
       _open = ((sessions) => sessions.open(vault));
 
   /// Публичная доска у читателя: только чтение, без входа в облако.
@@ -41,12 +43,14 @@ class FeedScreen extends StatefulWidget {
     this.onOwnerLabel,
   }) : label = board.label,
        pollInterval = AppConfig.boardPollInterval,
+       boardKey = board,
        _open = ((sessions) async => sessions.openAsReader(board));
 
   final String label;
   final String Function(BuildContext context)? liveLabel;
   final void Function(String ownerLabel)? onOwnerLabel;
   final Duration pollInterval;
+  final Object? boardKey;
   final Future<PostRepository> Function(VaultSessionFactory) _open;
 
   @override
@@ -106,7 +110,7 @@ class _FeedScreenState extends State<FeedScreen> {
             }
             return feed;
           },
-          child: _FeedView(title: _title),
+          child: _FeedView(title: _title, boardKey: widget.boardKey),
         );
       },
     );
@@ -114,9 +118,10 @@ class _FeedScreenState extends State<FeedScreen> {
 }
 
 class _FeedView extends StatelessWidget {
-  const _FeedView({required this.title});
+  const _FeedView({required this.title, this.boardKey});
 
   final String title;
+  final Object? boardKey;
 
   @override
   Widget build(BuildContext context) {
@@ -136,33 +141,70 @@ class _FeedView extends StatelessWidget {
     );
   }
 
-  AppBar _normalAppBar(BuildContext context) => AppBar(
-    title: Text(title),
-    actions: [
-      if (context.read<FeedController>().isReadOnly)
-        Padding(
-          padding: const EdgeInsets.only(right: 12),
-          child: Chip(
-            avatar: const Icon(Icons.visibility_outlined, size: 18),
-            label: Text(context.l10n.readOnly),
-          ),
-        )
-      else
-        PopupMenuButton<String>(
-          onSelected: (_) => _confirmClear(context),
-          itemBuilder: (_) => [
-            PopupMenuItem(
-              value: 'clear',
-              child: ListTile(
-                leading: const Icon(Icons.delete_sweep_outlined),
-                title: Text(context.l10n.clearFeed),
-                contentPadding: EdgeInsets.zero,
-              ),
+  AppBar _normalAppBar(BuildContext context) {
+    final vaults = Provider.of<VaultsController?>(context);
+    final key = boardKey;
+    final isPinned = key != null && vaults != null && vaults.isPinned(key);
+    final isReadOnly = context.read<FeedController>().isReadOnly;
+
+    return AppBar(
+      title: Text(title),
+      actions: [
+        if (isReadOnly)
+          Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: Chip(
+              avatar: const Icon(Icons.visibility_outlined, size: 18),
+              label: Text(context.l10n.readOnly),
             ),
-          ],
-        ),
-    ],
-  );
+          ),
+        if (key != null && vaults != null)
+          IconButton(
+            tooltip: isPinned ? context.l10n.unpinVault : context.l10n.pinVault,
+            icon: Icon(isPinned ? Icons.push_pin : Icons.push_pin_outlined),
+            onPressed: () => vaults.togglePinned(key),
+          ),
+        if (!isReadOnly)
+          PopupMenuButton<String>(
+            onSelected: (val) {
+              if (val == 'clear') _confirmClear(context);
+              if (val == 'pin' && key != null && vaults != null) {
+                vaults.togglePinned(key);
+              }
+            },
+            itemBuilder: (_) => [
+              if (key != null && vaults != null)
+                CheckedPopupMenuItem<String>(
+                  value: 'pin',
+                  checked: isPinned,
+                  child: Text(context.l10n.pinVault),
+                ),
+              PopupMenuItem(
+                value: 'clear',
+                child: ListTile(
+                  leading: const Icon(Icons.delete_sweep_outlined),
+                  title: Text(context.l10n.clearFeed),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
+          )
+        else if (key != null && vaults != null)
+          PopupMenuButton<String>(
+            onSelected: (val) {
+              if (val == 'pin') vaults.togglePinned(key);
+            },
+            itemBuilder: (_) => [
+              CheckedPopupMenuItem<String>(
+                value: 'pin',
+                checked: isPinned,
+                child: Text(context.l10n.pinVault),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
 
   AppBar _selectionAppBar(BuildContext context) {
     final l = context.l10n;
