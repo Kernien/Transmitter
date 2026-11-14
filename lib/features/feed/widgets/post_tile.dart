@@ -19,6 +19,10 @@ enum _PostAction {
   save,
   openFolder,
   openWith,
+  edit,
+  replaceFile,
+  replaceFolder,
+  rename,
   copy,
   selectText,
   delete,
@@ -40,11 +44,22 @@ class PostTile extends StatelessWidget {
     _PostAction.select,
     if (!readOnly) _PostAction.note,
     if (canShare) _PostAction.share,
-    if (post.attachment != null) _PostAction.save,
-    if (post.attachment != null && canOpen) _PostAction.openWith,
+    if (post.attachment != null) ...[
+      _PostAction.save,
+      if (canOpen) _PostAction.openWith,
+      if (!readOnly) ...[
+        if (post.attachment!.isReadable) _PostAction.edit,
+        _PostAction.replaceFile,
+        _PostAction.rename,
+      ],
+    ],
     if (post.folder != null) ...[
       _PostAction.openFolder,
       _PostAction.save,
+      if (!readOnly) ...[
+        _PostAction.replaceFolder,
+        _PostAction.rename,
+      ],
     ],
     if (post.text.isNotEmpty) _PostAction.copy,
     if (post.text.isNotEmpty || post.note != null) _PostAction.selectText,
@@ -228,6 +243,14 @@ class PostTile extends StatelessWidget {
         } else {
           await _save(context, post);
         }
+      case _PostAction.edit:
+        await TextViewerScreen.open(context, feed, post, initialEdit: true);
+      case _PostAction.replaceFile:
+        await _replaceFile(context, feed, post);
+      case _PostAction.replaceFolder:
+        await _replaceFolder(context, feed, post);
+      case _PostAction.rename:
+        await _rename(context, feed, post);
       case _PostAction.selectText:
         await showDialog<void>(
           context: context,
@@ -238,6 +261,107 @@ class PostTile extends StatelessWidget {
         messenger.showSnackBar(SnackBar(content: Text(l.copied)));
       case _PostAction.delete:
         if (await _confirmDelete(context)) await feed.delete(post);
+    }
+  }
+
+  static Future<void> _replaceFile(
+    BuildContext context,
+    FeedController feed,
+    Post post,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l = context.l10n;
+    final picked = await feed.files.pickFiles(maxSize: feed.maxFileSize);
+    if (picked.isEmpty) return;
+    final file = picked.first;
+    if (file.isTooLarge || file.size > feed.maxFileSize) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l.errFileTooLarge(l.sizeLimitOf(feed.maxFileSize)))),
+      );
+      return;
+    }
+    final updated = await feed.replaceFile(post, file);
+    if (updated != null) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l.fileReplaced(file.name))),
+      );
+    } else if (feed.error != null) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l.describeError(feed.error!))),
+      );
+    }
+  }
+
+  static Future<void> _replaceFolder(
+    BuildContext context,
+    FeedController feed,
+    Post post,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l = context.l10n;
+    final picked = await feed.files.pickFolder(maxSize: feed.maxFileSize);
+    if (picked == null) return;
+    for (final file in picked.files) {
+      if (file.isTooLarge || file.size > feed.maxFileSize) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l.errFileTooLarge(l.sizeLimitOf(feed.maxFileSize)))),
+        );
+        return;
+      }
+    }
+    final updated = await feed.replaceFolder(
+      post,
+      folderName: picked.name,
+      files: picked.files,
+    );
+    if (updated != null) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l.folderReplaced(picked.name))),
+      );
+    } else if (feed.error != null) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l.describeError(feed.error!))),
+      );
+    }
+  }
+
+  static Future<void> _rename(
+    BuildContext context,
+    FeedController feed,
+    Post post,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l = context.l10n;
+    final isFolder = post.folder != null;
+    final initial = isFolder
+        ? (post.folder?.name ?? '')
+        : (post.attachment?.fileName ?? '');
+
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (_) => _RenameDialog(initial: initial),
+    );
+
+    if (newName == null || newName.isEmpty || newName == initial) return;
+
+    if (isFolder) {
+      final updated = await feed.renameFolder(post, newName);
+      if (updated != null) {
+        messenger.showSnackBar(SnackBar(content: Text(l.folderRenamed)));
+      } else if (feed.error != null) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l.describeError(feed.error!))),
+        );
+      }
+    } else {
+      final updated = await feed.renameAttachment(post, newName);
+      if (updated != null) {
+        messenger.showSnackBar(SnackBar(content: Text(l.fileRenamed)));
+      } else if (feed.error != null) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l.describeError(feed.error!))),
+        );
+      }
     }
   }
 
@@ -329,6 +453,10 @@ class _ActionLabel extends StatelessWidget {
         isFolder ? l.saveFolder : l.actionSaveFile,
       ),
       _PostAction.openWith => (Icons.open_in_new, l.openWith),
+      _PostAction.edit => (Icons.edit_outlined, l.editText),
+      _PostAction.replaceFile => (Icons.find_replace_outlined, l.replaceFile),
+      _PostAction.replaceFolder => (Icons.sync, l.replaceFolder),
+      _PostAction.rename => (Icons.drive_file_rename_outline, l.rename),
       _PostAction.copy => (Icons.copy, l.actionCopyText),
       _PostAction.selectText => (Icons.text_fields, l.actionSelectText),
       _PostAction.delete => (Icons.delete_outline, l.actionDeleteEverywhere),
@@ -634,6 +762,52 @@ class _NoteView extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _RenameDialog extends StatefulWidget {
+  const _RenameDialog({required this.initial});
+
+  final String initial;
+
+  @override
+  State<_RenameDialog> createState() => _RenameDialogState();
+}
+
+class _RenameDialogState extends State<_RenameDialog> {
+  late final _controller = TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return AlertDialog(
+      title: Text(l.rename),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        decoration: InputDecoration(
+          labelText: l.nameTitle,
+          border: const OutlineInputBorder(),
+        ),
+        onSubmitted: (value) => Navigator.pop(context, value.trim()),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _controller.text.trim()),
+          child: Text(l.rename),
+        ),
+      ],
     );
   }
 }

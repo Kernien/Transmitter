@@ -147,6 +147,58 @@ class PublishingPostRepository implements PostRepository {
   );
 
   @override
+  Future<Post> replaceFile({
+    required Post post,
+    required PickedFile file,
+    ProgressCallback? onProgress,
+  }) => _changed(
+    _inner.replaceFile(
+      post: post,
+      file: file,
+      onProgress: onProgress,
+    ),
+  );
+
+  @override
+  Future<Post> renameAttachment({
+    required Post post,
+    required String newFileName,
+  }) => _changed(
+    _inner.renameAttachment(
+      post: post,
+      newFileName: newFileName,
+    ),
+  );
+
+  @override
+  Future<Post> replaceFolder({
+    required Post post,
+    required String folderName,
+    required List<PickedFile> files,
+    ProgressCallback? onProgress,
+    bool Function()? isCancelled,
+  }) => _changed(
+    _inner.replaceFolder(
+      post: post,
+      folderName: folderName,
+      files: files,
+      onProgress: onProgress,
+      isCancelled: isCancelled,
+    ),
+  );
+
+  @override
+  Future<Post> renameFolder({
+    required Post post,
+    required String newFolderName,
+  }) => _changed(
+    _inner.renameFolder(
+      post: post,
+      newFolderName: newFolderName,
+    ),
+  );
+
+  @override
   Future<Post?> updateFolderStructure({
     required Post post,
     required FolderAttachment updatedFolder,

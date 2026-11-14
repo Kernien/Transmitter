@@ -447,6 +447,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get replaceFile => 'Replace file';
 
   @override
+  String get replaceFolder => 'Replace folder';
+
+  @override
+  String fileReplaced(String name) {
+    return 'File “$name” replaced';
+  }
+
+  @override
+  String folderReplaced(String name) {
+    return 'Folder “$name” replaced';
+  }
+
+  @override
+  String get fileRenamed => 'File renamed';
+
+  @override
+  String get folderRenamed => 'Folder renamed';
+
+  @override
   String get addFilesToFolder => 'Add files';
 
   @override

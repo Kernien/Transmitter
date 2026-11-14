@@ -50,6 +50,12 @@ class AttachmentPreviews {
   /// Сохраняет готовые байты в памяти (например, сразу после отправки).
   void remember(String id, Uint8List bytes) => _remember(id, bytes);
 
+  /// Удаляет превью из памяти (например, при замене файла).
+  void evict(String id) {
+    final removed = _bytes.remove(id);
+    if (removed != null) _total -= removed.length;
+  }
+
   void _remember(String id, Uint8List bytes) {
     if (bytes.length > maxBytes) return;
     _bytes[id] = bytes;

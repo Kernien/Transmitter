@@ -217,6 +217,34 @@ class PublicBoardRepository implements PostRepository {
   }) => _readOnly();
 
   @override
+  Future<Post> replaceFile({
+    required Post post,
+    required PickedFile file,
+    ProgressCallback? onProgress,
+  }) => _readOnly();
+
+  @override
+  Future<Post> renameAttachment({
+    required Post post,
+    required String newFileName,
+  }) => _readOnly();
+
+  @override
+  Future<Post> replaceFolder({
+    required Post post,
+    required String folderName,
+    required List<PickedFile> files,
+    ProgressCallback? onProgress,
+    bool Function()? isCancelled,
+  }) => _readOnly();
+
+  @override
+  Future<Post> renameFolder({
+    required Post post,
+    required String newFolderName,
+  }) => _readOnly();
+
+  @override
   Future<Post?> updateFolderStructure({
     required Post post,
     required FolderAttachment updatedFolder,

@@ -830,6 +830,36 @@ abstract class AppLocalizations {
   /// **'Replace file'**
   String get replaceFile;
 
+  /// No description provided for @replaceFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace folder'**
+  String get replaceFolder;
+
+  /// No description provided for @fileReplaced.
+  ///
+  /// In en, this message translates to:
+  /// **'File “{name}” replaced'**
+  String fileReplaced(String name);
+
+  /// No description provided for @folderReplaced.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder “{name}” replaced'**
+  String folderReplaced(String name);
+
+  /// No description provided for @fileRenamed.
+  ///
+  /// In en, this message translates to:
+  /// **'File renamed'**
+  String get fileRenamed;
+
+  /// No description provided for @folderRenamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder renamed'**
+  String get folderRenamed;
+
   /// No description provided for @addFilesToFolder.
   ///
   /// In en, this message translates to:

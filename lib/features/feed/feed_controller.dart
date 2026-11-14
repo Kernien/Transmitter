@@ -79,7 +79,9 @@ class FeedController extends ChangeNotifier {
   void cancelTransfer(String id) {
     _cancelledTransfers.add(id);
     _transfers.remove(id);
-    _posts = _posts.where((p) => p.id != id).toList();
+    if (id.startsWith('pending_')) {
+      _posts = _posts.where((p) => p.id != id).toList();
+    }
     _sending = _transfers.isNotEmpty;
     _notify();
   }
@@ -166,6 +168,9 @@ class FeedController extends ChangeNotifier {
 
   /// Лимит размера файла в этой базе.
   int get maxFileSize => _repository.maxFileSize;
+
+  /// Сервис выбора и сохранения файлов.
+  FileTransferService get files => _files;
 
   /// Открывает системное меню «Поделиться» для одного поста.
   Future<void> sharePost(Post post) async {
@@ -1078,6 +1083,130 @@ class FeedController extends ChangeNotifier {
         post: post,
         files: picked,
         targetSubdir: targetSubdir,
+      );
+      _posts = [for (final p in _posts) p.id == post.id ? updated : p];
+      _error = null;
+      _notify();
+      return updated;
+    } catch (e) {
+      _error = e;
+      _notify();
+      return null;
+    }
+  }
+
+  /// Заменяет файл в посте [post] новым файлом [file] с отслеживанием прогресса.
+  Future<Post?> replaceFile(Post post, PickedFile file) async {
+    final tracker = TransferTracker(clock: _clock);
+    _transfers[post.id] = tracker.update(0, file.size);
+    _sending = true;
+    _notify();
+
+    try {
+      final updated = await _repository.replaceFile(
+        post: post,
+        file: file,
+        onProgress: (count, total) {
+          if (isTransferCancelled(post.id)) {
+            throw const TransferCancelledException();
+          }
+          _transfers[post.id] = tracker.update(count, total);
+          _notify();
+        },
+      );
+      if (updated.attachment case final newAtt?) {
+        if (file.hasBytesInMemory) {
+          previews.remember(newAtt.id, file.bytes);
+        } else {
+          previews.evict(post.attachment?.id ?? '');
+        }
+      }
+      _posts = [for (final p in _posts) p.id == post.id ? updated : p];
+      _error = null;
+      _notify();
+      return updated;
+    } catch (e) {
+      if (e is! TransferCancelledException && !isTransferCancelled(post.id)) {
+        _error = e;
+      }
+      _notify();
+      return null;
+    } finally {
+      _transfers.remove(post.id);
+      _cancelledTransfers.remove(post.id);
+      _sending = _transfers.isNotEmpty;
+      _notify();
+    }
+  }
+
+  /// Переименовывает прикреплённый файл отдельного поста [post] в [newName].
+  Future<Post?> renameAttachment(Post post, String newName) async {
+    try {
+      final updated = await _repository.renameAttachment(
+        post: post,
+        newFileName: newName,
+      );
+      _posts = [for (final p in _posts) p.id == post.id ? updated : p];
+      _error = null;
+      _notify();
+      return updated;
+    } catch (e) {
+      _error = e;
+      _notify();
+      return null;
+    }
+  }
+
+  /// Заменяет содержимое папки поста новой папкой [folderName] с файлами [files].
+  Future<Post?> replaceFolder(
+    Post post, {
+    required String folderName,
+    required List<PickedFile> files,
+  }) async {
+    final totalSize = files.fold(0, (sum, f) => sum + f.size);
+    final tracker = TransferTracker(clock: _clock);
+    _transfers[post.id] = tracker.update(0, totalSize);
+    _sending = true;
+    _notify();
+
+    try {
+      final updated = await _repository.replaceFolder(
+        post: post,
+        folderName: folderName,
+        files: files,
+        onProgress: (count, total) {
+          if (isTransferCancelled(post.id)) {
+            throw const TransferCancelledException();
+          }
+          _transfers[post.id] = tracker.update(count, total);
+          _notify();
+        },
+        isCancelled: () => isTransferCancelled(post.id),
+      );
+      _posts = [for (final p in _posts) p.id == post.id ? updated : p];
+      _error = null;
+      _notify();
+      return updated;
+    } catch (e) {
+      if (e is! TransferCancelledException && !isTransferCancelled(post.id)) {
+        _error = e;
+      }
+      _notify();
+      return null;
+    } finally {
+      _transfers.remove(post.id);
+      _cancelledTransfers.remove(post.id);
+      _sending = _transfers.isNotEmpty;
+      _notify();
+    }
+  }
+
+  /// Переименовывает прикреплённую папку поста [post] в [newFolderName].
+  Future<Post?> renameFolder(Post post, String newFolderName) async {
+    try {
+      final updated = await _repository.renameFolder(
+        post: post,
+        newFolderName: newFolderName,
       );
       _posts = [for (final p in _posts) p.id == post.id ? updated : p];
       _error = null;

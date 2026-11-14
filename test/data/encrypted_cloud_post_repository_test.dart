@@ -385,5 +385,113 @@ void main() {
       expect(await phone.fetchPosts(), isEmpty);
       expect(cloud.files.keys.where((k) => k.contains('/files/')), isEmpty);
     });
+
+    test('replaceFile заменяет файл, удаляет старое вложение и обновляет пост', () async {
+      final phone = device('Телефон');
+      final pc = device('ПК');
+
+      final initialPost = await phone.sendFile(
+        fileName: 'v1.txt',
+        bytes: Uint8List.fromList(utf8.encode('версия 1')),
+      );
+      final oldAttachmentId = initialPost.attachment!.id;
+
+      final updatedPost = await phone.replaceFile(
+        post: initialPost,
+        file: PickedFile(
+          name: 'v2.txt',
+          bytes: Uint8List.fromList(utf8.encode('версия 2 — длиннее')),
+        ),
+      );
+
+      expect(updatedPost.id, initialPost.id);
+      expect(updatedPost.attachment!.fileName, 'v2.txt');
+      expect(updatedPost.attachment!.id, isNot(oldAttachmentId));
+
+      // Старый файл удалён из хранилища
+      expect(cloud.files.keys.any((k) => k.contains(oldAttachmentId)), isFalse);
+
+      // Другое устройство видит обновлённый файл
+      final posts = await pc.fetchPosts();
+      expect(posts.single.attachment!.fileName, 'v2.txt');
+      final downloaded = await pc.downloadAttachment(posts.single.attachment!);
+      expect(utf8.decode(downloaded), 'версия 2 — длиннее');
+    });
+
+    test('renameAttachment переименовывает файл без перезаливки в зашифрованной базе', () async {
+      final phone = device('Телефон');
+      final pc = device('ПК');
+
+      final initialPost = await phone.sendFile(
+        fileName: 'старое.pdf',
+        bytes: Uint8List.fromList([1, 2, 3]),
+      );
+      final attachmentId = initialPost.attachment!.id;
+
+      final renamed = await phone.renameAttachment(
+        post: initialPost,
+        newFileName: 'новое.pdf',
+      );
+
+      expect(renamed.attachment!.fileName, 'новое.pdf');
+      expect(renamed.attachment!.id, attachmentId);
+
+      final posts = await pc.fetchPosts();
+      expect(posts.single.attachment!.fileName, 'новое.pdf');
+      expect(posts.single.attachment!.id, attachmentId);
+    });
+
+    test('replaceFolder заменяет папку и удаляет старые файлы', () async {
+      final phone = device('Телефон');
+      final pc = device('ПК');
+
+      final initial = await phone.sendFolder(
+        folderName: 'папка1',
+        files: [
+          PickedFile(name: 'a.txt', bytes: Uint8List.fromList(utf8.encode('a')), relativePath: 'a.txt'),
+        ],
+      );
+      final oldFileId = initial.folder!.files.single.id;
+
+      final replaced = await phone.replaceFolder(
+        post: initial,
+        folderName: 'папка2',
+        files: [
+          PickedFile(name: 'b.txt', bytes: Uint8List.fromList(utf8.encode('b')), relativePath: 'b.txt'),
+          PickedFile(name: 'c.txt', bytes: Uint8List.fromList(utf8.encode('c')), relativePath: 'c.txt'),
+        ],
+      );
+
+      expect(replaced.folder!.name, 'папка2');
+      expect(replaced.folder!.fileCount, 2);
+      expect(cloud.files.keys.any((k) => k.contains(oldFileId)), isFalse);
+
+      final posts = await pc.fetchPosts();
+      expect(posts.single.folder!.name, 'папка2');
+      expect(posts.single.folder!.fileCount, 2);
+    });
+
+    test('renameFolder обновляет название папки', () async {
+      final phone = device('Телефон');
+      final pc = device('ПК');
+
+      final initial = await phone.sendFolder(
+        folderName: 'старое_имя',
+        files: [
+          PickedFile(name: 'a.txt', bytes: Uint8List.fromList(utf8.encode('a')), relativePath: 'a.txt'),
+        ],
+      );
+
+      final renamed = await phone.renameFolder(
+        post: initial,
+        newFolderName: 'новое_имя',
+      );
+
+      expect(renamed.folder!.name, 'новое_имя');
+      expect(renamed.folder!.files.single.id, initial.folder!.files.single.id);
+
+      final posts = await pc.fetchPosts();
+      expect(posts.single.folder!.name, 'новое_имя');
+    });
   });
 }

@@ -48,10 +48,14 @@ class TextViewerScreen extends StatefulWidget {
     required this.feed,
     required this.post,
     this.onSaveContent,
+    this.initialEdit = false,
   });
 
   final FeedController feed;
   final Post post;
+
+  /// Открыть сразу в режиме редактирования текста.
+  final bool initialEdit;
 
   /// Пользовательский обработчик сохранения изменённого содержимого (например,
   /// для файла внутри папки). Если не задан, но доска не в режиме чтения,
@@ -63,12 +67,14 @@ class TextViewerScreen extends StatefulWidget {
     FeedController feed,
     Post post, {
     Future<Attachment?> Function(Uint8List bytes)? onSaveContent,
+    bool initialEdit = false,
   }) => Navigator.of(context).push(
     MaterialPageRoute(
       builder: (_) => TextViewerScreen(
         feed: feed,
         post: post,
         onSaveContent: onSaveContent,
+        initialEdit: initialEdit,
       ),
     ),
   );
@@ -87,7 +93,16 @@ class _TextViewerScreenState extends State<TextViewerScreen> {
 
   late Attachment _attachment = widget.post.attachment!;
   late Post _currentPost = widget.post;
-  late Future<_Document> _document = _loadDocument(_attachment);
+  late Future<_Document> _document = _loadDocument(_attachment).then((doc) {
+    if (widget.initialEdit && _canEditDocument(doc) && doc is _TextDocument) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_editing) {
+          _startEditing(doc);
+        }
+      });
+    }
+    return doc;
+  });
 
   /// Код и таблицы читать удобнее моноширинным шрифтом.
   late bool _monospace = _codeExtensions.contains(

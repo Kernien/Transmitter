@@ -449,6 +449,25 @@ class AppLocalizationsRu extends AppLocalizations {
   String get replaceFile => 'Заменить файл';
 
   @override
+  String get replaceFolder => 'Заменить папку';
+
+  @override
+  String fileReplaced(String name) {
+    return 'Файл «$name» заменён';
+  }
+
+  @override
+  String folderReplaced(String name) {
+    return 'Папка «$name» заменена';
+  }
+
+  @override
+  String get fileRenamed => 'Файл переименован';
+
+  @override
+  String get folderRenamed => 'Папка переименована';
+
+  @override
   String get addFilesToFolder => 'Добавить файлы';
 
   @override

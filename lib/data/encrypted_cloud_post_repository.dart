@@ -373,6 +373,26 @@ class EncryptedCloudPostRepository implements PostRepository {
     ProgressCallback? onProgress,
     bool Function()? isCancelled,
   }) async {
+    final entries = await _uploadFolderEntries(
+      files: files,
+      onProgress: onProgress,
+      isCancelled: isCancelled,
+    );
+    final folder = FolderAttachment(name: folderName, files: entries);
+    return _publish(
+      _newPost(
+        kind: PostKind.folder,
+        text: caption.trim(),
+        folder: folder,
+      ),
+    );
+  }
+
+  Future<List<FolderEntry>> _uploadFolderEntries({
+    required List<PickedFile> files,
+    ProgressCallback? onProgress,
+    bool Function()? isCancelled,
+  }) async {
     if (isCancelled?.call() == true) {
       throw const TransferCancelledException();
     }
@@ -525,6 +545,12 @@ class EncryptedCloudPostRepository implements PostRepository {
     }
 
     if (firstError != null) {
+      for (var i = 0; i < nextIndex && i < attachments.length; i++) {
+        try {
+          await _storage.delete(_attachmentPath(attachments[i]));
+          await _blobs.delete(attachmentCacheKey(attachments[i].id));
+        } catch (_) {}
+      }
       if (firstError is TransferCancelledException ||
           isCancelled?.call() == true) {
         throw const TransferCancelledException();
@@ -536,7 +562,7 @@ class EncryptedCloudPostRepository implements PostRepository {
       throw const TransferCancelledException();
     }
 
-    final entries = <FolderEntry>[
+    return [
       for (var i = 0; i < files.length; i++)
         FolderEntry(
           id: attachments[i].id,
@@ -545,15 +571,6 @@ class EncryptedCloudPostRepository implements PostRepository {
           mimeType: files[i].mimeType,
         ),
     ];
-
-    final folder = FolderAttachment(name: folderName, files: entries);
-    return _publish(
-      _newPost(
-        kind: PostKind.folder,
-        text: caption.trim(),
-        folder: folder,
-      ),
-    );
   }
 
   Future<void> _uploadWithRetry(
@@ -730,6 +747,156 @@ class EncryptedCloudPostRepository implements PostRepository {
       await _storage.delete(_attachmentPath(oldAttachment));
     }
     return updatedPost;
+  }
+
+  @override
+  Future<Post> replaceFile({
+    required Post post,
+    required PickedFile file,
+    ProgressCallback? onProgress,
+  }) async {
+    if (file.isTooLarge || file.size > maxFileSize) {
+      throw FileTooLargeException(file.size, maxFileSize);
+    }
+    final oldAttachment = post.attachment;
+    if (oldAttachment == null) {
+      throw ArgumentError('Post has no attachment');
+    }
+    if (!_filesDirReady) {
+      await _storage.ensureFolder(_filesDir);
+      _filesDirReady = true;
+    }
+    final targetName = file.name;
+    final newAttachmentId = plainFileNames
+        ? await _choosePlainFileName(targetName)
+        : _newId();
+    final newAttachment = Attachment(
+      id: newAttachmentId,
+      fileName: targetName,
+      size: file.size,
+      mimeType: file.mimeType ?? oldAttachment.mimeType,
+    );
+
+    if (file.hasBytesInMemory) {
+      final encrypted = await _cipher.encrypt(file.bytes);
+      await _storage.upload(
+        _attachmentPath(newAttachment),
+        encrypted,
+        onProgress: onProgress,
+      );
+      if (encrypted.length <= maxCachedAttachmentSize) {
+        await _blobs.write(attachmentCacheKey(newAttachment.id), encrypted);
+      }
+    } else {
+      final encryptedLength = _cipher.encryptedLength(file.size);
+      final encryptedStream = _cipher.encryptStream(file.openRead());
+      await _storage.uploadStream(
+        _attachmentPath(newAttachment),
+        encryptedStream,
+        length: encryptedLength,
+        onProgress: onProgress,
+      );
+    }
+
+    final updatedPost = await _replacePostRecord(
+      post,
+      post.withAttachment(newAttachment),
+    );
+    if (oldAttachment.id != newAttachment.id) {
+      await _blobs.delete(attachmentCacheKey(oldAttachment.id));
+      await _storage.delete(_attachmentPath(oldAttachment));
+    }
+    return updatedPost;
+  }
+
+  @override
+  Future<Post> renameAttachment({
+    required Post post,
+    required String newFileName,
+  }) async {
+    final oldAttachment = post.attachment;
+    if (oldAttachment == null) {
+      throw ArgumentError('Post has no attachment');
+    }
+    final cleanName = newFileName.trim();
+    if (cleanName.isEmpty || cleanName == oldAttachment.fileName) {
+      return post;
+    }
+    var targetId = oldAttachment.id;
+    if (plainFileNames) {
+      final newId = await _choosePlainFileName(cleanName);
+      if (newId != oldAttachment.id) {
+        final bytes = await downloadAttachment(oldAttachment);
+        await _storage.upload(
+          attachmentPath(_filesDir, newId, plainFileNames: true, inFilesDir: true),
+          bytes,
+        );
+        await _storage.delete(_attachmentPath(oldAttachment));
+        await _blobs.delete(attachmentCacheKey(oldAttachment.id));
+        targetId = newId;
+      }
+    }
+    final newAttachment = Attachment(
+      id: targetId,
+      fileName: cleanName,
+      size: oldAttachment.size,
+      mimeType: oldAttachment.mimeType,
+    );
+    return _replacePostRecord(post, post.withAttachment(newAttachment));
+  }
+
+  @override
+  Future<Post> replaceFolder({
+    required Post post,
+    required String folderName,
+    required List<PickedFile> files,
+    ProgressCallback? onProgress,
+    bool Function()? isCancelled,
+  }) async {
+    final oldFolder = post.folder;
+    if (oldFolder == null) {
+      throw ArgumentError('Post has no folder');
+    }
+    final cleanName =
+        folderName.trim().isEmpty ? oldFolder.name : folderName.trim();
+    final entries = await _uploadFolderEntries(
+      files: files,
+      onProgress: onProgress,
+      isCancelled: isCancelled,
+    );
+    final newFolder = FolderAttachment(name: cleanName, files: entries);
+    final updatedPost = await _replacePostRecord(
+      post,
+      post.withFolder(newFolder),
+    );
+    final newIds = entries.map((e) => e.id).toSet();
+    for (final oldFile in oldFolder.files) {
+      if (!newIds.contains(oldFile.id)) {
+        await _blobs.delete(attachmentCacheKey(oldFile.id));
+        await _storage.delete(_attachmentPath(oldFile.toAttachment()));
+      }
+    }
+    return updatedPost;
+  }
+
+  @override
+  Future<Post> renameFolder({
+    required Post post,
+    required String newFolderName,
+  }) async {
+    final oldFolder = post.folder;
+    if (oldFolder == null) {
+      throw ArgumentError('Post has no folder');
+    }
+    final cleanName = newFolderName.trim();
+    if (cleanName.isEmpty || cleanName == oldFolder.name) {
+      return post;
+    }
+    final updatedFolder = FolderAttachment(
+      name: cleanName,
+      files: oldFolder.files,
+    );
+    return _replacePostRecord(post, post.withFolder(updatedFolder));
   }
 
   @override

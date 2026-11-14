@@ -382,6 +382,109 @@ void main() {
       expect(feed.error, isA<StorageNotFoundException>());
       feed.dispose();
     });
+
+    test('replaceFile обновляет файл в контроллере', () async {
+      final cloud = InMemoryCloudStorage();
+      final files = FakeFileTransferService();
+      final feed = FeedController(
+        EncryptedCloudPostRepository(
+          storage: cloud,
+          vaultId: 'v',
+          cipher: AesGcmCipher(List<int>.filled(32, 1)),
+          deviceName: 'A',
+        ),
+        files: files,
+        pollInterval: const Duration(hours: 1),
+      );
+
+      files.nextPick = PickedFile(name: 'orig.txt', bytes: Uint8List.fromList([1, 2]));
+      await feed.attachFile();
+      final initial = feed.posts.single;
+
+      final updated = await feed.replaceFile(
+        initial,
+        PickedFile(name: 'updated.txt', bytes: Uint8List.fromList([3, 4, 5])),
+      );
+
+      expect(updated, isNotNull);
+      expect(feed.posts.single.attachment!.fileName, 'updated.txt');
+      expect(feed.posts.single.attachment!.size, 3);
+      feed.dispose();
+    });
+
+    test('renameAttachment переименовывает файл поста в контроллере', () async {
+      final cloud = InMemoryCloudStorage();
+      final files = FakeFileTransferService();
+      final feed = FeedController(
+        EncryptedCloudPostRepository(
+          storage: cloud,
+          vaultId: 'v',
+          cipher: AesGcmCipher(List<int>.filled(32, 1)),
+          deviceName: 'A',
+        ),
+        files: files,
+        pollInterval: const Duration(hours: 1),
+      );
+
+      files.nextPick = PickedFile(name: 'orig.txt', bytes: Uint8List.fromList([1]));
+      await feed.attachFile();
+      final initial = feed.posts.single;
+
+      final updated = await feed.renameAttachment(initial, 'renamed.txt');
+      expect(updated, isNotNull);
+      expect(feed.posts.single.attachment!.fileName, 'renamed.txt');
+      feed.dispose();
+    });
+
+    test('renameFolder переименовывает папку поста в контроллере', () async {
+      final cloud = InMemoryCloudStorage();
+      final files = FakeFileTransferService();
+      final feed = FeedController(
+        EncryptedCloudPostRepository(
+          storage: cloud,
+          vaultId: 'v',
+          cipher: AesGcmCipher(List<int>.filled(32, 1)),
+          deviceName: 'A',
+        ),
+        files: files,
+        pollInterval: const Duration(hours: 1),
+      );
+
+      files.nextPickedFolder = PickedFolder(
+        name: 'старая_папка',
+        files: [PickedFile(name: 'a.txt', bytes: Uint8List.fromList([1]), relativePath: 'a.txt')],
+      );
+      await feed.attachFolder();
+      final initial = feed.posts.single;
+
+      final updated = await feed.renameFolder(initial, 'новая_папка');
+      expect(updated, isNotNull);
+      expect(feed.posts.single.folder!.name, 'новая_папка');
+      feed.dispose();
+    });
+
+    test('cancelTransfer для существующего поста не удаляет его из списка постов', () async {
+      final cloud = InMemoryCloudStorage();
+      final files = FakeFileTransferService();
+      final feed = FeedController(
+        EncryptedCloudPostRepository(
+          storage: cloud,
+          vaultId: 'v',
+          cipher: AesGcmCipher(List<int>.filled(32, 1)),
+          deviceName: 'A',
+        ),
+        files: files,
+        pollInterval: const Duration(hours: 1),
+      );
+
+      files.nextPick = PickedFile(name: 'file.txt', bytes: Uint8List.fromList([1]));
+      await feed.attachFile();
+      final postId = feed.posts.single.id;
+
+      feed.cancelTransfer(postId);
+      expect(feed.posts.any((p) => p.id == postId), isTrue);
+      feed.dispose();
+    });
   });
 }
 

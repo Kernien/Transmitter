@@ -96,6 +96,35 @@ abstract interface class PostRepository {
     ProgressCallback? onProgress,
   });
 
+  /// Заменяет файл отдельного поста [post] новым файлом [file] (поддерживает потоковую
+  /// передачу больших файлов без полной загрузки в память).
+  Future<Post> replaceFile({
+    required Post post,
+    required PickedFile file,
+    ProgressCallback? onProgress,
+  });
+
+  /// Переименовывает прикреплённый файл отдельного поста [post] в [newFileName].
+  Future<Post> renameAttachment({
+    required Post post,
+    required String newFileName,
+  });
+
+  /// Заменяет содержимое папки поста новой папкой [folderName] с файлами [files].
+  Future<Post> replaceFolder({
+    required Post post,
+    required String folderName,
+    required List<PickedFile> files,
+    ProgressCallback? onProgress,
+    bool Function()? isCancelled,
+  });
+
+  /// Переименовывает прикреплённую папку поста [post] в [newFolderName].
+  Future<Post> renameFolder({
+    required Post post,
+    required String newFolderName,
+  });
+
   /// Обновляет структуру папки поста (переименование, перемещение или удаление
   /// вложенных файлов и подпапок). Удаляет из облака файлы с идентификаторами
   /// [removedEntryIds]. Если в [updatedFolder] не осталось ни одного файла,

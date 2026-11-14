@@ -135,6 +135,160 @@ void main() {
       feed.dispose();
     },
   );
+
+  testWidgets('в меню действий файла есть «Заменить файл» и «Переименовать»', (tester) async {
+    final files = FakeFileTransferService();
+    final feed = FeedController(
+      EncryptedCloudPostRepository(
+        storage: InMemoryCloudStorage(),
+        vaultId: 'v',
+        cipher: AesGcmCipher(List<int>.filled(32, 1)),
+        deviceName: 'A',
+      ),
+      files: files,
+      pollInterval: const Duration(hours: 1),
+    );
+
+    files.nextPick = PickedFile(
+      name: 'file.txt',
+      bytes: Uint8List.fromList([1, 2, 3]),
+    );
+    await tester.runAsync(() => feed.attachFile());
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: feed,
+        child: MaterialApp(
+          locale: const Locale('ru'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: Consumer<FeedController>(
+              builder: (_, f, _) => PostTile(post: f.posts.first),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Редактировать'), findsOneWidget);
+    expect(find.text('Заменить файл'), findsOneWidget);
+    expect(find.text('Переименовать'), findsOneWidget);
+
+    feed.dispose();
+  });
+
+  testWidgets('переименование файла обновляет имя на карточке поста', (tester) async {
+    final files = FakeFileTransferService();
+    final feed = FeedController(
+      EncryptedCloudPostRepository(
+        storage: InMemoryCloudStorage(),
+        vaultId: 'v',
+        cipher: AesGcmCipher(List<int>.filled(32, 1)),
+        deviceName: 'A',
+      ),
+      files: files,
+      pollInterval: const Duration(hours: 1),
+    );
+
+    files.nextPick = PickedFile(
+      name: 'old_name.txt',
+      bytes: Uint8List.fromList([1, 2, 3]),
+    );
+    await tester.runAsync(() => feed.attachFile());
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: feed,
+        child: MaterialApp(
+          locale: const Locale('ru'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: Consumer<FeedController>(
+              builder: (_, f, _) => PostTile(post: f.posts.first),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('old_name.txt'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Переименовать'));
+    await tester.pumpAndSettle();
+
+    // Вводим новое имя в диалоге
+    expect(find.byType(TextField), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'new_name.txt');
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, 'Переименовать'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('new_name.txt'), findsOneWidget);
+    expect(find.text('old_name.txt'), findsNothing);
+
+    feed.dispose();
+  });
+
+  testWidgets('замена файла заменяет файл в посте', (tester) async {
+    final files = FakeFileTransferService();
+    final feed = FeedController(
+      EncryptedCloudPostRepository(
+        storage: InMemoryCloudStorage(),
+        vaultId: 'v',
+        cipher: AesGcmCipher(List<int>.filled(32, 1)),
+        deviceName: 'A',
+      ),
+      files: files,
+      pollInterval: const Duration(hours: 1),
+    );
+
+    files.nextPick = PickedFile(
+      name: 'first.txt',
+      bytes: Uint8List.fromList([1, 2, 3]),
+    );
+    await tester.runAsync(() => feed.attachFile());
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: feed,
+        child: MaterialApp(
+          locale: const Locale('ru'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: Consumer<FeedController>(
+              builder: (_, f, _) => PostTile(post: f.posts.first),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('first.txt'), findsOneWidget);
+
+    // Подготавливаем заменяющий файл
+    files.nextPick = PickedFile(
+      name: 'second.txt',
+      bytes: Uint8List.fromList([4, 5, 6, 7]),
+    );
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Заменить файл'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('second.txt'), findsOneWidget);
+    expect(find.text('first.txt'), findsNothing);
+
+    feed.dispose();
+  });
 }
 
 class _BlockingCloud extends InMemoryCloudStorage {
