@@ -320,6 +320,38 @@ void main() {
     expect(find.text('Личное'), findsOneWidget);
     expect(find.text('Работа'), findsNWidgets(2));
   });
+
+  testWidgets('поиск баз по названию фильтрует список', (tester) async {
+    final settings = FakeSettings();
+    final vaults = await pumpScreen(tester, settings);
+    await vaults.create(label: 'Личное', provider: CloudProviderId.googleDrive);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Работа'), findsOneWidget);
+    expect(find.text('Личное'), findsOneWidget);
+
+    // Нажимаем значок поиска
+    await tester.tap(find.byIcon(Icons.search));
+    await tester.pumpAndSettle();
+
+    // Вводим поисковый запрос
+    await tester.enterText(find.byType(TextField), 'лич');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Личное'), findsOneWidget);
+    expect(find.text('Работа'), findsNothing);
+
+    // Очищаем поиск
+    await tester.tap(find.byIcon(Icons.clear));
+    await tester.pumpAndSettle();
+    expect(find.text('Работа'), findsOneWidget);
+    expect(find.text('Личное'), findsOneWidget);
+
+    // Закрываем поиск
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsNothing);
+  });
 }
 
 class _FakeAdapter implements CloudProviderAdapter {

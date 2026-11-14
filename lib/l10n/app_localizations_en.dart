@@ -1014,4 +1014,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String errUnknown(String error) {
     return 'Error: $error';
   }
+
+  @override
+  String get feedTab => 'Feed';
+
+  @override
+  String get filesTab => 'Files';
+
+  @override
+  String get searchHint => 'Search this board…';
+
+  @override
+  String get searchVaultsHint => 'Search vaults…';
+
+  @override
+  String get noFilesYet => 'No files on this board yet';
+
+  @override
+  String get searchNoResults => 'No results found';
+
+  @override
+  String get vaultEncryptedBadge => 'Encrypted';
+
+  @override
+  String get vaultPlainBadge => 'Unencrypted';
+
+  @override
+  String get boardReaderBadge => 'Read-only';
+
+  @override
+  String get searchAction => 'Search';
+
+  @override
+  String get clearSearch => 'Clear';
 }

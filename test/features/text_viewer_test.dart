@@ -109,8 +109,8 @@ void main() {
     );
 
     // Иконка редактирования доступна в AppBar
-    expect(find.byIcon(Icons.edit_outlined), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.edit_outlined));
+    expect(find.byIcon(Icons.edit), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.edit));
     await tester.pumpAndSettle();
 
     // Появляется текстовое поле с исходным текстом

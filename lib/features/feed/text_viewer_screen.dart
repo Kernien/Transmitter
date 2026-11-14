@@ -286,7 +286,7 @@ class _TextViewerScreenState extends State<TextViewerScreen> {
                         if (canEdit && document is _TextDocument)
                           IconButton(
                             tooltip: l.editText,
-                            icon: const Icon(Icons.edit_outlined),
+                            icon: const Icon(Icons.edit),
                             onPressed: () => _startEditing(document),
                           ),
                         if (feed.canOpenExternally)

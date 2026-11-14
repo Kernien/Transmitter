@@ -190,7 +190,7 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
               if (!isReadOnly) ...[
                 IconButton(
                   tooltip: l.addFilesToFolder,
-                  icon: const Icon(Icons.note_add_outlined),
+                  icon: const Icon(Icons.add),
                   onPressed: _busy ? null : () => _addFilesToCurrentSubdir(context),
                 ),
                 if (_currentSubdir.isEmpty)
@@ -223,6 +223,14 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
                 ),
             ],
           ),
+          floatingActionButton: isReadOnly
+              ? null
+              : FloatingActionButton(
+                  tooltip: l.addFilesToFolder,
+                  onPressed:
+                      _busy ? null : () => _addFilesToCurrentSubdir(context),
+                  child: const Icon(Icons.add),
+                ),
           body: Column(
             children: [
               _buildBreadcrumbs(theme),
@@ -354,7 +362,7 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
                                               PopupMenuItem(
                                                 value: _EntryMenuAction.edit,
                                                 child: _menuRow(
-                                                  Icons.edit_outlined,
+                                                  Icons.edit,
                                                   l.editText,
                                                 ),
                                               ),

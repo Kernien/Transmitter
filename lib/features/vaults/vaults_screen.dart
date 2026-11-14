@@ -46,6 +46,16 @@ class _VaultsScreenState extends State<VaultsScreen> {
   /// Идентификатор выбранной доски в двухпанельном режиме (`VaultsController.idOfKey`).
   String? _selectedId;
 
+  bool _isSearching = false;
+  String _searchQuery = '';
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -160,16 +170,42 @@ class _VaultsScreenState extends State<VaultsScreen> {
     final isWide = MediaQuery.sizeOf(context).width >= kWideScreenBreakpoint;
     final selected = isWide ? _resolveSelected(vaults, boards) : null;
 
+    final q = _searchQuery;
+    final filteredVaults = q.isEmpty
+        ? vaults
+        : vaults.where((v) {
+            final label =
+                (v.label.isEmpty ? l.untitled : v.label).toLowerCase();
+            final provider = v.provider.title.toLowerCase();
+            return label.contains(q) || provider.contains(q);
+          }).toList();
+    final filteredBoards = q.isEmpty
+        ? boards
+        : boards.where((b) {
+            final label =
+                (b.label.isEmpty ? l.untitled : b.label).toLowerCase();
+            final provider = b.provider.title.toLowerCase();
+            return label.contains(q) || provider.contains(q);
+          }).toList();
+
     Widget buildList() {
       if (vaults.isEmpty && boards.isEmpty) {
         return const _EmptyState();
       }
+      if (filteredVaults.isEmpty && filteredBoards.isEmpty) {
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Text(l.searchNoResults, textAlign: TextAlign.center),
+          ),
+        );
+      }
       return ListView.separated(
-        itemCount: vaults.length + boards.length,
+        itemCount: filteredVaults.length + filteredBoards.length,
         separatorBuilder: (_, _) => const Divider(height: 1),
         itemBuilder: (context, i) {
-          if (i < vaults.length) {
-            final v = vaults[i];
+          if (i < filteredVaults.length) {
+            final v = filteredVaults[i];
             return _VaultTile(
               vault: v,
               selected:
@@ -177,7 +213,7 @@ class _VaultsScreenState extends State<VaultsScreen> {
               onTap: () => _selectVault(v),
             );
           } else {
-            final b = boards[i - vaults.length];
+            final b = filteredBoards[i - filteredVaults.length];
             return _BoardTile(
               board: b,
               selected:
@@ -189,19 +225,63 @@ class _VaultsScreenState extends State<VaultsScreen> {
       );
     }
 
-    final appBarActions = [
-      // Оформление, язык и место на устройстве — в «Настройках».
-      IconButton(
-        tooltip: l.settings,
-        icon: const Icon(Icons.settings_outlined),
-        onPressed: () => showSettingsSheet(context),
-      ),
-      IconButton(
-        tooltip: l.addKey,
-        icon: const Icon(Icons.qr_code_scanner),
-        onPressed: () => _import(context),
-      ),
-    ];
+    final appBar = _isSearching
+        ? AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () {
+                setState(() {
+                  _isSearching = false;
+                  _searchQuery = '';
+                  _searchController.clear();
+                });
+              },
+            ),
+            title: TextField(
+              controller: _searchController,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: l.searchVaultsHint,
+                border: InputBorder.none,
+              ),
+              onChanged: (val) =>
+                  setState(() => _searchQuery = val.trim().toLowerCase()),
+            ),
+            actions: [
+              if (_searchQuery.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.clear),
+                  tooltip: l.clearSearch,
+                  onPressed: () {
+                    setState(() {
+                      _searchQuery = '';
+                      _searchController.clear();
+                    });
+                  },
+                ),
+            ],
+          )
+        : AppBar(
+            title: const Text('Transmitter'),
+            actions: [
+              IconButton(
+                tooltip: l.searchAction,
+                icon: const Icon(Icons.search),
+                onPressed: () => setState(() => _isSearching = true),
+              ),
+              // Оформление, язык и место на устройстве — в «Настройках».
+              IconButton(
+                tooltip: l.settings,
+                icon: const Icon(Icons.settings_outlined),
+                onPressed: () => showSettingsSheet(context),
+              ),
+              IconButton(
+                tooltip: l.addKey,
+                icon: const Icon(Icons.qr_code_scanner),
+                onPressed: () => _import(context),
+              ),
+            ],
+          );
 
     final fab = FloatingActionButton.extended(
       icon: const Icon(Icons.add),
@@ -211,10 +291,7 @@ class _VaultsScreenState extends State<VaultsScreen> {
 
     if (!isWide) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Transmitter'),
-          actions: appBarActions,
-        ),
+        appBar: appBar,
         body: ContentWidth(child: buildList()),
         floatingActionButton: fab,
       );
@@ -227,10 +304,7 @@ class _VaultsScreenState extends State<VaultsScreen> {
           SizedBox(
             width: _kMasterPaneWidth,
             child: Scaffold(
-              appBar: AppBar(
-                title: const Text('Transmitter'),
-                actions: appBarActions,
-              ),
+              appBar: appBar,
               body: buildList(),
               floatingActionButton: fab,
             ),
@@ -364,7 +438,7 @@ class _VaultTile extends StatelessWidget {
       selected: selected,
       selectedTileColor: colorScheme.secondaryContainer.withValues(alpha: 0.5),
       leading: CircleAvatar(
-        child: Icon(vault.isEncrypted ? Icons.key : Icons.folder_open_outlined),
+        child: Icon(vault.isEncrypted ? Icons.lock_outline : Icons.folder_open_outlined),
       ),
       title: Row(
         children: [
@@ -372,6 +446,18 @@ class _VaultTile extends StatelessWidget {
             child: Text(
               vault.label.isEmpty ? l.untitled : vault.label,
               overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Tooltip(
+            message:
+                vault.isEncrypted ? l.vaultEncryptedBadge : l.vaultPlainBadge,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: Icon(
+                vault.isEncrypted ? Icons.lock : Icons.folder_open,
+                size: 16,
+                color: colorScheme.outline,
+              ),
             ),
           ),
           if (isPinned)
@@ -606,6 +692,17 @@ class _BoardTile extends StatelessWidget {
             child: Text(
               board.label.isEmpty ? l.untitled : board.label,
               overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Tooltip(
+            message: l.boardReaderBadge,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: Icon(
+                Icons.visibility,
+                size: 16,
+                color: colorScheme.outline,
+              ),
             ),
           ),
           if (isPinned)

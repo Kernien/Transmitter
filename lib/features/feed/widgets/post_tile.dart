@@ -453,7 +453,7 @@ class _ActionLabel extends StatelessWidget {
         isFolder ? l.saveFolder : l.actionSaveFile,
       ),
       _PostAction.openWith => (Icons.open_in_new, l.openWith),
-      _PostAction.edit => (Icons.edit_outlined, l.editText),
+      _PostAction.edit => (Icons.edit, l.editText),
       _PostAction.replaceFile => (Icons.find_replace_outlined, l.replaceFile),
       _PostAction.replaceFolder => (Icons.sync, l.replaceFolder),
       _PostAction.rename => (Icons.drive_file_rename_outline, l.rename),

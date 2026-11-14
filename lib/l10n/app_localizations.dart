@@ -1783,6 +1783,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error: {error}'**
   String errUnknown(String error);
+
+  /// No description provided for @feedTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Feed'**
+  String get feedTab;
+
+  /// No description provided for @filesTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get filesTab;
+
+  /// No description provided for @searchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search this board…'**
+  String get searchHint;
+
+  /// No description provided for @searchVaultsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search vaults…'**
+  String get searchVaultsHint;
+
+  /// No description provided for @noFilesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No files on this board yet'**
+  String get noFilesYet;
+
+  /// No description provided for @searchNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results found'**
+  String get searchNoResults;
+
+  /// No description provided for @vaultEncryptedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Encrypted'**
+  String get vaultEncryptedBadge;
+
+  /// No description provided for @vaultPlainBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Unencrypted'**
+  String get vaultPlainBadge;
+
+  /// No description provided for @boardReaderBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-only'**
+  String get boardReaderBadge;
+
+  /// No description provided for @searchAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get searchAction;
+
+  /// No description provided for @clearSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get clearSearch;
 }
 
 class _AppLocalizationsDelegate

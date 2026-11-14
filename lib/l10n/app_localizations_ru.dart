@@ -1016,4 +1016,37 @@ class AppLocalizationsRu extends AppLocalizations {
   String errUnknown(String error) {
     return 'Ошибка: $error';
   }
+
+  @override
+  String get feedTab => 'Лента';
+
+  @override
+  String get filesTab => 'Файлы';
+
+  @override
+  String get searchHint => 'Поиск на доске…';
+
+  @override
+  String get searchVaultsHint => 'Поиск баз…';
+
+  @override
+  String get noFilesYet => 'На этой доске пока нет файлов';
+
+  @override
+  String get searchNoResults => 'Ничего не найдено';
+
+  @override
+  String get vaultEncryptedBadge => 'Зашифрована';
+
+  @override
+  String get vaultPlainBadge => 'Без шифрования';
+
+  @override
+  String get boardReaderBadge => 'Только чтение';
+
+  @override
+  String get searchAction => 'Поиск';
+
+  @override
+  String get clearSearch => 'Очистить';
 }
