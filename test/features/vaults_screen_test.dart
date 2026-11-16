@@ -271,7 +271,8 @@ void main() {
 
     // Изначально справа подсказка выбора доски, а слева — список.
     expect(find.text('Выберите доску в списке слева'), findsOneWidget);
-    expect(find.byType(VerticalDivider), findsOneWidget);
+    // Между областями оставлен спокойный отступ вместо табличной линии.
+    expect(find.byType(VerticalDivider), findsNothing);
     expect(find.text('Работа'), findsOneWidget);
     expect(find.text('Личное'), findsOneWidget);
 
@@ -314,7 +315,7 @@ void main() {
     await tester.pump();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.byType(VerticalDivider), findsOneWidget);
+    expect(find.byType(VerticalDivider), findsNothing);
     expect(find.byType(FeedScreen), findsOneWidget);
     expect(find.byIcon(Icons.arrow_back), findsNothing);
     expect(find.text('Личное'), findsOneWidget);

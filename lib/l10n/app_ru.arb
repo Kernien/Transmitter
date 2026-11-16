@@ -298,6 +298,7 @@
   "feedTab": "Лента",
   "filesTab": "Файлы",
   "searchHint": "Поиск на доске…",
+  "searchFolderHint": "Поиск в папке…",
   "searchVaultsHint": "Поиск баз…",
   "noFilesYet": "На этой доске пока нет файлов",
   "searchNoResults": "Ничего не найдено",

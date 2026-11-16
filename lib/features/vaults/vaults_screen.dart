@@ -30,7 +30,7 @@ const double _kMasterPaneWidth = 340;
 /// левая панель + правая панель с лентой располагаются в центре вплотную
 /// друг к другу, без пустых дыр между списком досок и карточками постов.
 const double _kWorkspaceMaxWidth =
-    _kMasterPaneWidth + 1 + ContentWidth.defaultMaxWidth;
+    _kMasterPaneWidth + 12 + ContentWidth.defaultMaxWidth;
 
 /// Главный экран: список ключей баз (на широком мониторе — вместе с открытой лентой).
 class VaultsScreen extends StatefulWidget {
@@ -201,8 +201,9 @@ class _VaultsScreenState extends State<VaultsScreen> {
         );
       }
       return ListView.separated(
+        padding: const EdgeInsets.fromLTRB(8, 8, 8, 96),
         itemCount: filteredVaults.length + filteredBoards.length,
-        separatorBuilder: (_, _) => const Divider(height: 1),
+        separatorBuilder: (_, _) => const SizedBox(height: 6),
         itemBuilder: (context, i) {
           if (i < filteredVaults.length) {
             final v = filteredVaults[i];
@@ -309,7 +310,9 @@ class _VaultsScreenState extends State<VaultsScreen> {
               floatingActionButton: fab,
             ),
           ),
-          const VerticalDivider(width: 1, thickness: 1),
+          // Панели разделяет свободное пространство, а не контрастная линия:
+          // так широкий интерфейс выглядит как единое рабочее пространство.
+          const SizedBox(width: 12),
           Expanded(
             child: switch (selected) {
               VaultKey v => FeedScreen.vault(
@@ -436,7 +439,9 @@ class _VaultTile extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return ListTile(
       selected: selected,
-      selectedTileColor: colorScheme.secondaryContainer.withValues(alpha: 0.5),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      contentPadding: const EdgeInsetsDirectional.fromSTEB(14, 8, 8, 8),
+      selectedTileColor: colorScheme.primaryContainer.withValues(alpha: 0.45),
       leading: CircleAvatar(
         child: Icon(vault.isEncrypted ? Icons.lock_outline : Icons.folder_open_outlined),
       ),
@@ -684,7 +689,9 @@ class _BoardTile extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return ListTile(
       selected: selected,
-      selectedTileColor: colorScheme.secondaryContainer.withValues(alpha: 0.5),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      contentPadding: const EdgeInsetsDirectional.fromSTEB(14, 8, 8, 8),
+      selectedTileColor: colorScheme.primaryContainer.withValues(alpha: 0.45),
       leading: const CircleAvatar(child: Icon(Icons.public)),
       title: Row(
         children: [

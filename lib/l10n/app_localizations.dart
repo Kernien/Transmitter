@@ -1802,6 +1802,12 @@ abstract class AppLocalizations {
   /// **'Search this board…'**
   String get searchHint;
 
+  /// No description provided for @searchFolderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search this folder…'**
+  String get searchFolderHint;
+
   /// No description provided for @searchVaultsHint.
   ///
   /// In en, this message translates to:

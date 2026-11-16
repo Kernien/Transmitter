@@ -358,6 +358,7 @@
   "feedTab": "Feed",
   "filesTab": "Files",
   "searchHint": "Search this board…",
+  "searchFolderHint": "Search this folder…",
   "searchVaultsHint": "Search vaults…",
   "noFilesYet": "No files on this board yet",
   "searchNoResults": "No results found",

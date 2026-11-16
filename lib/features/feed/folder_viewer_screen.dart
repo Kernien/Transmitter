@@ -16,11 +16,7 @@ enum _SubdirMenuAction { rename, move, delete }
 /// вложенных папок, хлебными крошками, открытием файлов, скачиванием,
 /// удалением, переименованием, перемещением и добавлением/заменой файлов.
 class FolderViewerScreen extends StatefulWidget {
-  const FolderViewerScreen({
-    super.key,
-    required this.feed,
-    required this.post,
-  });
+  const FolderViewerScreen({super.key, required this.feed, required this.post});
 
   final FeedController feed;
   final Post post;
@@ -41,7 +37,10 @@ class FolderViewerScreen extends StatefulWidget {
 
 class _FolderViewerScreenState extends State<FolderViewerScreen> {
   final Set<String> _savingEntries = {};
+  final _searchController = TextEditingController();
   String _currentSubdir = '';
+  String _searchQuery = '';
+  bool _isSearching = false;
   bool _busy = false;
   late Post _fallbackPost = widget.post;
 
@@ -54,7 +53,16 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
   @override
   void dispose() {
     widget.feed.removeListener(_onFeedChanged);
+    _searchController.dispose();
     super.dispose();
+  }
+
+  void _stopSearching() {
+    setState(() {
+      _isSearching = false;
+      _searchQuery = '';
+      _searchController.clear();
+    });
   }
 
   void _onFeedChanged() {
@@ -78,8 +86,9 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
     if (_currentSubdir.isEmpty) return;
     final lastSlash = _currentSubdir.lastIndexOf('/');
     setState(() {
-      _currentSubdir =
-          lastSlash == -1 ? '' : _currentSubdir.substring(0, lastSlash);
+      _currentSubdir = lastSlash == -1
+          ? ''
+          : _currentSubdir.substring(0, lastSlash);
     });
   }
 
@@ -116,11 +125,14 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
           (e) => e.relativePath.replaceAll('\\', '/').startsWith(prefix),
         )) {
       final lastSlash = _currentSubdir.lastIndexOf('/');
-      _currentSubdir =
-          lastSlash == -1 ? '' : _currentSubdir.substring(0, lastSlash);
+      _currentSubdir = lastSlash == -1
+          ? ''
+          : _currentSubdir.substring(0, lastSlash);
       prefix = _currentSubdir.isEmpty ? '' : '$_currentSubdir/';
     }
 
+    final isSearching = _isSearching;
+    final searchQuery = _searchQuery;
     final subdirs = <String, ({int count, int size})>{};
     final directFiles = <FolderEntry>[];
     var currentFilesCount = 0;
@@ -128,6 +140,13 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
 
     for (final entry in folder.files) {
       final norm = entry.relativePath.replaceAll('\\', '/');
+      if (isSearching) {
+        if (!norm.toLowerCase().contains(searchQuery)) continue;
+        directFiles.add(entry);
+        currentFilesCount++;
+        currentTotalSize += entry.size;
+        continue;
+      }
       if (!norm.startsWith(prefix)) continue;
       currentFilesCount++;
       currentTotalSize += entry.size;
@@ -151,89 +170,134 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
     final totalItems = sortedSubdirs.length + directFiles.length;
 
     return PopScope(
-      canPop: _currentSubdir.isEmpty,
+      canPop: _currentSubdir.isEmpty && !isSearching,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
-        _navigateUp();
+        if (isSearching) {
+          _stopSearching();
+        } else {
+          _navigateUp();
+        }
       },
       child: CenteredPageFrame(
         child: Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () {
-                if (_currentSubdir.isNotEmpty) {
-                  _navigateUp();
-                } else {
-                  Navigator.of(context).pop();
-                }
-              },
-            ),
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _currentSubdir.isEmpty
-                      ? folder.name
-                      : _currentSubdir.split('/').last,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  '${l.folderFilesCount(currentFilesCount)} · ${l.fileSize(currentTotalSize)}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+          appBar: isSearching
+              ? AppBar(
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: _stopSearching,
                   ),
-                ),
-              ],
-            ),
-            actions: [
-              if (!isReadOnly) ...[
-                IconButton(
-                  tooltip: l.addFilesToFolder,
-                  icon: const Icon(Icons.add),
-                  onPressed: _busy ? null : () => _addFilesToCurrentSubdir(context),
-                ),
-                if (_currentSubdir.isEmpty)
-                  IconButton(
-                    tooltip: l.rename,
-                    icon: const Icon(Icons.drive_file_rename_outline),
-                    onPressed: _busy ? null : () => _renameRootFolder(context),
-                  ),
-              ],
-              if (_busy || isSavingFolder || transfer != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Center(
-                    child: SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(
-                        value: transfer != null && transfer.fraction > 0
-                            ? transfer.fraction
-                            : null,
-                        strokeWidth: 2,
-                      ),
+                  title: TextField(
+                    controller: _searchController,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: l.searchFolderHint,
+                      border: InputBorder.none,
+                    ),
+                    onChanged: (value) => setState(
+                      () => _searchQuery = value.trim().toLowerCase(),
                     ),
                   ),
+                  actions: [
+                    if (searchQuery.isNotEmpty)
+                      IconButton(
+                        icon: const Icon(Icons.clear),
+                        tooltip: l.clearSearch,
+                        onPressed: () {
+                          setState(() {
+                            _searchQuery = '';
+                            _searchController.clear();
+                          });
+                        },
+                      ),
+                  ],
                 )
-              else
-                IconButton(
-                  tooltip: l.saveFolder,
-                  icon: const Icon(Icons.download),
-                  onPressed: () => _saveWholeFolder(context),
+              : AppBar(
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () {
+                      if (_currentSubdir.isNotEmpty) {
+                        _navigateUp();
+                      } else {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                  title: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _currentSubdir.isEmpty
+                            ? folder.name
+                            : _currentSubdir.split('/').last,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        '${l.folderFilesCount(currentFilesCount)} · ${l.fileSize(currentTotalSize)}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    IconButton(
+                      tooltip: l.searchAction,
+                      icon: const Icon(Icons.search),
+                      onPressed: () => setState(() => _isSearching = true),
+                    ),
+                    if (!isReadOnly) ...[
+                      IconButton(
+                        tooltip: l.addFilesToFolder,
+                        icon: const Icon(Icons.add),
+                        onPressed: _busy
+                            ? null
+                            : () => _addFilesToCurrentSubdir(context),
+                      ),
+                      if (_currentSubdir.isEmpty)
+                        IconButton(
+                          tooltip: l.rename,
+                          icon: const Icon(Icons.drive_file_rename_outline),
+                          onPressed: _busy
+                              ? null
+                              : () => _renameRootFolder(context),
+                        ),
+                    ],
+                    if (_busy || isSavingFolder || transfer != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Center(
+                          child: SizedBox.square(
+                            dimension: 20,
+                            child: CircularProgressIndicator(
+                              value: transfer != null && transfer.fraction > 0
+                                  ? transfer.fraction
+                                  : null,
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      IconButton(
+                        tooltip: l.saveFolder,
+                        icon: const Icon(Icons.download),
+                        onPressed: () => _saveWholeFolder(context),
+                      ),
+                  ],
                 ),
-            ],
-          ),
           floatingActionButton: isReadOnly
               ? null
               : FloatingActionButton(
                   tooltip: l.addFilesToFolder,
-                  onPressed:
-                      _busy ? null : () => _addFilesToCurrentSubdir(context),
+                  onPressed: _busy
+                      ? null
+                      : () => _addFilesToCurrentSubdir(context),
                   child: const Icon(Icons.add),
                 ),
           body: Column(
             children: [
-              _buildBreadcrumbs(theme),
+              if (!isSearching) _buildBreadcrumbs(theme),
               Expanded(
                 child: totalItems == 0
                     ? Center(
@@ -325,7 +389,9 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
                           return ListTile(
                             leading: _fileIcon(entry, theme),
                             title: Text(
-                              entry.fileName,
+                              isSearching
+                                  ? entry.relativePath.replaceAll('\\', '/')
+                                  : entry.fileName,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -352,11 +418,12 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
                                         PopupMenuButton<_EntryMenuAction>(
                                           tooltip: l.actions,
                                           enabled: !_busy,
-                                          onSelected: (action) => _onEntryAction(
-                                            context,
-                                            action,
-                                            entry,
-                                          ),
+                                          onSelected: (action) =>
+                                              _onEntryAction(
+                                                context,
+                                                action,
+                                                entry,
+                                              ),
                                           itemBuilder: (_) => [
                                             if (canEditText)
                                               PopupMenuItem(
@@ -1051,7 +1118,9 @@ class _MoveDestinationDialogState extends State<_MoveDestinationDialog> {
                     selected: selected,
                     selectedTileColor: theme.colorScheme.secondaryContainer,
                     leading: Icon(
-                      dir.isEmpty ? Icons.folder_special : Icons.folder_outlined,
+                      dir.isEmpty
+                          ? Icons.folder_special
+                          : Icons.folder_outlined,
                       size: 20,
                     ),
                     title: Text(label),

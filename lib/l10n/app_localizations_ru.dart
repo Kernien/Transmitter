@@ -1027,6 +1027,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get searchHint => 'Поиск на доске…';
 
   @override
+  String get searchFolderHint => 'Поиск в папке…';
+
+  @override
   String get searchVaultsHint => 'Поиск баз…';
 
   @override

@@ -34,9 +34,7 @@ void main() {
 
   Widget testApp({required Widget child, required FeedController feed}) =>
       MultiProvider(
-        providers: [
-          ChangeNotifierProvider<FeedController>.value(value: feed),
-        ],
+        providers: [ChangeNotifierProvider<FeedController>.value(value: feed)],
         child: MaterialApp(
           localizationsDelegates: const [
             AppLocalizations.delegate,
@@ -55,61 +53,68 @@ void main() {
     files = FakeFileTransferService();
   });
 
-  test('отправка папки через FeedController и последующее сохранение', () async {
-    final sender = controllerFor('Phone');
-    final receiver = controllerFor('PC');
+  test(
+    'отправка папки через FeedController и последующее сохранение',
+    () async {
+      final sender = controllerFor('Phone');
+      final receiver = controllerFor('PC');
 
-    files.nextPickedFolder = PickedFolder(
-      name: 'archive_project',
-      files: [
-        PickedFile(
-          name: 'README.md',
-          bytes: Uint8List.fromList(utf8.encode('# Readme')),
-          relativePath: 'README.md',
-        ),
-        PickedFile(
-          name: 'empty.txt',
-          bytes: Uint8List(0),
-          relativePath: 'empty.txt',
-        ),
-        PickedFile(
-          name: 'code.dart',
-          bytes: Uint8List.fromList(utf8.encode('void main() {}')),
-          relativePath: 'src/code.dart',
-        ),
-      ],
-    );
+      files.nextPickedFolder = PickedFolder(
+        name: 'archive_project',
+        files: [
+          PickedFile(
+            name: 'README.md',
+            bytes: Uint8List.fromList(utf8.encode('# Readme')),
+            relativePath: 'README.md',
+          ),
+          PickedFile(
+            name: 'empty.txt',
+            bytes: Uint8List(0),
+            relativePath: 'empty.txt',
+          ),
+          PickedFile(
+            name: 'code.dart',
+            bytes: Uint8List.fromList(utf8.encode('void main() {}')),
+            relativePath: 'src/code.dart',
+          ),
+        ],
+      );
 
-    final attached = await sender.attachFolder(caption: 'исходный код');
-    expect(attached, isTrue);
-    expect(sender.posts, hasLength(1));
-    expect(sender.posts.single.kind, PostKind.folder);
-    expect(sender.posts.single.folder?.name, 'archive_project');
-    expect(sender.posts.single.folder?.fileCount, 3);
+      final attached = await sender.attachFolder(caption: 'исходный код');
+      expect(attached, isTrue);
+      expect(sender.posts, hasLength(1));
+      expect(sender.posts.single.kind, PostKind.folder);
+      expect(sender.posts.single.folder?.name, 'archive_project');
+      expect(sender.posts.single.folder?.fileCount, 3);
 
-    await receiver.refresh();
-    expect(receiver.posts, hasLength(1));
-    final post = receiver.posts.single;
-    expect(post.folder?.name, 'archive_project');
+      await receiver.refresh();
+      expect(receiver.posts, hasLength(1));
+      final post = receiver.posts.single;
+      expect(post.folder?.name, 'archive_project');
 
-    // Сохранение всей папки
-    final saved = await receiver.saveFolder(post);
-    expect(saved, isTrue);
-    expect(files.savedFolders, hasLength(1));
-    expect(files.savedFolders.single.$1, 'archive_project');
-    expect(files.savedFolders.single.$2, hasLength(3));
-    expect(files.saved, hasLength(3));
+      // Сохранение всей папки
+      final saved = await receiver.saveFolder(post);
+      expect(saved, isTrue);
+      expect(files.savedFolders, hasLength(1));
+      expect(files.savedFolders.single.$1, 'archive_project');
+      expect(files.savedFolders.single.$2, hasLength(3));
+      expect(files.saved, hasLength(3));
 
-    // Сохранение отдельного файла
-    final savedEntry = await receiver.saveFolderEntry(post.folder!.files.first);
-    expect(savedEntry, isTrue);
-    expect(files.saved.last.$1, 'README.md');
+      // Сохранение отдельного файла
+      final savedEntry = await receiver.saveFolderEntry(
+        post.folder!.files.first,
+      );
+      expect(savedEntry, isTrue);
+      expect(files.saved.last.$1, 'README.md');
 
-    sender.dispose();
-    receiver.dispose();
-  });
+      sender.dispose();
+      receiver.dispose();
+    },
+  );
 
-  testWidgets('отображение структуры папок и навигация в FolderViewerScreen', (tester) async {
+  testWidgets('отображение структуры папок и навигация в FolderViewerScreen', (
+    tester,
+  ) async {
     final feed = controllerFor('PC');
     final post = Post(
       id: 'p1',
@@ -120,22 +125,17 @@ void main() {
       folder: FolderAttachment(
         name: 'documents',
         files: [
-          FolderEntry(
-            id: 'f1',
-            relativePath: 'report.txt',
-            size: 1024,
-          ),
-          FolderEntry(
-            id: 'f2',
-            relativePath: 'sub/data.csv',
-            size: 2048,
-          ),
+          FolderEntry(id: 'f1', relativePath: 'report.txt', size: 1024),
+          FolderEntry(id: 'f2', relativePath: 'sub/data.csv', size: 2048),
         ],
       ),
     );
 
     await tester.pumpWidget(
-      testApp(child: PostTile(post: post), feed: feed),
+      testApp(
+        child: PostTile(post: post),
+        feed: feed,
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -170,6 +170,47 @@ void main() {
     feed.dispose();
   });
 
+  testWidgets('поиск в папке находит файл во вложенной подпапке', (
+    tester,
+  ) async {
+    final feed = controllerFor('PC');
+    final post = Post(
+      id: 'search-folder',
+      kind: PostKind.folder,
+      createdAt: DateTime.utc(2026, 3, 1),
+      senderDevice: 'PC',
+      folder: FolderAttachment(
+        name: 'documents',
+        files: [
+          FolderEntry(id: 'root', relativePath: 'readme.txt', size: 1),
+          FolderEntry(
+            id: 'nested',
+            relativePath: 'reports/2026/result.pdf',
+            size: 2,
+          ),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(
+      testApp(
+        child: FolderViewerScreen(feed: feed, post: post),
+        feed: feed,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.search));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'result');
+    await tester.pumpAndSettle();
+
+    expect(find.text('reports/2026/result.pdf'), findsOneWidget);
+    expect(find.text('readme.txt'), findsNothing);
+
+    feed.dispose();
+  });
+
   test('отмена отправки папки через cancelTransfer', () async {
     final sender = controllerFor('Phone');
 
@@ -188,8 +229,9 @@ void main() {
     final sendFuture = sender.sendFolder(folder);
 
     // pendingPost добавляется сразу в sendFolder
-    final pendingPost =
-        sender.posts.firstWhere((p) => p.id.startsWith('pending_'));
+    final pendingPost = sender.posts.firstWhere(
+      (p) => p.id.startsWith('pending_'),
+    );
     sender.cancelTransfer(pendingPost.id);
 
     final result = await sendFuture;
@@ -278,10 +320,7 @@ void main() {
     );
 
     await secondSend;
-    expect(
-      sender.posts.where((p) => p.id.startsWith('pending_')),
-      isEmpty,
-    );
+    expect(sender.posts.where((p) => p.id.startsWith('pending_')), isEmpty);
     expect(sender.posts, hasLength(2));
 
     sender.dispose();
@@ -338,10 +377,7 @@ void main() {
     expect(post.folder!.files, hasLength(1));
     expect(post.folder!.files.single.relativePath, 'ready/final.md');
     // Файл мусора реально удалён из облака
-    expect(
-      cloud.files.keys.any((k) => k.contains(trashEntry.id)),
-      isFalse,
-    );
+    expect(cloud.files.keys.any((k) => k.contains(trashEntry.id)), isFalse);
 
     // 2. Редактируем содержимое файла внутри папки (replaceFolderEntry)
     final updatedContent = Uint8List.fromList(utf8.encode('Финальный текст'));
@@ -355,7 +391,9 @@ void main() {
     final replacedEntry = post.folder!.files.single;
     expect(replacedEntry.id, isNot(equals(draftEntry.id)));
     expect(
-      utf8.decode(await sender.downloadAttachment(replacedEntry.toAttachment())),
+      utf8.decode(
+        await sender.downloadAttachment(replacedEntry.toAttachment()),
+      ),
       'Финальный текст',
     );
 
@@ -364,10 +402,7 @@ void main() {
       name: 'extra.txt',
       bytes: Uint8List.fromList(utf8.encode('Дополнение')),
     );
-    post = (await sender.pickAndAddFilesToFolder(
-      post,
-      targetSubdir: 'ready',
-    ))!;
+    post = (await sender.pickAndAddFilesToFolder(post, targetSubdir: 'ready'))!;
     expect(post.folder!.files, hasLength(2));
     expect(
       post.folder!.files.map((f) => f.relativePath),
@@ -383,7 +418,9 @@ void main() {
       (f) => f.relativePath == 'ready/final.md',
     );
     expect(
-      utf8.decode(await receiver.downloadAttachment(remoteFinal.toAttachment())),
+      utf8.decode(
+        await receiver.downloadAttachment(remoteFinal.toAttachment()),
+      ),
       'Финальный текст',
     );
 

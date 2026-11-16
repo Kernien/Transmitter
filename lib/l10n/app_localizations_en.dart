@@ -1025,6 +1025,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchHint => 'Search this board…';
 
   @override
+  String get searchFolderHint => 'Search this folder…';
+
+  @override
   String get searchVaultsHint => 'Search vaults…';
 
   @override
