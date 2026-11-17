@@ -307,7 +307,7 @@ Dropbox. Для личного использования этого доста�
 ## Выпуск релиза
 
 1. Поднять версию в `pubspec.yaml` (`version: 0.13.0+16` — номер после `+`
-   увеличивается с каждым релизом, иначе Android не обновит приложение).
+   увеличивается с каждым релизом, иначе Android не обновит приложение) и обновить `README.md`, `README.en.md`, `README.de.md`, `README.zh.md`.
 2. Собрать всё в `build/dist`:
    APK, zip и установщик Windows (нужен Inno Setup 6:
    `winget install JRSoftware.InnoSetup`; сценарий — `installer/transmitter.iss`),
@@ -335,7 +335,7 @@ Dropbox. Для личного использования этого доста�
 
 5. Тег и GitHub Release с файлами из `build/dist` и
    `build/flatpak/Transmitter-<версия>.flatpak`: черновик
-   (`gh release create --draft`), файлы по одному (`gh release upload`),
+   (`gh release create --draft`, описание на двух языках: English и Русский), файлы по одному (`gh release upload`),
    проверка размеров, публикация (`gh release edit --draft=false --latest`).
 
 **Ключ подписи Android** лежит в `%USERPROFILE%\.transmitter-signing\`
