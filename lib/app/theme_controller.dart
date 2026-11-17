@@ -49,7 +49,23 @@ enum AppTheme {
     }
     final palette = this.palette;
     if (palette != null) scheme = palette.apply(scheme, seed);
-    return ThemeData(colorScheme: scheme, useMaterial3: true);
+    return ThemeData(
+      colorScheme: scheme,
+      useMaterial3: true,
+      // Зоны окна различаются тоном фона: шапка и панель ввода — чуть светлее
+      // ленты, карточки — ещё светлее, боковая панель (см. VaultsScreen) —
+      // темнее. Без этого всё сливается в один цвет.
+      appBarTheme: AppBarTheme(
+        backgroundColor: scheme.surfaceContainer,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+      ),
+      cardTheme: CardThemeData(
+        color: scheme.surfaceContainerHigh,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+      ),
+    );
   }
 }
 

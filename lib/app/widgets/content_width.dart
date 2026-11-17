@@ -54,8 +54,9 @@ class CenteredPageFrame extends StatelessWidget {
       builder: (context, constraints) {
         if (constraints.maxWidth <= maxWidth) return child;
         final theme = Theme.of(context);
+        // Поля вокруг окна — самый тёмный тон: рабочая область выделяется.
         return ColoredBox(
-          color: theme.scaffoldBackgroundColor,
+          color: theme.colorScheme.surfaceContainerLowest,
           child: Center(
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: maxWidth),

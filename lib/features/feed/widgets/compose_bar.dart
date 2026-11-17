@@ -27,9 +27,12 @@ class _ComposeBarState extends State<ComposeBar> {
     final maxFileSize = context.select<FeedController, int>((f) => f.maxFileSize);
     final canAttachMedia = context.select<FeedController, bool>((f) => f.canAttachMedia);
 
-    return SafeArea(
-      top: false,
-      child: Padding(
+    // Панель ввода — отдельная зона: тон светлее ленты.
+    return ColoredBox(
+      color: Theme.of(context).colorScheme.surfaceContainer,
+      child: SafeArea(
+        top: false,
+        child: Padding(
         padding: const EdgeInsets.fromLTRB(4, 4, 8, 8),
         child: Row(
           children: [
@@ -75,6 +78,7 @@ class _ComposeBarState extends State<ComposeBar> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

@@ -176,9 +176,20 @@ void main() {
         expect(c.sentCount, 2);
 
         final posts = await repo('Windows').fetchPosts();
-        expect(posts.map((p) => p.attachment!.fileName), ['1.jpg', '2.jpg']);
-        expect(posts.first.text, 'фото с отпуска');
-        expect(posts.last.text, '');
+        // Два поста могут получить одну метку времени, поэтому порядок в
+        // ленте не проверяем — только состав и то, что подпись у первого файла.
+        expect(
+          posts.map((p) => p.attachment!.fileName),
+          unorderedEquals(['1.jpg', '2.jpg']),
+        );
+        expect(
+          posts.singleWhere((p) => p.attachment!.fileName == '1.jpg').text,
+          'фото с отпуска',
+        );
+        expect(
+          posts.singleWhere((p) => p.attachment!.fileName == '2.jpg').text,
+          '',
+        );
       },
     );
 

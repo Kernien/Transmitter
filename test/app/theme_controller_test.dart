@@ -12,6 +12,30 @@ import 'package:transmitter/features/settings/settings_sheet.dart';
 import 'package:transmitter/l10n/app_localizations.dart';
 
 void main() {
+  test('зоны окна различаются по тону: шапка, карточки и фон не сливаются', () {
+    for (final theme in AppTheme.values) {
+      for (final b in Brightness.values) {
+        final data = theme.data(b);
+        final scheme = data.colorScheme;
+        expect(
+          data.appBarTheme.backgroundColor,
+          isNot(scheme.surface),
+          reason: '${theme.name}/$b: шапка совпала с фоном ленты',
+        );
+        expect(
+          data.cardTheme.color,
+          isNot(scheme.surface),
+          reason: '${theme.name}/$b: карточка совпала с фоном ленты',
+        );
+        expect(
+          scheme.surfaceContainerLow,
+          isNot(scheme.surface),
+          reason: '${theme.name}/$b: боковая панель совпала с лентой',
+        );
+      }
+    }
+  });
+
   test('выбор оформления сохраняется на устройстве', () async {
     final store = InMemoryKeyValueStore();
     final controller = ThemeController(store);
