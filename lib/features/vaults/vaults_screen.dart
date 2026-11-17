@@ -30,7 +30,7 @@ const double _kMasterPaneWidth = 340;
 /// левая панель + правая панель с лентой располагаются в центре вплотную
 /// друг к другу, без пустых дыр между списком досок и карточками постов.
 const double _kWorkspaceMaxWidth =
-    _kMasterPaneWidth + 1 + ContentWidth.defaultMaxWidth;
+    _kMasterPaneWidth + ContentWidth.defaultMaxWidth;
 
 /// Главный экран: список ключей баз (на широком мониторе — вместе с открытой лентой).
 class VaultsScreen extends StatefulWidget {
@@ -312,8 +312,7 @@ class _VaultsScreenState extends State<VaultsScreen> {
               floatingActionButton: fab,
             ),
           ),
-          // Боковая панель темнее ленты, между ними — тонкая линия.
-          const VerticalDivider(width: 1, thickness: 1),
+          // Боковая панель темнее ленты, разделительная линия не нужна.
           Expanded(
             child: switch (selected) {
               VaultKey v => FeedScreen.vault(

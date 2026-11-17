@@ -79,7 +79,7 @@ void main() {
       for (final t in AppTheme.values)
         if (t.palette != null) t,
     ];
-    expect(palettes, hasLength(6));
+    expect(palettes, hasLength(12));
     for (final t in palettes) {
       expect(t.brightness, Brightness.dark, reason: t.name);
       final scheme = t.data(Brightness.light).colorScheme;
@@ -90,7 +90,7 @@ void main() {
     // Фоны у всех тем разные.
     expect({
       for (final t in palettes) t.data(Brightness.dark).colorScheme.surface,
-    }, hasLength(6));
+    }, hasLength(12));
   });
 
   testWidgets('«Настройки» → «Оформление» → пресет', (tester) async {

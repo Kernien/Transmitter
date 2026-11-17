@@ -60,14 +60,8 @@ class CenteredPageFrame extends StatelessWidget {
           child: Center(
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: maxWidth),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  border: Border.symmetric(
-                    vertical: BorderSide(color: theme.dividerColor, width: 1),
-                  ),
-                ),
-                child: child,
-              ),
+              // Без рамки: окно отделяет от полей разница тонов.
+              child: child,
             ),
           ),
         );

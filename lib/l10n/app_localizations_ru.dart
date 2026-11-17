@@ -703,6 +703,24 @@ class AppLocalizationsRu extends AppLocalizations {
   String get themeCatppuccin => 'Catppuccin Mocha';
 
   @override
+  String get themeTokyoNight => 'Tokyo Night';
+
+  @override
+  String get themeMonokai => 'Monokai';
+
+  @override
+  String get themeGithubDark => 'GitHub Dark';
+
+  @override
+  String get themeRosePine => 'Rosé Pine';
+
+  @override
+  String get themeAyuMirage => 'Ayu Mirage';
+
+  @override
+  String get themeEverforest => 'Everforest';
+
+  @override
   String storageLimitValue(String size) {
     return 'Лимит: $size';
   }

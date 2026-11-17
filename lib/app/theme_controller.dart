@@ -21,7 +21,13 @@ enum AppTheme {
   oneDark(Color(0xFF61AFEF), Brightness.dark, _oneDark),
   solarized(Color(0xFF268BD2), Brightness.dark, _solarized),
   gruvbox(Color(0xFFFABD2F), Brightness.dark, _gruvbox),
-  catppuccin(Color(0xFFCBA6F7), Brightness.dark, _catppuccin);
+  catppuccin(Color(0xFFCBA6F7), Brightness.dark, _catppuccin),
+  tokyoNight(Color(0xFF7AA2F7), Brightness.dark, _tokyoNight),
+  monokai(Color(0xFFA6E22E), Brightness.dark, _monokai),
+  githubDark(Color(0xFF58A6FF), Brightness.dark, _githubDark),
+  rosePine(Color(0xFFC4A7E7), Brightness.dark, _rosePine),
+  ayuMirage(Color(0xFFFFCC66), Brightness.dark, _ayuMirage),
+  everforest(Color(0xFFA7C080), Brightness.dark, _everforest);
 
   const AppTheme(this.seed, this.brightness, [this.palette]);
 
@@ -212,6 +218,96 @@ const _catppuccin = ThemePalette(
   comment: Color(0xFF6C7086),
   secondary: Color(0xFF89B4FA),
   error: Color(0xFFF38BA8),
+);
+
+const _tokyoNight = ThemePalette(
+  backgrounds: [
+    Color(0xFF13141C),
+    Color(0xFF16161E),
+    Color(0xFF1A1B26),
+    Color(0xFF24283B),
+    Color(0xFF2F334D),
+  ],
+  text: Color(0xFFC0CAF5),
+  dimText: Color(0xFFA9B1D6),
+  comment: Color(0xFF565F89),
+  secondary: Color(0xFFBB9AF7),
+  error: Color(0xFFF7768E),
+);
+
+const _monokai = ThemePalette(
+  backgrounds: [
+    Color(0xFF171814),
+    Color(0xFF1E1F1C),
+    Color(0xFF272822),
+    Color(0xFF3E3D32),
+    Color(0xFF49483E),
+  ],
+  text: Color(0xFFF8F8F2),
+  dimText: Color(0xFFCFCFC2),
+  comment: Color(0xFF75715E),
+  secondary: Color(0xFF66D9EF),
+  error: Color(0xFFF92672),
+);
+
+const _githubDark = ThemePalette(
+  backgrounds: [
+    Color(0xFF010409),
+    Color(0xFF090C10),
+    Color(0xFF0D1117),
+    Color(0xFF161B22),
+    Color(0xFF21262D),
+  ],
+  text: Color(0xFFE6EDF3),
+  dimText: Color(0xFF9DA7B3),
+  comment: Color(0xFF6E7681),
+  secondary: Color(0xFFBC8CFF),
+  error: Color(0xFFF85149),
+);
+
+const _rosePine = ThemePalette(
+  backgrounds: [
+    Color(0xFF13111D),
+    Color(0xFF16141F),
+    Color(0xFF191724),
+    Color(0xFF1F1D2E),
+    Color(0xFF26233A),
+  ],
+  text: Color(0xFFE0DEF4),
+  dimText: Color(0xFF908CAA),
+  comment: Color(0xFF6E6A86),
+  secondary: Color(0xFFEBBCBA),
+  error: Color(0xFFEB6F92),
+);
+
+const _ayuMirage = ThemePalette(
+  backgrounds: [
+    Color(0xFF171B24),
+    Color(0xFF1B202A),
+    Color(0xFF1F2430),
+    Color(0xFF242B38),
+    Color(0xFF2D3544),
+  ],
+  text: Color(0xFFCCCAC2),
+  dimText: Color(0xFFB3B1AD),
+  comment: Color(0xFF707A8C),
+  secondary: Color(0xFF73D0FF),
+  error: Color(0xFFF28779),
+);
+
+const _everforest = ThemePalette(
+  backgrounds: [
+    Color(0xFF232A2E),
+    Color(0xFF272E33),
+    Color(0xFF2D353B),
+    Color(0xFF343F44),
+    Color(0xFF3D484D),
+  ],
+  text: Color(0xFFD3C6AA),
+  dimText: Color(0xFF9DA9A0),
+  comment: Color(0xFF859289),
+  secondary: Color(0xFF7FBBB3),
+  error: Color(0xFFE67E80),
 );
 
 /// Выбор оформления. Хранится только на этом устройстве, как язык.

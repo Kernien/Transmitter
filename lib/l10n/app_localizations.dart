@@ -1298,6 +1298,42 @@ abstract class AppLocalizations {
   /// **'Catppuccin Mocha'**
   String get themeCatppuccin;
 
+  /// No description provided for @themeTokyoNight.
+  ///
+  /// In en, this message translates to:
+  /// **'Tokyo Night'**
+  String get themeTokyoNight;
+
+  /// No description provided for @themeMonokai.
+  ///
+  /// In en, this message translates to:
+  /// **'Monokai'**
+  String get themeMonokai;
+
+  /// No description provided for @themeGithubDark.
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub Dark'**
+  String get themeGithubDark;
+
+  /// No description provided for @themeRosePine.
+  ///
+  /// In en, this message translates to:
+  /// **'Rosé Pine'**
+  String get themeRosePine;
+
+  /// No description provided for @themeAyuMirage.
+  ///
+  /// In en, this message translates to:
+  /// **'Ayu Mirage'**
+  String get themeAyuMirage;
+
+  /// No description provided for @themeEverforest.
+  ///
+  /// In en, this message translates to:
+  /// **'Everforest'**
+  String get themeEverforest;
+
   /// No description provided for @storageLimitValue.
   ///
   /// In en, this message translates to:
