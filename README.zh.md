@@ -13,7 +13,7 @@
 | 🐧 **Linux** | 可自动更新的 Flatpak，或 AppImage——单个文件，无需安装；已在 Steam Deck 上测试 |
 | 🌐 **浏览器** | https://kernien.github.io/transmitter-web/ ——无需安装 |
 
-版本 **1.0.0**。
+版本 **1.1.2**。
 
 > **界面语言。** 应用界面有英语和俄语；在中文系统上显示为英语（可在 ⚙ 设置“Settings”中切换）。本指南中的按钮名称先给出中文，括号内是应用中实际显示的英文，例如 **新建密钥**（“New key”）。
 
@@ -29,7 +29,9 @@
 
 - **链接。** 自动识别，轻点即可打开。
 - **任何大小的文件** ——照片、文档、视频、压缩包。每个库在创建时选择大小上限（25 MB、100 MB、500 MB、1 GB、2 GB 或“无限制”），并可随时更改（⋮ → “文件大小…”）。分块流式加密（4 MB/块），网络错误时可断点续传，带传输进度和速度指示。使用 📎 按钮、拖放到窗口（Windows 和浏览器），或在 Android 上从任意应用“分享”。
-- **一次发送多个文件。** 通过 📎 按钮或相册选择一组文件——它们会立即出现在列表中并显示传输状态，按顺序依次上传。
+- **一次发送多个文件与整个文件夹。** 通过 📎 按钮、相册选择多个文件，或直接发送包含子目录的整个文件夹（📁）。文件夹可在应用内像资源管理器一样浏览，支持面包屑导航、搜索以及在原位添加、重命名、移动和删除文件。
+- **原位替换与内置文本编辑。** 无需重新创建条目即可替换已发送的文件或文件夹，支持重命名附件以及在应用内直接编辑文本文件（`.txt`、`.md`、`.json`、源代码）。
+- **“文件”标签页与即时搜索（🔍）。** 在按时间排列的“动态”与汇总所有附件和文件夹的“文件”视图之间自由切换；支持按名称搜索库、帖子、备注和文件夹内的文件。
 - **双向“分享”（Android）。** 从浏览器、相册或任意应用直接发送到 Transmitter，也可以从 Transmitter 分享到任意应用。
 - **多个库。** 例如一个用于“个人资料 ↔ 工作资料”，另一个用于与电脑交换：每个库都有自己的密钥，互不干扰。
 - **批量处理条目。** 选中多条后，可打包成一个 zip 下载、分享或删除。
@@ -37,7 +39,7 @@
 - **在所有设备上删除。** 删除的条目会从所有设备上消失，云盘中的文件也一并删除。
 - **设备名称。** 每个条目都显示来源设备：“Redmi 10”、“Redmi 10 · work”、“笔记本”。
 - **英语和俄语界面。** 语言跟随系统，或在应用中选择。
-- **自选外观。** 浅色或深色主题、跟随系统，或选择配色预设：海洋（Ocean）、森林（Forest）、日落（Sunset）、夜晚（Night，纯黑背景，在 OLED 屏幕上更省电）。还有流行的深色编辑器主题：Dracula、Nord、One Dark、Solarized Dark、Gruvbox、Catppuccin Mocha。
+- **自选外观。** 浅色或深色主题、跟随系统，或选择配色预设：海洋（Ocean）、森林（Forest）、日落（Sunset）、夜晚（Night，纯黑背景，在 OLED 屏幕上更省电）。还有流行的深色编辑器主题：Dracula、Nord、One Dark、Solarized Dark、Gruvbox、Catppuccin Mocha、Tokyo Night、Monokai、GitHub Dark、Rosé Pine、Ayu Mirage、Everforest。
 - **在列表中直接看照片。** 带图片的条目显示预览，可全屏查看并缩放。较大的照片（超过 10 MB）点击按钮后才加载。
 - **在应用内直接阅读文档。** 文本文件（`.txt`、`.csv`、`.json`、`.log`、源代码）、带格式的 Markdown 和 Word `.docx` 文档点击即可打开：可选择、复制，可切换等宽字体。
 - **在应用内直接播放视频和音乐**（Android、Windows、浏览器）：支持拖动进度和全屏，几乎支持所有格式（`.mp4`、`.mkv`、`.avi`、`.mp3`、`.flac`…）。播放视频时屏幕不会熄灭；关闭屏幕后音乐仍会继续播放。
@@ -61,18 +63,18 @@
 ### Android
 
 1. 从 [**Releases**](https://github.com/Kernien/Transmitter/releases) 下载 APK：
-   - `Transmitter-1.0.0-android-arm64.apk` ——适用于近几年的大多数手机；
-   - `Transmitter-1.0.0-android-armv7.apk` ——适用于较旧或入门级机型（如果第一个无法安装）。
+   - `Transmitter-1.1.2-android-arm64.apk` ——适用于近几年的大多数手机；
+   - `Transmitter-1.1.2-android-armv7.apk` ——适用于较旧或入门级机型（如果第一个无法安装）。
 2. 在手机上打开该文件。Android 会询问是否允许从此来源（浏览器或文件管理器）安装——请允许。
 
 **工作资料（Shelter）。** 先在个人资料中安装 Transmitter，然后在 Shelter 中选中它，点击 **克隆到工作资料**。在工作资料中登录云盘也需要浏览器——请把浏览器一并克隆过去。
 
 ### Windows
 
-1. 从 [**Releases**](https://github.com/Kernien/Transmitter/releases) 下载 `Transmitter-1.0.0-windows-setup.exe` 并运行。它只为当前用户安装（无需管理员权限），并在开始菜单中添加 Transmitter。可在 **设置 → 应用** 中卸载；密钥和云盘登录状态会保留。
+1. 从 [**Releases**](https://github.com/Kernien/Transmitter/releases) 下载 `Transmitter-1.1.2-windows-setup.exe` 并运行。它只为当前用户安装（无需管理员权限），并在开始菜单中添加 Transmitter。可在 **设置 → 应用** 中卸载；密钥和云盘登录状态会保留。
 2. 首次启动时，Windows 可能提示“Windows 已保护你的电脑”——因为应用没有付费的代码签名证书。点击 **更多信息 → 仍要运行**。
 
-不想安装？`Transmitter-1.0.0-windows-x64.zip` 是便携版：解压到任意位置，运行 `transmitter.exe` 即可。
+不想安装？`Transmitter-1.1.2-windows-x64.zip` 是便携版：解压到任意位置，运行 `transmitter.exe` 即可。
 
 ### Linux 和 Steam Deck
 
@@ -86,12 +88,12 @@ flatpak install --user https://kernien.github.io/transmitter-web/flatpak/io.gith
 
 **AppImage——单个文件，无需安装：**
 
-1. 从 [**Releases**](https://github.com/Kernien/Transmitter/releases) 下载 `Transmitter-1.0.0-linux-x86_64.AppImage`。
+1. 从 [**Releases**](https://github.com/Kernien/Transmitter/releases) 下载 `Transmitter-1.1.2-linux-x86_64.AppImage`。
 2. 将文件设为可执行：在文件管理器中右键 → **属性 → 权限 → 可执行**（或运行 `chmod +x Transmitter-*.AppImage`），然后启动。
 
 **Steam Deck：** 以上操作在桌面模式下进行（Steam 键 → 电源 → 切换到桌面）。若想在游戏模式中也能启动 Transmitter，右键点击文件 → **添加到 Steam**，它会出现在库中的非 Steam 游戏里。
 
-Linux 版没有二维码扫描器——请以字符串形式粘贴密钥。密钥和云盘登录信息保存在 `~/.local/share/app.transmitter.transmitter`（仅当前用户可访问）。另有 `Transmitter-1.0.0-linux-x64.tar.gz`：解压后运行 `transmitter` 即可。
+Linux 版没有二维码扫描器——请以字符串形式粘贴密钥。密钥和云盘登录信息保存在 `~/.local/share/app.transmitter.transmitter`（仅当前用户可访问）。另有 `Transmitter-1.1.2-linux-x64.tar.gz`：解压后运行 `transmitter` 即可。
 
 ### 浏览器
 

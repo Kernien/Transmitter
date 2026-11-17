@@ -17,7 +17,7 @@ right on the device: the cloud only ever sees meaningless bytes.
 | 🐧 **Linux** | Flatpak with automatic updates, or AppImage — a single file, no installation; tested on Steam Deck |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — nothing to install |
 
-Version **1.0.0**. The interface is in **English and Russian** — it follows the
+Version **1.1.2**. The interface is in **English and Russian** — it follows the
 system language, or pick one in ⚙ *Settings*.
 
 ## Why
@@ -40,7 +40,9 @@ browser.
 
 - **Links.** Detected automatically and opened with a single tap.
 - **Files of any size** — photos, documents, videos, archives. The limit (25 MB, 100 MB, 500 MB, 1 GB, 2 GB or “No limit”) is chosen for each vault when created and can be adjusted anytime (⋮ → *File size limit…*). Chunked streaming encryption (4 MB chunks), resumable chunked uploads, transfer progress and speed indicator. Use the 📎 button, drag files into the window (Windows and browser) or “Share” from any app on Android.
-- **Send multiple files at once.** Pick a batch of files via 📎 or photos/videos from Gallery — they appear immediately in the feed with transfer status and upload in sequence.
+- **Send multiple files and whole folders.** Pick a batch of files via 📎, photos/videos from Gallery, or attach an entire folder with nested subfolders (📁). Folders open right in the app like a file explorer — with breadcrumbs, search, and in-place file addition, renaming, moving, and deletion.
+- **In-place replacement & text editing.** Update an existing file or folder with a new version without recreating the post (*Replace file…* / *Replace folder…*), rename attachments, and edit text files (`.txt`, `.md`, `.json`, source code) directly inside the app.
+- **“Files” tab & instant search (🔍).** Switch between the chronological **Feed** and a structured **Files** view of all attachments and folders on the board; filter your vaults list or search across posts, notes, and file names.
 - **“Share” both ways (Android).** From your browser, gallery or any app
   straight into Transmitter — and from Transmitter into any app.
 - **Several vaults.** For example, one for the “personal ↔ work profile” pair
@@ -61,7 +63,8 @@ browser.
 - **Choose the look.** Light or dark theme, as in the system, or a color
   preset: *Ocean*, *Forest*, *Sunset*, *Night (black)* — the black background
   saves battery on OLED screens. Popular dark code-editor themes too: Dracula,
-  Nord, One Dark, Solarized Dark, Gruvbox, Catppuccin Mocha.
+  Nord, One Dark, Solarized Dark, Gruvbox, Catppuccin Mocha, Tokyo Night,
+  Monokai, GitHub Dark, Rosé Pine, Ayu Mirage, Everforest.
 - **Photos right in the feed.** Previews for items with pictures and a
   full-screen viewer with zoom. Large photos (over 10 MB) load on request.
 - **Documents right in the app.** Text files (`.txt`, `.csv`, `.json`, `.log`,
@@ -107,9 +110,9 @@ browser.
 ### Android
 
 1. Download the APK from [**Releases**](https://github.com/Kernien/Transmitter/releases):
-   - `Transmitter-1.0.0-android-arm64.apk` — for most phones from recent
+   - `Transmitter-1.1.2-android-arm64.apk` — for most phones from recent
      years;
-   - `Transmitter-1.0.0-android-armv7.apk` — for older or budget models, if
+   - `Transmitter-1.1.2-android-armv7.apk` — for older or budget models, if
      the first one doesn't install.
 2. Open the file on your phone. Android will ask to allow installs from this
    source (your browser or file manager) — allow it.
@@ -120,14 +123,14 @@ the cloud in the work profile also needs a browser there — clone one as well.
 
 ### Windows
 
-1. Download `Transmitter-1.0.0-windows-setup.exe` from [**Releases**](https://github.com/Kernien/Transmitter/releases)
+1. Download `Transmitter-1.1.2-windows-setup.exe` from [**Releases**](https://github.com/Kernien/Transmitter/releases)
    and run it. It installs for your user only — no administrator rights
    needed — and adds Transmitter to the Start menu. Uninstall it in
    **Settings → Apps**; your keys and cloud sign-ins are kept.
 2. On first launch Windows may say “Windows protected your PC” — the app has
    no paid code-signing certificate. Click **More info → Run anyway**.
 
-Prefer no installation? `Transmitter-1.0.0-windows-x64.zip` is a portable
+Prefer no installation? `Transmitter-1.1.2-windows-x64.zip` is a portable
 version: unpack it anywhere and run `transmitter.exe`.
 
 ### Linux and Steam Deck
@@ -147,7 +150,7 @@ so add your vaults again.
 
 **AppImage — a single file, no installation:**
 
-1. Download `Transmitter-1.0.0-linux-x86_64.AppImage` from [**Releases**](https://github.com/Kernien/Transmitter/releases).
+1. Download `Transmitter-1.1.2-linux-x86_64.AppImage` from [**Releases**](https://github.com/Kernien/Transmitter/releases).
 2. Make the file executable — in the file manager, right-click →
    **Properties → Permissions → Is executable** (or
    `chmod +x Transmitter-*.AppImage`) — and run it.
@@ -159,7 +162,7 @@ Desktop). To launch Transmitter from Game Mode as well, right-click the file →
 There is no QR scanner on Linux — paste the key as a string. Keys and cloud
 sign-ins are stored in `~/.local/share/app.transmitter.transmitter`
 (accessible only to your user). There is also
-`Transmitter-1.0.0-linux-x64.tar.gz`: extract it and run `transmitter`.
+`Transmitter-1.1.2-linux-x64.tar.gz`: extract it and run `transmitter`.
 
 ### Browser
 
