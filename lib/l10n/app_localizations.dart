@@ -1891,6 +1891,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear'**
   String get clearSearch;
+
+  /// No description provided for @addAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add account'**
+  String get addAccount;
+
+  /// No description provided for @renameAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename account'**
+  String get renameAccount;
+
+  /// No description provided for @accountNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Account name'**
+  String get accountNameLabel;
+
+  /// No description provided for @accountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get accountLabel;
+
+  /// No description provided for @switchAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch account'**
+  String get switchAccount;
+
+  /// No description provided for @selectAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Select account'**
+  String get selectAccount;
+
+  /// No description provided for @disconnectAccountConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out of account \"{name}\"?'**
+  String disconnectAccountConfirm(String name);
+
+  /// No description provided for @noAccountsConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'No accounts connected'**
+  String get noAccountsConnected;
 }
 
 class _AppLocalizationsDelegate

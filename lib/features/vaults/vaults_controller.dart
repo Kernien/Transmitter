@@ -118,15 +118,31 @@ class VaultsController extends ChangeNotifier {
     required CloudProviderId provider,
     int maxFileSize = VaultKey.defaultMaxFileSize,
     bool isEncrypted = true,
+    String? accountId,
+    String? accountEmail,
   }) async {
     final key = VaultKey.generate(
       provider: provider,
       label: label.trim(),
       maxFileSize: maxFileSize,
       isEncrypted: isEncrypted,
+      accountId: accountId,
+      accountEmail: accountEmail,
     );
     await _save([..._vaults, key]);
     return key;
+  }
+
+  /// Привязывает базу к конкретному аккаунту облака.
+  Future<void> setVaultAccount(
+    VaultKey key, {
+    String? accountId,
+    String? accountEmail,
+  }) async {
+    final current = _current(key) ?? key;
+    await _replace(
+      current.copyWith(accountId: accountId, accountEmail: accountEmail),
+    );
   }
 
   /// Добавляет ключ базы из строки или QR-кода. Если такой ключ уже есть,

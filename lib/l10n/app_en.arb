@@ -372,5 +372,14 @@
   "vaultPlainBadge": "Unencrypted",
   "boardReaderBadge": "Read-only",
   "searchAction": "Search",
-  "clearSearch": "Clear"
+  "clearSearch": "Clear",
+  "addAccount": "Add account",
+  "renameAccount": "Rename account",
+  "accountNameLabel": "Account name",
+  "accountLabel": "Account",
+  "switchAccount": "Switch account",
+  "selectAccount": "Select account",
+  "disconnectAccountConfirm": "Sign out of account \"{name}\"?",
+  "@disconnectAccountConfirm": { "placeholders": { "name": { "type": "String" } } },
+  "noAccountsConnected": "No accounts connected"
 }

@@ -52,4 +52,17 @@ class MegaAdapter implements PasswordCloudAdapter {
       () => MegaStorage(api: MegaApi(_client), credentials: session),
     );
   }
+
+  @override
+  Future<CloudAccountProfile?> fetchProfile(String credentials) async {
+    try {
+      final session = MegaCredentials.decode(credentials);
+      return CloudAccountProfile(
+        email: session.email,
+        displayName: session.email,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
 }

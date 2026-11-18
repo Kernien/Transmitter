@@ -70,9 +70,10 @@ class GoogleDriveAuthenticator {
         'code_challenge': pkce.challenge,
         'code_challenge_method': Pkce.method,
         'state': state,
-        // offline + consent: Google выдаёт refresh token при каждом входе.
+        // offline + consent + select_account: позволяет выбрать аккаунт при входе
+        // и выдаёт refresh token.
         'access_type': 'offline',
-        'prompt': 'consent',
+        'prompt': 'select_account consent',
       },
     );
 
@@ -115,6 +116,7 @@ class GoogleDriveAuthenticator {
         'scope': scope,
         'state': state,
         'include_granted_scopes': 'true',
+        'prompt': 'select_account',
       },
     );
 

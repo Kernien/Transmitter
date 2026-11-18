@@ -52,8 +52,11 @@ extension AppLocalizationsX on AppLocalizations {
   }
 
   /// Подпись подключённой базы в списке баз и на экране «Поделиться».
-  String vaultConnectedSubtitle(VaultKey vault) {
-    final provider = vault.provider.title;
+  String vaultConnectedSubtitle(VaultKey vault, [String? accountName]) {
+    final effectiveAccount = accountName ?? vault.accountEmail;
+    final provider = effectiveAccount != null && effectiveAccount.isNotEmpty
+        ? '${vault.provider.title} ($effectiveAccount)'
+        : vault.provider.title;
     final unlimited = vault.maxFileSize >= VaultKey.unlimitedFileSize;
     if (vault.isEncrypted) {
       return unlimited

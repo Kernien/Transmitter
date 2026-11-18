@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:http/http.dart' as http;
 
 import '../../../auth/auth_browser.dart';
@@ -48,4 +50,35 @@ class GoogleDriveAdapter implements CloudProviderAdapter {
       onChanged: (c) => onCredentialsChanged(c.encode()),
     ),
   );
+
+  @override
+  Future<CloudAccountProfile?> fetchProfile(String credentials) async {
+    try {
+      final tokens = OAuthTokenManager(
+        initial: OAuthCredentials.decode(credentials),
+        refresher: _auth.refresh,
+        onChanged: (_) async {},
+      );
+      final token = await tokens.accessToken();
+      final uri = Uri.parse(
+        'https://www.googleapis.com/drive/v3/about?fields=user(displayName,emailAddress)',
+      );
+      final response = await _client.get(
+        uri,
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        final user = json['user'] as Map<String, dynamic>?;
+        if (user != null) {
+          final email = user['emailAddress'] as String?;
+          final name = user['displayName'] as String?;
+          return CloudAccountProfile(email: email, displayName: name);
+        }
+      }
+    } catch (_) {
+      // Игнорируем сетевые ошибки при запросе профиля.
+    }
+    return null;
+  }
 }

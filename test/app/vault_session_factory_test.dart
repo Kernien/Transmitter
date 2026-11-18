@@ -43,6 +43,9 @@ class FakeAdapter implements CloudProviderAdapter {
   Future<String> signIn() async => 'creds';
 
   @override
+  Future<CloudAccountProfile?> fetchProfile(String credentials) async => null;
+
+  @override
   CloudStorage createStorage(
     String credentials, {
     required CredentialsChanged onCredentialsChanged,

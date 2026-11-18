@@ -1070,4 +1070,30 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get clearSearch => 'Очистить';
+
+  @override
+  String get addAccount => 'Добавить аккаунт';
+
+  @override
+  String get renameAccount => 'Переименовать аккаунт';
+
+  @override
+  String get accountNameLabel => 'Название аккаунта';
+
+  @override
+  String get accountLabel => 'Аккаунт';
+
+  @override
+  String get switchAccount => 'Сменить аккаунт';
+
+  @override
+  String get selectAccount => 'Выберите аккаунт';
+
+  @override
+  String disconnectAccountConfirm(String name) {
+    return 'Выйти из аккаунта «$name»?';
+  }
+
+  @override
+  String get noAccountsConnected => 'Нет подключённых аккаунтов';
 }

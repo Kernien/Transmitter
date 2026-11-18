@@ -26,6 +26,19 @@ abstract interface class CloudProviderAdapter {
     String credentials, {
     required CredentialsChanged onCredentialsChanged,
   });
+
+  /// Запрашивает профиль пользователя (почту, имя) по учётным данным.
+  /// Возвращает `null`, если провайдер не предоставляет профиль или произошла ошибка.
+  Future<CloudAccountProfile?> fetchProfile(String credentials) =>
+      Future.value(null);
+}
+
+/// Профиль пользователя в облачном сервисе (почта, имя).
+class CloudAccountProfile {
+  const CloudAccountProfile({this.email, this.displayName});
+
+  final String? email;
+  final String? displayName;
 }
 
 /// Облако со входом по почте и паролю прямо в приложении, без браузера.

@@ -37,6 +37,9 @@ class _PasswordAdapter implements PasswordCloudAdapter {
   }
 
   @override
+  Future<CloudAccountProfile?> fetchProfile(String credentials) async => null;
+
+  @override
   CloudStorage createStorage(
     String credentials, {
     required CredentialsChanged onCredentialsChanged,

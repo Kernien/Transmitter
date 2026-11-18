@@ -1068,4 +1068,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clearSearch => 'Clear';
+
+  @override
+  String get addAccount => 'Add account';
+
+  @override
+  String get renameAccount => 'Rename account';
+
+  @override
+  String get accountNameLabel => 'Account name';
+
+  @override
+  String get accountLabel => 'Account';
+
+  @override
+  String get switchAccount => 'Switch account';
+
+  @override
+  String get selectAccount => 'Select account';
+
+  @override
+  String disconnectAccountConfirm(String name) {
+    return 'Sign out of account \"$name\"?';
+  }
+
+  @override
+  String get noAccountsConnected => 'No accounts connected';
 }

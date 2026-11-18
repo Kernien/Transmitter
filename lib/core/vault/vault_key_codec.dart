@@ -69,6 +69,8 @@ class VaultKeyCodec {
     'n': key.label,
     'm': key.maxFileSize,
     if (!key.isEncrypted) 'e': false,
+    if (key.accountId != null) 'a': key.accountId,
+    if (key.accountEmail != null) 'ae': key.accountEmail,
   };
 
   VaultKey fromJson(Map<String, dynamic> json) {
@@ -85,6 +87,8 @@ class VaultKeyCodec {
         maxFileSize:
             (json['m'] as num?)?.toInt() ?? VaultKey.defaultMaxFileSize,
         isEncrypted: (encrypted as bool?) ?? true,
+        accountId: json['a'] as String?,
+        accountEmail: json['ae'] as String?,
       );
     } catch (_) {
       throw const InvalidVaultKeyException(ErrorCode.keyCorrupted);

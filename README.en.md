@@ -17,7 +17,7 @@ right on the device: the cloud only ever sees meaningless bytes.
 | 🐧 **Linux** | Flatpak with automatic updates, or AppImage — a single file, no installation; tested on Steam Deck |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — nothing to install |
 
-Version **1.1.2**. The interface is in **English and Russian** — it follows the
+Version **1.2.0**. The interface is in **English and Russian** — it follows the
 system language, or pick one in ⚙ *Settings*.
 
 ## Why
@@ -110,9 +110,9 @@ browser.
 ### Android
 
 1. Download the APK from [**Releases**](https://github.com/Kernien/Transmitter/releases):
-   - `Transmitter-1.1.2-android-arm64.apk` — for most phones from recent
+   - `Transmitter-1.2.0-android-arm64.apk` — for most phones from recent
      years;
-   - `Transmitter-1.1.2-android-armv7.apk` — for older or budget models, if
+   - `Transmitter-1.2.0-android-armv7.apk` — for older or budget models, if
      the first one doesn't install.
 2. Open the file on your phone. Android will ask to allow installs from this
    source (your browser or file manager) — allow it.
@@ -123,14 +123,14 @@ the cloud in the work profile also needs a browser there — clone one as well.
 
 ### Windows
 
-1. Download `Transmitter-1.1.2-windows-setup.exe` from [**Releases**](https://github.com/Kernien/Transmitter/releases)
+1. Download `Transmitter-1.2.0-windows-setup.exe` from [**Releases**](https://github.com/Kernien/Transmitter/releases)
    and run it. It installs for your user only — no administrator rights
    needed — and adds Transmitter to the Start menu. Uninstall it in
    **Settings → Apps**; your keys and cloud sign-ins are kept.
 2. On first launch Windows may say “Windows protected your PC” — the app has
    no paid code-signing certificate. Click **More info → Run anyway**.
 
-Prefer no installation? `Transmitter-1.1.2-windows-x64.zip` is a portable
+Prefer no installation? `Transmitter-1.2.0-windows-x64.zip` is a portable
 version: unpack it anywhere and run `transmitter.exe`.
 
 ### Linux and Steam Deck
@@ -150,7 +150,7 @@ so add your vaults again.
 
 **AppImage — a single file, no installation:**
 
-1. Download `Transmitter-1.1.2-linux-x86_64.AppImage` from [**Releases**](https://github.com/Kernien/Transmitter/releases).
+1. Download `Transmitter-1.2.0-linux-x86_64.AppImage` from [**Releases**](https://github.com/Kernien/Transmitter/releases).
 2. Make the file executable — in the file manager, right-click →
    **Properties → Permissions → Is executable** (or
    `chmod +x Transmitter-*.AppImage`) — and run it.
@@ -162,7 +162,7 @@ Desktop). To launch Transmitter from Game Mode as well, right-click the file →
 There is no QR scanner on Linux — paste the key as a string. Keys and cloud
 sign-ins are stored in `~/.local/share/app.transmitter.transmitter`
 (accessible only to your user). There is also
-`Transmitter-1.1.2-linux-x64.tar.gz`: extract it and run `transmitter`.
+`Transmitter-1.2.0-linux-x64.tar.gz`: extract it and run `transmitter`.
 
 ### Browser
 
@@ -192,6 +192,8 @@ are remembered in that browser.
    browser with a camera), or paste the key string `TRM1.…` copied with
    **Copy key**.
 3. Sign in to the **same** cloud account — and the feed appears.
+
+**Several accounts of one cloud.** ☁ → pick the cloud → **Add account** (for example, personal and work Google Drive). When creating a vault, choose which account it lives in; later change it via ⋮ → **Switch account**. A vault key carries the account's email, so another device picks the matching account automatically.
 
 **Google Drive notes.** During sign-in Google warns that the app isn't
 verified — choose **Advanced → Go to Transmitter**. On the phone, tap

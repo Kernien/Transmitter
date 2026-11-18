@@ -7,6 +7,7 @@ import '../../app/app_lock_controller.dart';
 import '../../app/l10n.dart';
 import '../../app/widgets/content_width.dart';
 import '../../app/vault_session_factory.dart';
+import '../../core/storage/cloud_account.dart';
 import '../../core/storage/cloud_connection_service.dart';
 import '../../core/vault/reader_key.dart';
 import '../../core/vault/vault_key.dart';
@@ -386,7 +387,7 @@ Future<void> openVault(BuildContext context, VaultKey key) async {
     );
     return;
   }
-  if (!connections.isConnected(key.provider)) {
+  if (!connections.isConnected(key.provider, accountId: key.accountId)) {
     final connected = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => ConnectCloudScreen(provider: key.provider),
@@ -478,7 +479,13 @@ class _VaultTile extends StatelessWidget {
       ),
       subtitle: Text(
         connected
-            ? l.vaultConnectedSubtitle(vault)
+            ? l.vaultConnectedSubtitle(
+                vault,
+                context
+                    .read<CloudConnectionService>()
+                    .findAccountForVault(vault)
+                    ?.displayName,
+              )
             : (vault.isEncrypted
                   ? l.vaultSubtitleNotConnected(vault.provider.title)
                   : l.vaultSubtitleNotConnectedPlain(vault.provider.title)),
@@ -496,6 +503,15 @@ class _VaultTile extends StatelessWidget {
             value: _VaultAction.pin,
             child: Text(isPinned ? l.unpinVault : l.pinVault),
           ),
+          if (context
+                  .read<CloudConnectionService>()
+                  .accountsFor(vault.provider)
+                  .length >
+              1)
+            PopupMenuItem(
+              value: _VaultAction.switchAccount,
+              child: Text(l.switchAccount),
+            ),
           PopupMenuItem(value: _VaultAction.rename, child: Text(l.rename)),
           PopupMenuItem(
             value: _VaultAction.fileSize,
@@ -519,6 +535,8 @@ class _VaultTile extends StatelessWidget {
         await showBoardAccessSheet(context, vault);
       case _VaultAction.pin:
         await controller.togglePinned(vault);
+      case _VaultAction.switchAccount:
+        await _switchAccount(context);
       case _VaultAction.rename:
         final label = await _askLabel(context, vault.label);
         if (label == null || !context.mounted) return;
@@ -553,6 +571,51 @@ class _VaultTile extends StatelessWidget {
         SnackBar(content: Text(l.vaultChangeFailed(l.describeError(e)))),
       );
       return false;
+    }
+  }
+
+  Future<void> _switchAccount(BuildContext context) async {
+    final l = context.l10n;
+    final connections = context.read<CloudConnectionService>();
+    final controller = context.read<VaultsController>();
+    final accounts = connections.accountsFor(vault.provider);
+    final currentAccount = connections.findAccountForVault(vault);
+
+    final selected = await showDialog<CloudAccount>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.selectAccount),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final a in accounts)
+                ListTile(
+                  leading: Icon(a == currentAccount ? Icons.radio_button_checked : Icons.radio_button_unchecked),
+                  title: Text(a.displayName),
+                  subtitle: a.email != null && a.email != a.label
+                      ? Text(a.email!)
+                      : null,
+                  onTap: () => Navigator.pop(ctx, a),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l.cancel),
+          ),
+        ],
+      ),
+    );
+
+    if (selected != null && context.mounted) {
+      await controller.setVaultAccount(
+        vault,
+        accountId: selected.id,
+        accountEmail: selected.email,
+      );
     }
   }
 
@@ -667,7 +730,7 @@ Future<int?> _askFileSize(BuildContext context, int current) {
   );
 }
 
-enum _VaultAction { share, board, pin, rename, fileSize, remove }
+enum _VaultAction { share, board, pin, switchAccount, rename, fileSize, remove }
 
 /// Публичная доска, которую на этом устройстве можно только читать.
 class _BoardTile extends StatelessWidget {

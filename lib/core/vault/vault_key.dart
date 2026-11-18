@@ -16,6 +16,8 @@ class VaultKey {
     required this.label,
     this.maxFileSize = defaultMaxFileSize,
     this.isEncrypted = true,
+    this.accountId,
+    this.accountEmail,
   }) : secret = Uint8List.fromList(secret) {
     if (secret.length != secretLength) {
       throw ArgumentError('Secret must be $secretLength bytes');
@@ -30,6 +32,8 @@ class VaultKey {
     required String label,
     int maxFileSize = defaultMaxFileSize,
     bool isEncrypted = true,
+    String? accountId,
+    String? accountEmail,
     Random? random,
   }) {
     final rnd = random ?? Random.secure();
@@ -39,6 +43,8 @@ class VaultKey {
       label: label,
       maxFileSize: maxFileSize,
       isEncrypted: isEncrypted,
+      accountId: accountId,
+      accountEmail: accountEmail,
     );
   }
 
@@ -85,12 +91,26 @@ class VaultKey {
   /// лежат под своими настоящими именами и открываются прямо в облаке.
   final bool isEncrypted;
 
-  VaultKey copyWith({String? label, int? maxFileSize}) => VaultKey(
+  /// Идентификатор подключённого аккаунта облака на этом устройстве (если задан).
+  final String? accountId;
+
+  /// Почта или логин аккаунта в облаке (передаётся в ключе для автовыбора
+  /// нужного аккаунта на других устройствах).
+  final String? accountEmail;
+
+  VaultKey copyWith({
+    String? label,
+    int? maxFileSize,
+    String? accountId,
+    String? accountEmail,
+  }) => VaultKey(
     secret: secret,
     provider: provider,
     label: label ?? this.label,
     maxFileSize: maxFileSize ?? this.maxFileSize,
     isEncrypted: isEncrypted,
+    accountId: accountId ?? this.accountId,
+    accountEmail: accountEmail ?? this.accountEmail,
   );
 
   /// Один и тот же ключ, даже если локальные названия различаются.
@@ -104,7 +124,9 @@ class VaultKey {
       other is VaultKey &&
       sameVaultAs(other) &&
       label == other.label &&
-      maxFileSize == other.maxFileSize;
+      maxFileSize == other.maxFileSize &&
+      accountId == other.accountId &&
+      accountEmail == other.accountEmail;
 
   @override
   int get hashCode => Object.hash(
@@ -112,6 +134,8 @@ class VaultKey {
     label,
     maxFileSize,
     isEncrypted,
+    accountId,
+    accountEmail,
     Object.hashAll(secret),
   );
 }

@@ -64,16 +64,22 @@ class VaultSessionFactory implements VaultSettingsRemote {
 
   /// Лента базы. Если облако умеет открывать файлы по ссылке, изменения
   /// сразу попадают и в публичную доску (когда доступ на чтение открыт).
+  String? _effectiveAccountId(VaultKey key) =>
+      key.accountId ?? _connections.findAccountForVault(key)?.id;
+
+  /// Лента базы. Если облако умеет открывать файлы по ссылке, изменения
+  /// сразу попадают и в публичную доску (когда доступ на чтение открыт).
   Future<PostRepository> open(VaultKey key) {
+    final accountId = _effectiveAccountId(key);
     final id =
-        '${key.provider.code}:${key.isEncrypted}:${base64Url.encode(key.secret)}';
+        '${key.provider.code}:${accountId ?? ''}:${key.isEncrypted}:${base64Url.encode(key.secret)}';
     final stamp =
-        '${_connections.connectionEpoch(key.provider)}/${_deviceName()}/'
+        '${_connections.connectionEpoch(key.provider, accountId)}/${_deviceName()}/'
         '${key.maxFileSize}/${key.isEncrypted ? '' : key.label}';
     final cached = _sessions[id];
     if (cached != null && cached.stamp == stamp) return cached.session;
 
-    final session = _create(key);
+    final session = _create(key, accountId: accountId);
     _sessions[id] = (stamp: stamp, session: session);
     // Неудачную попытку (нет сети, не подключено облако) не запоминаем.
     session.then(
@@ -85,9 +91,9 @@ class VaultSessionFactory implements VaultSettingsRemote {
     return session;
   }
 
-  Future<PostRepository> _create(VaultKey key) async {
+  Future<PostRepository> _create(VaultKey key, {String? accountId}) async {
     final secrets = await _derivation.derive(key.secret);
-    final storage = _connections.storageFor(key.provider);
+    final storage = _connections.storageFor(key.provider, accountId: accountId);
     final vaultFolder = await _resolveVaultFolder(key, storage, secrets);
     final repository = _repository(key, storage, secrets, vaultFolder);
     final publisher = await _publisher(
@@ -124,8 +130,9 @@ class VaultSessionFactory implements VaultSettingsRemote {
   /// Управление доступом на чтение; `null`, если облако не умеет
   /// открывать файлы по ссылке.
   Future<BoardPublisher?> openBoard(VaultKey key) async {
+    final accountId = _effectiveAccountId(key);
     final secrets = await _derivation.derive(key.secret);
-    final storage = _connections.storageFor(key.provider);
+    final storage = _connections.storageFor(key.provider, accountId: accountId);
     final vaultFolder = await _resolveVaultFolder(key, storage, secrets);
     return _publisher(
       key,
@@ -138,7 +145,8 @@ class VaultSessionFactory implements VaultSettingsRemote {
 
   @override
   Future<VaultSettings?> loadSettings(VaultKey key) async {
-    if (!_connections.isConnected(key.provider)) return null;
+    final accountId = _effectiveAccountId(key);
+    if (!_connections.isConnected(key.provider, accountId: accountId)) return null;
     return (await _settings(key)).load();
   }
 
@@ -150,8 +158,9 @@ class VaultSessionFactory implements VaultSettingsRemote {
     VaultKey key, {
     bool renameFolder = false,
   }) async {
+    final accountId = _effectiveAccountId(key);
     final secrets = await _derivation.derive(key.secret);
-    final storage = _connections.storageFor(key.provider);
+    final storage = _connections.storageFor(key.provider, accountId: accountId);
     final vaultFolder = await _resolveVaultFolder(
       key,
       storage,

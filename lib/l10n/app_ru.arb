@@ -312,5 +312,13 @@
   "vaultPlainBadge": "Без шифрования",
   "boardReaderBadge": "Только чтение",
   "searchAction": "Поиск",
-  "clearSearch": "Очистить"
+  "clearSearch": "Очистить",
+  "addAccount": "Добавить аккаунт",
+  "renameAccount": "Переименовать аккаунт",
+  "accountNameLabel": "Название аккаунта",
+  "accountLabel": "Аккаунт",
+  "switchAccount": "Сменить аккаунт",
+  "selectAccount": "Выберите аккаунт",
+  "disconnectAccountConfirm": "Выйти из аккаунта «{name}»?",
+  "noAccountsConnected": "Нет подключённых аккаунтов"
 }

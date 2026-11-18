@@ -86,6 +86,11 @@
   </content_rating>
 
   <releases>
+    <release version="1.2.0" date="2026-11-18">
+      <description>
+        <p>Multiple accounts per cloud provider (Google Drive, Dropbox, MEGA), account selection and switching for vaults, in-board and vault search, shared files tab, and 6 new dark themes.</p>
+      </description>
+    </release>
     <release version="1.0.0" date="2026-11-08">
       <description>
         <p>1.0.0 release: support for files of any size with streaming chunked encryption and resumable uploads, configurable vault file limits (25 MB up to unlimited), performance and stability improvements.</p>
