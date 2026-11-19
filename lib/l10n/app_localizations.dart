@@ -98,6 +98,30 @@ abstract class AppLocalizations {
     Locale('ru'),
   ];
 
+  /// No description provided for @subVaults.
+  ///
+  /// In en, this message translates to:
+  /// **'Sub-boards'**
+  String get subVaults;
+
+  /// No description provided for @createSubVault.
+  ///
+  /// In en, this message translates to:
+  /// **'Create sub-board'**
+  String get createSubVault;
+
+  /// No description provided for @noSubVaults.
+  ///
+  /// In en, this message translates to:
+  /// **'No sub-boards yet'**
+  String get noSubVaults;
+
+  /// No description provided for @subVaultKeyWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This key grants access to this board and all its current and future sub-boards.'**
+  String get subVaultKeyWarning;
+
   /// No description provided for @cancel.
   ///
   /// In en, this message translates to:

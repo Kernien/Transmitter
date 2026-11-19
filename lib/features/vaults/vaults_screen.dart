@@ -173,7 +173,7 @@ class _VaultsScreenState extends State<VaultsScreen> {
 
     final q = _searchQuery;
     final filteredVaults = q.isEmpty
-        ? vaults
+        ? controller.rootVaults
         : vaults.where((v) {
             final label =
                 (v.label.isEmpty ? l.untitled : v.label).toLowerCase();

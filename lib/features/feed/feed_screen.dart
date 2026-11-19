@@ -15,7 +15,9 @@ import '../../core/vault/reader_key.dart';
 import '../../core/vault/vault_key.dart';
 import '../../data/post_repository.dart';
 import '../../data/public_board_repository.dart';
+import '../../data/sub_vault_store.dart';
 import '../../domain/post.dart';
+import '../vaults/sub_vaults_screen.dart';
 import '../vaults/vaults_controller.dart';
 import '../vaults/vaults_screen.dart' show kWideScreenBreakpoint;
 import 'feed_controller.dart';
@@ -32,13 +34,17 @@ enum _ViewMode { feed, files }
 /// Лента постов одной базы или публичной доски.
 class FeedScreen extends StatefulWidget {
   /// База владельца: всё можно.
-  FeedScreen.vault(VaultKey vault, {super.key, this.embedded = false})
-    : label = vault.label,
-      pollInterval = AppConfig.pollInterval,
-      liveLabel = null,
-      onOwnerLabel = null,
-      boardKey = vault,
-      _open = ((sessions) => sessions.open(vault));
+  FeedScreen.vault(
+    VaultKey vault, {
+    super.key,
+    this.embedded = false,
+    this.parentPath = const [],
+  }) : label = vault.label,
+       pollInterval = AppConfig.pollInterval,
+       liveLabel = null,
+       onOwnerLabel = null,
+       boardKey = vault,
+       _open = ((sessions) => sessions.open(vault));
 
   /// Публичная доска у читателя: только чтение, без входа в облако.
   ///
@@ -50,16 +56,19 @@ class FeedScreen extends StatefulWidget {
     this.liveLabel,
     this.onOwnerLabel,
     this.embedded = false,
-  }) : label = board.label,
+  }) : parentPath = const [],
+       label = board.label,
        pollInterval = AppConfig.boardPollInterval,
        boardKey = board,
        _open = ((sessions) async => sessions.openAsReader(board));
 
+  final List<String> parentPath;
   final String label;
   final String Function(BuildContext context)? liveLabel;
   final void Function(String ownerLabel)? onOwnerLabel;
   final Duration pollInterval;
   final Object? boardKey;
+
   /// Встроена ли лента в правую панель широкого экрана (без кнопки «Назад»).
   final bool embedded;
   final Future<PostRepository> Function(VaultSessionFactory) _open;
@@ -80,7 +89,8 @@ class _FeedScreenState extends State<FeedScreen> {
     // Если лента была открыта отдельным экраном в узком окне, а затем окно
     // растянули до двухпанельного режима, закрываем этот маршрут, чтобы
     // показать обе панели (список досок слева + эту же ленту справа).
-    if (!widget.embedded &&
+    if (widget.parentPath.isEmpty &&
+        !widget.embedded &&
         !_poppingOnResize &&
         MediaQuery.sizeOf(context).width >= kWideScreenBreakpoint) {
       _poppingOnResize = true;
@@ -151,6 +161,7 @@ class _FeedScreenState extends State<FeedScreen> {
           },
           child: _FeedView(
             title: _title,
+            parentPath: widget.parentPath,
             boardKey: widget.boardKey,
             embedded: widget.embedded,
           ),
@@ -163,10 +174,12 @@ class _FeedScreenState extends State<FeedScreen> {
 class _FeedView extends StatefulWidget {
   const _FeedView({
     required this.title,
+    required this.parentPath,
     this.boardKey,
     this.embedded = false,
   });
 
+  final List<String> parentPath;
   final String title;
   final Object? boardKey;
   final bool embedded;
@@ -270,7 +283,11 @@ class _FeedViewState extends State<_FeedView> {
   AppBar _normalAppBar(BuildContext context) {
     final vaults = Provider.of<VaultsController?>(context);
     final key = widget.boardKey;
-    final isPinned = key != null && vaults != null && vaults.isPinned(key);
+    final canPin =
+        vaults != null &&
+        (key is ReaderKey ||
+            (key is VaultKey && vaults.vaults.any(key.sameVaultAs)));
+    final isPinned = canPin && vaults.isPinned(key!);
     final isReadOnly = context.read<FeedController>().isReadOnly;
 
     return AppBar(
@@ -290,22 +307,43 @@ class _FeedViewState extends State<_FeedView> {
           icon: const Icon(Icons.search),
           onPressed: () => setState(() => _isSearching = true),
         ),
-        if (key != null && vaults != null)
+        if (canPin)
           IconButton(
             tooltip: isPinned ? context.l10n.unpinVault : context.l10n.pinVault,
             icon: Icon(isPinned ? Icons.push_pin : Icons.push_pin_outlined),
-            onPressed: () => vaults.togglePinned(key),
+            onPressed: () => vaults.togglePinned(key!),
           ),
         if (!isReadOnly)
           PopupMenuButton<String>(
             onSelected: (val) {
+              if (val == 'children' && key is VaultKey) {
+                final SubVaultsRemote remote = context
+                    .read<VaultSessionFactory>();
+                final path = [...widget.parentPath, widget.title];
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => SubVaultsScreen(
+                      parent: key,
+                      path: path,
+                      buildFeed: (child) =>
+                          FeedScreen.vault(child, parentPath: path),
+                      remote: remote,
+                    ),
+                  ),
+                );
+              }
               if (val == 'clear') _confirmClear(context);
-              if (val == 'pin' && key != null && vaults != null) {
-                vaults.togglePinned(key);
+              if (val == 'pin' && canPin) {
+                vaults.togglePinned(key!);
               }
             },
             itemBuilder: (_) => [
-              if (key != null && vaults != null)
+              if (key is VaultKey && key.isEncrypted)
+                PopupMenuItem(
+                  value: 'children',
+                  child: Text(context.l10n.subVaults),
+                ),
+              if (canPin)
                 CheckedPopupMenuItem<String>(
                   value: 'pin',
                   checked: isPinned,
@@ -321,10 +359,10 @@ class _FeedViewState extends State<_FeedView> {
               ),
             ],
           )
-        else if (key != null && vaults != null)
+        else if (canPin)
           PopupMenuButton<String>(
             onSelected: (val) {
-              if (val == 'pin') vaults.togglePinned(key);
+              if (val == 'pin') vaults.togglePinned(key!);
             },
             itemBuilder: (_) => [
               CheckedPopupMenuItem<String>(

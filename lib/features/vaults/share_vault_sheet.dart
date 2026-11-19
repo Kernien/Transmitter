@@ -14,7 +14,9 @@ Future<void> showShareVaultSheet(BuildContext context, VaultKey key) =>
       context,
       title: key.label.isEmpty ? context.l10n.vaultKeyTitle : key.label,
       code: context.read<VaultsController>().exportCode(key),
-      warning: context.l10n.keyWarning,
+      warning: key.isEncrypted
+          ? '${context.l10n.keyWarning} ${context.l10n.subVaultKeyWarning}'
+          : context.l10n.keyWarning,
     );
 
 /// Ключ читателя публичной доски — чтобы передать его дальше.

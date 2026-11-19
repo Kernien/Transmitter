@@ -36,6 +36,10 @@ class VaultKeyDerivation {
   Future<Uint8List> boardSigningSeed(List<int> masterSecret) =>
       _expand(masterSecret, 'board-signing-key', 32);
 
+  /// Секрет дочерней доски по случайному идентификатору из каталога родителя.
+  Future<Uint8List> subVaultSecret(List<int> parentSecret, String childId) =>
+      _expand(parentSecret, 'sub-vault-key.v1/$childId', 32);
+
   Future<Uint8List> _expand(List<int> secret, String info, int length) async {
     final hkdf = Hkdf(hmac: Hmac.sha256(), outputLength: length);
     final key = await hkdf.deriveKey(

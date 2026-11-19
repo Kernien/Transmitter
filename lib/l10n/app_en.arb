@@ -1,4 +1,8 @@
 {
+  "subVaults": "Sub-boards",
+  "createSubVault": "Create sub-board",
+  "noSubVaults": "No sub-boards yet",
+  "subVaultKeyWarning": "This key grants access to this board and all its current and future sub-boards.",
   "@@locale": "en",
 
   "cancel": "Cancel",

@@ -10,6 +10,19 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get subVaults => 'Sub-boards';
+
+  @override
+  String get createSubVault => 'Create sub-board';
+
+  @override
+  String get noSubVaults => 'No sub-boards yet';
+
+  @override
+  String get subVaultKeyWarning =>
+      'This key grants access to this board and all its current and future sub-boards.';
+
+  @override
   String get cancel => 'Cancel';
 
   @override

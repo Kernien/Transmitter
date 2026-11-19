@@ -19,6 +19,7 @@ import '../data/encrypted_cloud_post_repository.dart';
 import '../data/post_repository.dart';
 import '../data/public_board_repository.dart';
 import '../data/publishing_post_repository.dart';
+import '../data/sub_vault_store.dart';
 import '../data/vault_settings.dart';
 
 /// Собирает [PostRepository] для выбранного ключа: выводит секреты,
@@ -31,7 +32,7 @@ import '../data/vault_settings.dart';
 ///
 /// Здесь же — настройки баз в облаке ([VaultSettingsRemote]): для них нужны
 /// те же ключи и хранилище.
-class VaultSessionFactory implements VaultSettingsRemote {
+class VaultSessionFactory implements VaultSettingsRemote, SubVaultsRemote {
   VaultSessionFactory({
     required this._connections,
     required this._deviceName,
@@ -65,7 +66,7 @@ class VaultSessionFactory implements VaultSettingsRemote {
   /// Лента базы. Если облако умеет открывать файлы по ссылке, изменения
   /// сразу попадают и в публичную доску (когда доступ на чтение открыт).
   String? _effectiveAccountId(VaultKey key) =>
-      key.accountId ?? _connections.findAccountForVault(key)?.id;
+      _connections.findAccountForVault(key)?.id ?? key.accountId;
 
   /// Лента базы. Если облако умеет открывать файлы по ссылке, изменения
   /// сразу попадают и в публичную доску (когда доступ на чтение открыт).
@@ -153,6 +154,43 @@ class VaultSessionFactory implements VaultSettingsRemote {
   @override
   Future<void> saveSettings(VaultKey key, VaultSettings settings) async =>
       (await _settings(key, renameFolder: true)).save(settings);
+
+  @override
+  Future<List<VaultKey>> listSubVaults(VaultKey parent) async {
+    if (!parent.isEncrypted) return const [];
+    final children = await (await _subVaults(parent)).list();
+    return Future.wait(children.map(_withRemoteSettings));
+  }
+
+  Future<VaultKey> _withRemoteSettings(VaultKey child) async {
+    final settings = await loadSettings(child);
+    return settings == null
+        ? child
+        : child.copyWith(
+            label: settings.label,
+            maxFileSize: settings.maxFileSize,
+          );
+  }
+
+  @override
+  Future<VaultKey> createSubVault(VaultKey parent, String label) async =>
+      (await _subVaults(parent)).create(label);
+
+  Future<SubVaultStore> _subVaults(VaultKey parent) async {
+    if (!parent.isEncrypted) throw ArgumentError.value(parent.isEncrypted);
+    final accountId = _effectiveAccountId(parent);
+    final secrets = await _derivation.derive(parent.secret);
+    return SubVaultStore(
+      storage: _connections.storageFor(parent.provider, accountId: accountId),
+      parent: parent.copyWith(
+        accountId: accountId,
+        accountEmail: _connections.findAccountForVault(parent)?.email,
+      ),
+      vaultId: secrets.vaultId,
+      cipher: _cipherFor(parent, secrets),
+      derivation: _derivation,
+    );
+  }
 
   Future<VaultSettingsStore> _settings(
     VaultKey key, {

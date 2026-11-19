@@ -10,6 +10,19 @@ class AppLocalizationsRu extends AppLocalizations {
   AppLocalizationsRu([String locale = 'ru']) : super(locale);
 
   @override
+  String get subVaults => 'Поддоски';
+
+  @override
+  String get createSubVault => 'Создать поддоску';
+
+  @override
+  String get noSubVaults => 'Поддосок пока нет';
+
+  @override
+  String get subVaultKeyWarning =>
+      'Этот ключ даёт доступ к доске и ко всем её текущим и будущим поддоскам.';
+
+  @override
   String get cancel => 'Отмена';
 
   @override

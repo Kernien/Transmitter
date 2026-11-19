@@ -49,6 +49,23 @@ void main() {
     expect(c.boards, hasLength(1));
   });
 
+  test('импортированная поддоска видна отдельно без родителя', () async {
+    final c = controller();
+    final child = await c.importCode(ownerCode);
+    final parent = await c.create(
+      label: 'Работа',
+      provider: CloudProviderId.dropbox,
+    );
+    expect(c.rootVaults, [child, parent]);
+
+    c.rememberSubVaults(parent, [child]);
+    expect(c.rootVaults, [parent]);
+    expect(c.vaults, [child, parent]);
+
+    await c.remove(parent);
+    expect(c.rootVaults, [child]);
+  });
+
   test('доски сохраняются, переименовываются и удаляются', () async {
     final c = controller();
     await c.load();

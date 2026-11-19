@@ -42,6 +42,36 @@ class VaultsController extends ChangeNotifier {
 
   List<VaultKey> get vaults => List.unmodifiable(_vaults);
 
+  final Map<String, Set<String>> _subVaultIds = {};
+
+  /// Скрывает повторно импортированный ключ, если путь к нему уже найден.
+  List<VaultKey> get rootVaults {
+    final visited = <String>{};
+    final nested = <String>{};
+    void visit(String id) {
+      if (!visited.add(id)) return;
+      final children = _subVaultIds[id] ?? const <String>{};
+      nested.addAll(children);
+      children.forEach(visit);
+    }
+
+    for (final vault in _vaults) {
+      visit(idOfKey(vault));
+    }
+    return [
+      for (final vault in _vaults)
+        if (!nested.contains(idOfKey(vault))) vault,
+    ];
+  }
+
+  void rememberSubVaults(VaultKey parent, List<VaultKey> children) {
+    final id = idOfKey(parent);
+    final childIds = children.map(idOfKey).toSet();
+    if (setEquals(_subVaultIds[id], childIds)) return;
+    _subVaultIds[id] = childIds;
+    notifyListeners();
+  }
+
   /// Публичные доски, которые на этом устройстве можно только читать.
   List<ReaderKey> get boards => List.unmodifiable(_boards);
 
@@ -282,6 +312,7 @@ class VaultsController extends ChangeNotifier {
     final readers = _readers;
     if (readers != null) await readers.saveAll(const [], const {});
     _vaults = const [];
+    _subVaultIds.clear();
     _boards = const [];
     _customLabels = const {};
     notifyListeners();
