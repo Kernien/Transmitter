@@ -288,7 +288,7 @@ class VaultSessionFactory implements VaultSettingsRemote, SubVaultsRemote {
         accountEmail: _connections.findAccountForVault(parent)?.email,
       ),
       vaultId: secrets.vaultId,
-      cipher: AesGcmCipher(secrets.encryptionKey),
+      cipher: _cipherFor(parent, secrets),
       derivation: _derivation,
     );
   }

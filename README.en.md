@@ -38,7 +38,7 @@ browser.
 
 ## Features
 
-On an encrypted board, open **⋮ → Sub-boards** to create a separate feed inside it. A full board key grants access to its current and future sub-boards. A sub-board key grants access to its branch.
+On any board, open **⋮ → Sub-boards** to create a separate feed inside it. A full board key grants access to its current and future sub-boards. A sub-board key grants access to its branch.
 
 - **Links.** Detected automatically and opened with a single tap.
 - **Files of any size** — photos, documents, videos, archives. The limit (25 MB, 100 MB, 500 MB, 1 GB, 2 GB or “No limit”) is chosen for each vault when created and can be adjusted anytime (⋮ → *File size limit…*). Chunked streaming encryption (4 MB chunks), resumable chunked uploads, transfer progress and speed indicator. Use the 📎 button, drag files into the window (Windows and browser) or “Share” from any app on Android.

@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:transmitter/core/crypto/aes_gcm_cipher.dart';
+import 'package:transmitter/core/crypto/plaintext_cipher.dart';
 import 'package:transmitter/core/crypto/vault_key_derivation.dart';
 import 'package:transmitter/core/storage/cloud_provider_id.dart';
 import 'package:transmitter/core/storage/in_memory_cloud_storage.dart';
@@ -97,5 +98,32 @@ void main() {
     // Удаление поддоски
     await store.delete(updated);
     expect(await store.list(), isEmpty);
+  });
+
+  test('Поддоски открытой доски сохраняют признак isEncrypted = false', () async {
+    final cloud = InMemoryCloudStorage();
+    const derivation = VaultKeyDerivation();
+    final parent = VaultKey.generate(
+      provider: CloudProviderId.dropbox,
+      label: 'Открытая',
+      isEncrypted: false,
+    );
+    final secrets = await derivation.derive(parent.secret);
+    final store = SubVaultStore(
+      storage: cloud,
+      parent: parent,
+      vaultId: secrets.vaultId,
+      cipher: const PlaintextCipher(),
+      derivation: derivation,
+    );
+
+    final child = await store.create('Открытая поддоска');
+    expect(child.isEncrypted, isFalse);
+    expect(child.label, 'Открытая поддоска');
+
+    final list = await store.list();
+    expect(list.length, 1);
+    expect(list.first.isEncrypted, isFalse);
+    expect(list.first.label, 'Открытая поддоска');
   });
 }

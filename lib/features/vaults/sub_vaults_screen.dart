@@ -7,6 +7,7 @@ import '../../core/vault/vault_key.dart';
 import '../../data/sub_vault_store.dart';
 import 'board_access_sheet.dart';
 import 'share_vault_sheet.dart';
+import 'vault_icon.dart';
 import 'vaults_controller.dart';
 
 enum _SubVaultAction { share, board, rename, fileSize, delete }
@@ -279,11 +280,21 @@ class _SubVaultsScreenState extends State<SubVaultsScreen> {
                           ListTile(title: Text(l.noSubVaults)),
                         for (final child in children)
                           ListTile(
-                            leading: CircleAvatar(
-                              child: Icon(
-                                child.isEncrypted
-                                    ? Icons.lock_outline
-                                    : Icons.folder_open_outlined,
+                            leading: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: ShapeDecoration(
+                                color: theme.colorScheme.surfaceContainerHighest,
+                                shape: const ContinuousRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(16)),
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: VaultIcon.buildWidget(
+                                child.icon,
+                                isEncrypted: child.isEncrypted,
+                                color: theme.colorScheme.onSurfaceVariant,
                               ),
                             ),
                             title: Text(child.label),

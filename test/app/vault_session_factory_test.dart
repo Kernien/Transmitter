@@ -292,5 +292,22 @@ void main() {
       expect(sessions.cachedSubVaults(key), isEmpty);
       expect(await sessions.listSubVaults(key), isEmpty);
     });
+
+    test('поддоски для открытой базы создаются с PlaintextCipher и isEncrypted = false', () async {
+      final plainKey = VaultKey(
+        secret: List<int>.filled(32, 7),
+        provider: CloudProviderId.dropbox,
+        label: 'Открытая доска',
+        isEncrypted: false,
+      );
+
+      final child = await sessions.createSubVault(plainKey, 'Вложенная');
+      expect(child.isEncrypted, isFalse);
+      expect(child.label, 'Вложенная');
+
+      final list = await sessions.listSubVaults(plainKey);
+      expect(list.single.isEncrypted, isFalse);
+      expect(list.single.label, 'Вложенная');
+    });
   });
 }

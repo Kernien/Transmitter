@@ -304,7 +304,7 @@ class _FeedViewState extends State<_FeedView> {
             (key is VaultKey && vaults.vaults.any(key.sameVaultAs)));
     final isPinned = canPin && vaults.isPinned(key!);
     final isReadOnly = context.read<FeedController>().isReadOnly;
-    final hasSubVaults = key is VaultKey && key.isEncrypted;
+    final hasSubVaults = key is VaultKey;
 
     return AppBar(
       automaticallyImplyLeading: !widget.embedded,
@@ -347,7 +347,7 @@ class _FeedViewState extends State<_FeedView> {
               }
             },
             itemBuilder: (_) => [
-              if (key is VaultKey && key.isEncrypted)
+              if (key is VaultKey)
                 PopupMenuItem(
                   value: 'children',
                   child: ListTile(

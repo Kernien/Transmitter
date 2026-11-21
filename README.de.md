@@ -45,7 +45,7 @@ Computer und Browser.
 
 ## Funktionen
 
-Öffne auf einem verschlüsselten Board **⋮ → Sub-boards**, um darin einen eigenen Feed zu erstellen. Der vollständige Board-Schlüssel gewährt Zugriff auf alle aktuellen und zukünftigen Unterboards. Der Schlüssel eines Unterboards öffnet dessen Zweig.
+Öffne auf jedem Board **⋮ → Sub-boards**, um darin einen eigenen Feed zu erstellen. Der vollständige Board-Schlüssel gewährt Zugriff auf alle aktuellen und zukünftigen Unterboards. Der Schlüssel eines Unterboards öffnet dessen Zweig.
 
 - **Links.** Werden automatisch erkannt und mit einem Tippen geöffnet.
 - **Dateien jeder Größe** — Fotos, Dokumente, Videos, Archive. Die Grenze (25 MB, 100 MB, 500 MB, 1 GB, 2 GB oder „Ohne Limit“) wird für jeden Tresor beim Anlegen festgelegt und lässt sich jederzeit anpassen (⋮ → „Dateigröße…“). Streaming-Verschlüsselung in 4-MB-Blöcken, fortsetzbarer Upload mit Wiederaufnahme bei Netzwerkfehlern, Fortschritts- und Geschwindigkeitsanzeige. Über die 📎-Schaltfläche, per Drag & Drop ins Fenster (Windows und Browser) oder mit „Teilen“ aus jeder App unter Android.
