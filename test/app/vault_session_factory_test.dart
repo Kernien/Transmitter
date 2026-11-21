@@ -262,5 +262,35 @@ void main() {
       await otherDevice.refreshSettings();
       expect(otherDevice.vaults.single.label, 'Общая папка');
     });
+
+    test('управление поддосками: кэширование, создание, переименование, удаление', () async {
+      expect(sessions.cachedSubVaults(key), isNull);
+      final initial = await sessions.listSubVaults(key);
+      expect(initial, isEmpty);
+      expect(sessions.cachedSubVaults(key), isEmpty);
+
+      final created = await sessions.createSubVault(key, 'Поддоска 1');
+      expect(created.label, 'Поддоска 1');
+      expect(sessions.cachedSubVaults(key)?.map((k) => k.label), ['Поддоска 1']);
+
+      final renamed = await sessions.renameSubVault(key, created, 'Поддоска переименована');
+      expect(renamed.label, 'Поддоска переименована');
+      expect(sessions.cachedSubVaults(key)?.single.label, 'Поддоска переименована');
+
+      final withNewLimit = await sessions.setSubVaultMaxFileSize(
+        key,
+        renamed,
+        100 * 1024 * 1024,
+      );
+      expect(withNewLimit.maxFileSize, 100 * 1024 * 1024);
+      expect(
+        sessions.cachedSubVaults(key)?.single.maxFileSize,
+        100 * 1024 * 1024,
+      );
+
+      await sessions.deleteSubVault(key, withNewLimit);
+      expect(sessions.cachedSubVaults(key), isEmpty);
+      expect(await sessions.listSubVaults(key), isEmpty);
+    });
   });
 }

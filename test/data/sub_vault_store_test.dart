@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:transmitter/core/crypto/aes_gcm_cipher.dart';
 import 'package:transmitter/core/crypto/vault_key_derivation.dart';
@@ -54,4 +56,46 @@ void main() {
       expect(await firstDevice.list(), children);
     },
   );
+
+  test('Редактирование, удаление поддосок и устойчивость к повреждённым файлам', () async {
+    final cloud = InMemoryCloudStorage();
+    const derivation = VaultKeyDerivation();
+    final parent = VaultKey.generate(
+      provider: CloudProviderId.dropbox,
+      label: 'Базовая',
+    );
+    final secrets = await derivation.derive(parent.secret);
+    final store = SubVaultStore(
+      storage: cloud,
+      parent: parent,
+      vaultId: secrets.vaultId,
+      cipher: AesGcmCipher(secrets.encryptionKey),
+      derivation: derivation,
+    );
+
+    final child = await store.create('Старое название');
+    expect((await store.list()).single.label, 'Старое название');
+
+    // Обновление названия и лимита размера файла
+    final updated = child.copyWith(
+      label: 'Новое название',
+      maxFileSize: 50 * 1024 * 1024,
+    );
+    await store.update(updated);
+
+    final reloaded = (await store.list()).single;
+    expect(reloaded.label, 'Новое название');
+    expect(reloaded.maxFileSize, 50 * 1024 * 1024);
+
+    // Добавляем повреждённый файл в облако: список не ломается, повреждённый пропускается
+    final brokenFileName = 'sub-vault-v1-${secrets.vaultId}-broken.bin';
+    cloud.files[brokenFileName] = Uint8List.fromList([1, 2, 3, 4, 5]);
+    final listWithBroken = await store.list();
+    expect(listWithBroken.length, 1);
+    expect(listWithBroken.single.label, 'Новое название');
+
+    // Удаление поддоски
+    await store.delete(updated);
+    expect(await store.list(), isEmpty);
+  });
 }

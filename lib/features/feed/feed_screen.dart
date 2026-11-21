@@ -280,6 +280,21 @@ class _FeedViewState extends State<_FeedView> {
     );
   }
 
+  void _openSubVaults(BuildContext context, VaultKey key) {
+    final SubVaultsRemote remote = context.read<VaultSessionFactory>();
+    final path = [...widget.parentPath, widget.title];
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SubVaultsScreen(
+          parent: key,
+          path: path,
+          buildFeed: (child) => FeedScreen.vault(child, parentPath: path),
+          remote: remote,
+        ),
+      ),
+    );
+  }
+
   AppBar _normalAppBar(BuildContext context) {
     final vaults = Provider.of<VaultsController?>(context);
     final key = widget.boardKey;
@@ -289,6 +304,7 @@ class _FeedViewState extends State<_FeedView> {
             (key is VaultKey && vaults.vaults.any(key.sameVaultAs)));
     final isPinned = canPin && vaults.isPinned(key!);
     final isReadOnly = context.read<FeedController>().isReadOnly;
+    final hasSubVaults = key is VaultKey && key.isEncrypted;
 
     return AppBar(
       automaticallyImplyLeading: !widget.embedded,
@@ -307,6 +323,12 @@ class _FeedViewState extends State<_FeedView> {
           icon: const Icon(Icons.search),
           onPressed: () => setState(() => _isSearching = true),
         ),
+        if (hasSubVaults)
+          IconButton(
+            tooltip: context.l10n.subVaults,
+            icon: const Icon(Icons.account_tree_outlined),
+            onPressed: () => _openSubVaults(context, key),
+          ),
         if (canPin)
           IconButton(
             tooltip: isPinned ? context.l10n.unpinVault : context.l10n.pinVault,
@@ -317,20 +339,7 @@ class _FeedViewState extends State<_FeedView> {
           PopupMenuButton<String>(
             onSelected: (val) {
               if (val == 'children' && key is VaultKey) {
-                final SubVaultsRemote remote = context
-                    .read<VaultSessionFactory>();
-                final path = [...widget.parentPath, widget.title];
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => SubVaultsScreen(
-                      parent: key,
-                      path: path,
-                      buildFeed: (child) =>
-                          FeedScreen.vault(child, parentPath: path),
-                      remote: remote,
-                    ),
-                  ),
-                );
+                _openSubVaults(context, key);
               }
               if (val == 'clear') _confirmClear(context);
               if (val == 'pin' && canPin) {
@@ -341,7 +350,11 @@ class _FeedViewState extends State<_FeedView> {
               if (key is VaultKey && key.isEncrypted)
                 PopupMenuItem(
                   value: 'children',
-                  child: Text(context.l10n.subVaults),
+                  child: ListTile(
+                    leading: const Icon(Icons.account_tree_outlined),
+                    title: Text(context.l10n.subVaults),
+                    contentPadding: EdgeInsets.zero,
+                  ),
                 ),
               if (canPin)
                 CheckedPopupMenuItem<String>(

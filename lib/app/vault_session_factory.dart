@@ -56,11 +56,14 @@ class VaultSessionFactory implements VaultSettingsRemote, SubVaultsRemote {
   final Map<String, ({String stamp, Future<PostRepository> session})>
   _sessions = {};
   final Map<String, PostRepository> _boards = {};
+  final Map<String, ({String stamp, List<VaultKey> children})>
+  _subVaultCache = {};
 
   /// Отбрасывает сессии с ключами, когда ключи на устройстве сбрасываются.
   void clearSessions() {
     _sessions.clear();
     _boards.clear();
+    _subVaultCache.clear();
   }
 
   /// Лента базы. Если облако умеет открывать файлы по ссылке, изменения
@@ -155,11 +158,34 @@ class VaultSessionFactory implements VaultSettingsRemote, SubVaultsRemote {
   Future<void> saveSettings(VaultKey key, VaultSettings settings) async =>
       (await _settings(key, renameFolder: true)).save(settings);
 
+  String _subVaultCacheKey(VaultKey parent) {
+    final accountId = _effectiveAccountId(parent) ?? '';
+    return '${parent.provider.code}:$accountId:${parent.isEncrypted}:${base64Url.encode(parent.secret)}';
+  }
+
+  String _subVaultCacheStamp(VaultKey parent) {
+    final accountId = _effectiveAccountId(parent);
+    return '${_connections.connectionEpoch(parent.provider, accountId)}';
+  }
+
+  @override
+  List<VaultKey>? cachedSubVaults(VaultKey parent) {
+    final cached = _subVaultCache[_subVaultCacheKey(parent)];
+    if (cached != null && cached.stamp == _subVaultCacheStamp(parent)) {
+      return cached.children;
+    }
+    return null;
+  }
+
   @override
   Future<List<VaultKey>> listSubVaults(VaultKey parent) async {
-    if (!parent.isEncrypted) return const [];
     final children = await (await _subVaults(parent)).list();
-    return Future.wait(children.map(_withRemoteSettings));
+    final resolved = await Future.wait(children.map(_withRemoteSettings));
+    _subVaultCache[_subVaultCacheKey(parent)] = (
+      stamp: _subVaultCacheStamp(parent),
+      children: List.unmodifiable(resolved),
+    );
+    return resolved;
   }
 
   Future<VaultKey> _withRemoteSettings(VaultKey child) async {
@@ -173,11 +199,86 @@ class VaultSessionFactory implements VaultSettingsRemote, SubVaultsRemote {
   }
 
   @override
-  Future<VaultKey> createSubVault(VaultKey parent, String label) async =>
-      (await _subVaults(parent)).create(label);
+  Future<VaultKey> createSubVault(VaultKey parent, String label) async {
+    final created = await (await _subVaults(parent)).create(label);
+    final current = cachedSubVaults(parent);
+    if (current != null) {
+      final updated = [...current, created]
+        ..sort((a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
+      _subVaultCache[_subVaultCacheKey(parent)] = (
+        stamp: _subVaultCacheStamp(parent),
+        children: List.unmodifiable(updated),
+      );
+    }
+    return created;
+  }
+
+  @override
+  Future<VaultKey> renameSubVault(
+    VaultKey parent,
+    VaultKey child,
+    String label,
+  ) async {
+    final next = child.copyWith(label: label.trim());
+    await saveSettings(
+      next,
+      VaultSettings(
+        label: next.label,
+        maxFileSize: next.maxFileSize,
+        updatedAt: DateTime.now().toUtc(),
+      ),
+    );
+    await (await _subVaults(parent)).update(next);
+    _updateCachedSubVault(parent, next);
+    return next;
+  }
+
+  @override
+  Future<VaultKey> setSubVaultMaxFileSize(
+    VaultKey parent,
+    VaultKey child,
+    int maxFileSize,
+  ) async {
+    final next = child.copyWith(maxFileSize: maxFileSize);
+    await saveSettings(
+      next,
+      VaultSettings(
+        label: next.label,
+        maxFileSize: next.maxFileSize,
+        updatedAt: DateTime.now().toUtc(),
+      ),
+    );
+    await (await _subVaults(parent)).update(next);
+    _updateCachedSubVault(parent, next);
+    return next;
+  }
+
+  @override
+  Future<void> deleteSubVault(VaultKey parent, VaultKey child) async {
+    await (await _subVaults(parent)).delete(child);
+    final current = cachedSubVaults(parent);
+    if (current != null) {
+      final updated = current.where((c) => !c.sameVaultAs(child)).toList();
+      _subVaultCache[_subVaultCacheKey(parent)] = (
+        stamp: _subVaultCacheStamp(parent),
+        children: List.unmodifiable(updated),
+      );
+    }
+  }
+
+  void _updateCachedSubVault(VaultKey parent, VaultKey next) {
+    final current = cachedSubVaults(parent);
+    if (current == null) return;
+    final updated = [
+      for (final c in current) c.sameVaultAs(next) ? next : c,
+    ]..sort((a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
+    _subVaultCache[_subVaultCacheKey(parent)] = (
+      stamp: _subVaultCacheStamp(parent),
+      children: List.unmodifiable(updated),
+    );
+  }
 
   Future<SubVaultStore> _subVaults(VaultKey parent) async {
-    if (!parent.isEncrypted) throw ArgumentError.value(parent.isEncrypted);
     final accountId = _effectiveAccountId(parent);
     final secrets = await _derivation.derive(parent.secret);
     return SubVaultStore(
@@ -187,7 +288,7 @@ class VaultSessionFactory implements VaultSettingsRemote, SubVaultsRemote {
         accountEmail: _connections.findAccountForVault(parent)?.email,
       ),
       vaultId: secrets.vaultId,
-      cipher: _cipherFor(parent, secrets),
+      cipher: AesGcmCipher(secrets.encryptionKey),
       derivation: _derivation,
     );
   }
