@@ -210,6 +210,37 @@ class PostNote {
   };
 }
 
+/// Отметка о закреплении записи: хранится отдельно от записи,
+/// как и комментарий.
+@immutable
+class PostPin {
+  const PostPin({
+    required this.postId,
+    required this.isPinned,
+    required this.pinnedAt,
+  });
+
+  factory PostPin.fromJson(Map<String, dynamic> json) => PostPin(
+    postId: json['post'] as String,
+    isPinned: (json['pinned'] as bool?) ?? true,
+    pinnedAt: DateTime.fromMillisecondsSinceEpoch(
+      (json['ts'] as num).toInt(),
+      isUtc: true,
+    ),
+  );
+
+  final String postId;
+  final bool isPinned;
+  final DateTime pinnedAt;
+
+  Map<String, dynamic> toJson() => {
+    'v': 1,
+    'post': postId,
+    'pinned': isPinned,
+    'ts': pinnedAt.toUtc().millisecondsSinceEpoch,
+  };
+}
+
 /// Одна запись в базе: текст, ссылка, файл или папка.
 @immutable
 class Post {
@@ -222,6 +253,7 @@ class Post {
     this.attachment,
     this.folder,
     this.note,
+    this.isPinned = false,
   });
 
   factory Post.fromJson(Map<String, dynamic> json) => Post(
@@ -239,6 +271,7 @@ class Post {
     folder: json['folder'] == null
         ? null
         : FolderAttachment.fromJson(json['folder'] as Map<String, dynamic>),
+    isPinned: (json['pinned'] as bool?) ?? false,
   );
 
   final String id;
@@ -254,6 +287,9 @@ class Post {
   /// Комментарий к записи. В JSON записи не входит: хранится отдельно.
   final PostNote? note;
 
+  /// Закреплена ли запись наверху доски.
+  final bool isPinned;
+
   /// Та же запись с другим комментарием (`null` — без комментария).
   Post withNote(PostNote? note) => Post(
     id: id,
@@ -264,6 +300,20 @@ class Post {
     attachment: attachment,
     folder: folder,
     note: note,
+    isPinned: isPinned,
+  );
+
+  /// Та же запись с изменённым статусом закрепления.
+  Post withPinned(bool pinned) => Post(
+    id: id,
+    kind: kind,
+    createdAt: createdAt,
+    senderDevice: senderDevice,
+    text: text,
+    attachment: attachment,
+    folder: folder,
+    note: note,
+    isPinned: pinned,
   );
 
   /// Та же запись с обновлённым прикреплённым файлом.
@@ -276,6 +326,7 @@ class Post {
     attachment: attachment,
     folder: folder,
     note: note,
+    isPinned: isPinned,
   );
 
   /// Та же запись с обновлённой прикреплённой папкой.
@@ -288,6 +339,7 @@ class Post {
     attachment: attachment,
     folder: folder,
     note: note,
+    isPinned: isPinned,
   );
 
   Map<String, dynamic> toJson() => {
@@ -299,5 +351,6 @@ class Post {
     'text': text,
     if (attachment != null) 'file': attachment!.toJson(),
     if (folder != null) 'folder': folder!.toJson(),
+    if (isPinned) 'pinned': true,
   };
 }

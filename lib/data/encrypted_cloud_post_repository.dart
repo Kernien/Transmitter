@@ -50,6 +50,7 @@ class EncryptedCloudPostRepository implements PostRepository {
 
   static const String _postExtension = '.post';
   static const String _noteExtension = '.note';
+  static const String _pinExtension = '.pin';
   static const String _noteSeparator = '~';
   static const String _indexKey = 'index.json';
 
@@ -93,6 +94,9 @@ class EncryptedCloudPostRepository implements PostRepository {
   /// Уже расшифрованные комментарии по имени файла в облаке.
   final Map<String, PostNote> _notes = {};
 
+  /// Уже расшифрованные отметки закрепления по имени файла в облаке.
+  final Map<String, PostPin> _pins = {};
+
   /// Файлы, которые не удалось расшифровать: повторно их не скачиваем.
   final Set<String> _unreadable = {};
 
@@ -109,6 +113,7 @@ class EncryptedCloudPostRepository implements PostRepository {
         .toSet();
     final postNames = remote.where((n) => n.endsWith(_postExtension)).toSet();
     final noteNames = remote.where((n) => n.endsWith(_noteExtension)).toSet();
+    final pinNames = remote.where((n) => n.endsWith(_pinExtension)).toSet();
 
     // Посты и комментарии, удалённые на других устройствах.
     for (final entry in _cache.entries) {
@@ -125,6 +130,7 @@ class EncryptedCloudPostRepository implements PostRepository {
     }
     _cache.removeWhere((name, _) => !postNames.contains(name));
     _notes.removeWhere((name, _) => !noteNames.contains(name));
+    _pins.removeWhere((name, _) => !pinNames.contains(name));
 
     bool isFresh(String name, Map<String, Object> cache) =>
         !cache.containsKey(name) && !_unreadable.contains(name);
@@ -133,6 +139,8 @@ class EncryptedCloudPostRepository implements PostRepository {
         _loadPost(name),
       for (final name in noteNames.where((n) => isFresh(n, _notes)))
         _loadNote(name),
+      for (final name in pinNames.where((n) => isFresh(n, _pins)))
+        _loadPin(name),
     ]);
 
     _fetched = true;
@@ -150,7 +158,9 @@ class EncryptedCloudPostRepository implements PostRepository {
         if (name.endsWith(_postExtension))
           _loadPost(name, localOnly: true)
         else if (name.endsWith(_noteExtension))
-          _loadNote(name, localOnly: true),
+          _loadNote(name, localOnly: true)
+        else if (name.endsWith(_pinExtension))
+          _loadPin(name, localOnly: true),
     ]);
     _indexed = names;
     _fetched = true;
@@ -168,6 +178,12 @@ class EncryptedCloudPostRepository implements PostRepository {
     localOnly: localOnly,
   );
 
+  Future<void> _loadPin(String name, {bool localOnly = false}) => _load(
+    name,
+    (json) => _pins[name] = PostPin.fromJson(json),
+    localOnly: localOnly,
+  );
+
   Future<Set<String>?> _readIndex() async {
     final raw = await _blobs.read(_indexKey);
     if (raw == null) return null;
@@ -180,7 +196,7 @@ class EncryptedCloudPostRepository implements PostRepository {
 
   /// Запоминает, какие файлы известны, и убирает из кеша удалённые.
   Future<void> _saveIndex() async {
-    final names = {..._cache.keys, ..._notes.keys};
+    final names = {..._cache.keys, ..._notes.keys, ..._pins.keys};
     final previous = _indexed ??= await _readIndex() ?? {};
     if (setEquals(previous, names)) return;
     for (final gone in previous.difference(names)) {
@@ -193,16 +209,17 @@ class EncryptedCloudPostRepository implements PostRepository {
   @override
   List<Post>? get cachedPosts => _fetched ? _assemble() : null;
 
-  /// Известные посты с комментариями, от старых к новым.
+  /// Известные посты с комментариями и отметками закрепления, от старых к новым.
   /// Если из-за прерванной правки в облаке осталось два файла `.post` одного
   /// и того же поста (`post.id`), побеждает файл с более поздним именем.
   List<Post> _assemble() {
     final notes = _latestNotes();
+    final pins = _latestPins();
     final byId = <String, Post>{};
     final sortedNames = _cache.keys.toList()..sort();
     for (final name in sortedNames) {
       final p = _cache[name]!;
-      byId[p.id] = p.withNote(notes[p.id]);
+      byId[p.id] = p.withNote(notes[p.id]).withPinned(pins[p.id] ?? false);
     }
     return byId.values.toList()
       ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
@@ -218,6 +235,21 @@ class EncryptedCloudPostRepository implements PostRepository {
       }
     }
     return latest;
+  }
+
+  /// Самый свежий статус закрепления для каждого поста.
+  Map<String, bool> _latestPins() {
+    final latest = <String, PostPin>{};
+    for (final pin in _pins.values) {
+      final current = latest[pin.postId];
+      if (current == null || pin.pinnedAt.isAfter(current.pinnedAt)) {
+        latest[pin.postId] = pin;
+      }
+    }
+    return {
+      for (final entry in latest.entries)
+        if (entry.value.isPinned) entry.key: true,
+    };
   }
 
   /// Файл берётся из кеша на устройстве, а если его там нет (или он
@@ -672,6 +704,7 @@ class EncryptedCloudPostRepository implements PostRepository {
       }
     }
     await _deleteNotes(_noteFilesFor(post));
+    await _deletePins(_pinFilesFor(post));
   }
 
   @override
@@ -698,6 +731,31 @@ class EncryptedCloudPostRepository implements PostRepository {
     }
     await _deleteNotes(old.where((name) => !_isCurrent(name, note)));
     return post.withNote(note);
+  }
+
+  @override
+  Future<Post> setPinned(Post post, bool isPinned) async {
+    final old = _pinFilesFor(post);
+    final pin = PostPin(
+      postId: post.id,
+      isPinned: isPinned,
+      pinnedAt: _clock().toUtc(),
+    );
+    final fileName = _pinFileNameFor(post, pin);
+    final encrypted = await _cipher.encrypt(
+      utf8.encode(jsonEncode(pin.toJson())),
+    );
+    await _storage.upload('$_postsDir/$fileName', encrypted);
+    await _blobs.write(fileName, encrypted);
+    _pins[fileName] = pin;
+    await _deletePins(old.where((name) => name != fileName));
+    final updated = post.withPinned(isPinned);
+    for (final entry in _cache.entries) {
+      if (entry.value.id == post.id) {
+        _cache[entry.key] = updated;
+      }
+    }
+    return updated;
   }
 
   @override
@@ -1262,6 +1320,20 @@ class EncryptedCloudPostRepository implements PostRepository {
     }
   }
 
+  /// Файлы отметок закрепления поста, известные по последнему списку из облака.
+  List<String> _pinFilesFor(Post post) => [
+    for (final entry in _pins.entries)
+      if (entry.value.postId == post.id) entry.key,
+  ];
+
+  Future<void> _deletePins(Iterable<String> names) async {
+    for (final name in names.toList()) {
+      await _storage.delete('$_postsDir/$name');
+      _pins.remove(name);
+      await _blobs.delete(name);
+    }
+  }
+
   Post _newPost({
     required PostKind kind,
     required String text,
@@ -1347,6 +1419,10 @@ class EncryptedCloudPostRepository implements PostRepository {
   static String _noteFileNameFor(Post post, PostNote note) =>
       '${_baseNameFor(post)}$_noteSeparator'
       '${_timestamp(note.editedAt)}$_noteExtension';
+
+  static String _pinFileNameFor(Post post, PostPin pin) =>
+      '${_baseNameFor(post)}$_noteSeparator'
+      '${_timestamp(pin.pinnedAt)}$_pinExtension';
 
   static String _baseNameFor(Post post) =>
       '${_timestamp(post.createdAt)}_${post.id}';

@@ -130,6 +130,10 @@ class PublishingPostRepository implements PostRepository {
       _changed(_inner.setNote(post, text));
 
   @override
+  Future<Post> setPinned(Post post, bool isPinned) =>
+      _changed(_inner.setPinned(post, isPinned));
+
+  @override
   Future<Post> updateFileContent({
     required Post post,
     required Uint8List bytes,

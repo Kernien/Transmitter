@@ -609,6 +609,10 @@ class _FeedBody extends StatelessWidget {
             ),
           ),
         ),
+        if (viewMode == _ViewMode.feed &&
+            searchQuery.isEmpty &&
+            feed.pinnedPosts.isNotEmpty)
+          _PinnedPostsBar(feed: feed, pinnedPosts: feed.pinnedPosts),
         Expanded(
           child: viewMode == _ViewMode.files
               ? _FilesListView(feed: feed, searchQuery: searchQuery)
@@ -687,6 +691,111 @@ class _FeedBody extends StatelessWidget {
   }
 }
 
+class _PinnedPostsBar extends StatefulWidget {
+  const _PinnedPostsBar({required this.feed, required this.pinnedPosts});
+
+  final FeedController feed;
+  final List<Post> pinnedPosts;
+
+  @override
+  State<_PinnedPostsBar> createState() => _PinnedPostsBarState();
+}
+
+class _PinnedPostsBarState extends State<_PinnedPostsBar> {
+  int _currentIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.pinnedPosts.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final l = context.l10n;
+    if (_currentIndex >= widget.pinnedPosts.length) {
+      _currentIndex = 0;
+    }
+    final post = widget.pinnedPosts[_currentIndex];
+
+    String previewText;
+    if (post.attachment case final att?) {
+      previewText = att.fileName;
+    } else if (post.folder case final fol?) {
+      previewText = fol.name;
+    } else if (post.text.isNotEmpty) {
+      previewText = post.text.replaceAll('\n', ' ');
+    } else {
+      previewText = l.untitled;
+    }
+
+    final count = widget.pinnedPosts.length;
+    final titleText = count > 1
+        ? '${l.pinnedPost} (${_currentIndex + 1}/$count)'
+        : l.pinnedPost;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 2, 16, 6),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: () {
+          if (count > 1) {
+            setState(() {
+              _currentIndex = (_currentIndex + 1) % count;
+            });
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Row(
+            children: [
+              Icon(
+                Icons.push_pin,
+                size: 18,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      titleText,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      previewText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              if (!widget.feed.isReadOnly)
+                IconButton(
+                  icon: const Icon(Icons.close, size: 16),
+                  tooltip: l.unpinPost,
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: () => widget.feed.togglePin(post),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _FileItem {
   _FileItem({
     required this.post,
@@ -705,9 +814,28 @@ class _FileItem {
   final DateTime createdAt;
 
   bool get isFolder => folder != null;
+  bool get isPinned => post.isPinned;
+
+  int get typeOrder {
+    if (isFolder) return 0;
+    if (attachment?.isImage ?? false) return 1;
+    if (attachment?.isVideo ?? false) return 2;
+    if (attachment?.isAudio ?? false) return 3;
+    return 4;
+  }
 }
 
-class _FilesListView extends StatelessWidget {
+enum FileSortMode {
+  dateDesc,
+  dateAsc,
+  nameAsc,
+  nameDesc,
+  sizeDesc,
+  sizeAsc,
+  type,
+}
+
+class _FilesListView extends StatefulWidget {
   const _FilesListView({
     required this.feed,
     required this.searchQuery,
@@ -717,9 +845,48 @@ class _FilesListView extends StatelessWidget {
   final String searchQuery;
 
   @override
+  State<_FilesListView> createState() => _FilesListViewState();
+}
+
+class _FilesListViewState extends State<_FilesListView> {
+  FileSortMode _sortMode = FileSortMode.dateDesc;
+
+  int _compare(_FileItem a, _FileItem b) {
+    switch (_sortMode) {
+      case FileSortMode.dateDesc:
+        return b.createdAt.compareTo(a.createdAt);
+      case FileSortMode.dateAsc:
+        return a.createdAt.compareTo(b.createdAt);
+      case FileSortMode.nameAsc:
+        return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      case FileSortMode.nameDesc:
+        return b.name.toLowerCase().compareTo(a.name.toLowerCase());
+      case FileSortMode.sizeDesc:
+        return b.size.compareTo(a.size);
+      case FileSortMode.sizeAsc:
+        return a.size.compareTo(b.size);
+      case FileSortMode.type:
+        final cmp = a.typeOrder.compareTo(b.typeOrder);
+        if (cmp != 0) return cmp;
+        return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    }
+  }
+
+  String _sortLabel(AppLocalizations l, FileSortMode mode) => switch (mode) {
+    FileSortMode.dateDesc => l.sortDateDesc,
+    FileSortMode.dateAsc => l.sortDateAsc,
+    FileSortMode.nameAsc => l.sortNameAsc,
+    FileSortMode.nameDesc => l.sortNameDesc,
+    FileSortMode.sizeDesc => l.sortSizeDesc,
+    FileSortMode.sizeAsc => l.sortSizeAsc,
+    FileSortMode.type => l.sortType,
+  };
+
+  @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final theme = Theme.of(context);
+    final feed = widget.feed;
     final isReadOnly = feed.isReadOnly;
 
     final allItems = <_FileItem>[];
@@ -748,11 +915,17 @@ class _FilesListView extends StatelessWidget {
       }
     }
 
-    // Сортировка: от новых к старым
-    allItems.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    if (allItems.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(l.noFilesYet, textAlign: TextAlign.center),
+        ),
+      );
+    }
 
-    final q = searchQuery;
-    final items = q.isEmpty
+    final q = widget.searchQuery;
+    final filtered = q.isEmpty
         ? allItems
         : allItems.where((it) {
             if (it.name.toLowerCase().contains(q)) return true;
@@ -766,16 +939,7 @@ class _FilesListView extends StatelessWidget {
             return false;
           }).toList();
 
-    if (allItems.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(l.noFilesYet, textAlign: TextAlign.center),
-        ),
-      );
-    }
-
-    if (items.isEmpty) {
+    if (filtered.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -784,106 +948,232 @@ class _FilesListView extends StatelessWidget {
       );
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: items.length,
-      separatorBuilder: (_, _) => const Divider(height: 1),
-      itemBuilder: (context, index) {
-        final item = items[index];
-        final post = item.post;
-        final isPending = post.id.startsWith('pending_');
+    // При обычном просмотре (без поиска) закреплённые файлы показываются в начале.
+    final List<_FileItem> items;
+    if (q.isEmpty) {
+      final pinned = filtered.where((it) => it.isPinned).toList()..sort(_compare);
+      final regular = filtered.where((it) => !it.isPinned).toList()..sort(_compare);
+      items = [...pinned, ...regular];
+    } else {
+      items = filtered..sort(_compare);
+    }
 
-        IconData iconData;
-        Color? iconColor;
-        if (item.isFolder) {
-          iconData = Icons.folder;
-          iconColor = theme.colorScheme.primary;
-        } else if (item.attachment?.isImage ?? false) {
-          iconData = Icons.image_outlined;
-        } else if (item.attachment?.isVideo ?? false) {
-          iconData = Icons.videocam_outlined;
-        } else if (item.attachment?.isAudio ?? false) {
-          iconData = Icons.audiotrack_outlined;
-        } else {
-          iconData = Icons.description_outlined;
-        }
-
-        final subtitleText = item.isFolder
-            ? '${l.folderFilesCount(item.folder!.files.length)} · ${l.fileSize(item.size)}'
-            : '${l.fileSize(item.size)} · ${_formatDate(item.createdAt)}';
-
-        return ListTile(
-          leading: Icon(iconData, color: iconColor),
-          title: Text(
-            item.name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          subtitle: Text(
-            subtitleText,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+    final sortButton = PopupMenuButton<FileSortMode>(
+      tooltip: l.sortBy,
+      initialValue: _sortMode,
+      onSelected: (mode) => setState(() => _sortMode = mode),
+      itemBuilder: (context) => [
+        CheckedPopupMenuItem(
+          value: FileSortMode.dateDesc,
+          checked: _sortMode == FileSortMode.dateDesc,
+          child: Text(l.sortDateDesc),
+        ),
+        CheckedPopupMenuItem(
+          value: FileSortMode.dateAsc,
+          checked: _sortMode == FileSortMode.dateAsc,
+          child: Text(l.sortDateAsc),
+        ),
+        CheckedPopupMenuItem(
+          value: FileSortMode.nameAsc,
+          checked: _sortMode == FileSortMode.nameAsc,
+          child: Text(l.sortNameAsc),
+        ),
+        CheckedPopupMenuItem(
+          value: FileSortMode.nameDesc,
+          checked: _sortMode == FileSortMode.nameDesc,
+          child: Text(l.sortNameDesc),
+        ),
+        CheckedPopupMenuItem(
+          value: FileSortMode.sizeDesc,
+          checked: _sortMode == FileSortMode.sizeDesc,
+          child: Text(l.sortSizeDesc),
+        ),
+        CheckedPopupMenuItem(
+          value: FileSortMode.sizeAsc,
+          checked: _sortMode == FileSortMode.sizeAsc,
+          child: Text(l.sortSizeAsc),
+        ),
+        CheckedPopupMenuItem(
+          value: FileSortMode.type,
+          checked: _sortMode == FileSortMode.type,
+          child: Text(l.sortType),
+        ),
+      ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.sort,
+              size: 18,
+              color: theme.colorScheme.primary,
             ),
+            const SizedBox(width: 4),
+            Text(
+              _sortLabel(l, _sortMode),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 2, 8, 2),
+          child: Row(
+            children: [
+              Text(
+                '${l.filesTab}: ${items.length}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+              const Spacer(),
+              sortButton,
+            ],
           ),
-          onTap: isPending ? null : () => _openItem(context, feed, item),
-          trailing: isPending
-              ? const SizedBox.square(
-                  dimension: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : PopupMenuButton<_FileItemAction>(
-                  tooltip: l.actions,
-                  onSelected: (action) =>
-                      _onAction(context, feed, item, action),
-                  itemBuilder: (_) => [
-                    PopupMenuItem(
-                      value: _FileItemAction.save,
-                      child: Row(
-                        children: [
-                          const Icon(Icons.download, size: 20),
-                          const SizedBox(width: 12),
-                          Text(
-                            item.isFolder ? l.saveFolder : l.actionSaveFile,
-                          ),
-                        ],
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            itemCount: items.length,
+            separatorBuilder: (_, _) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final item = items[index];
+              final post = item.post;
+              final isPending = post.id.startsWith('pending_');
+
+              IconData iconData;
+              Color? iconColor;
+              if (item.isFolder) {
+                iconData = Icons.folder;
+                iconColor = theme.colorScheme.primary;
+              } else if (item.attachment?.isImage ?? false) {
+                iconData = Icons.image_outlined;
+              } else if (item.attachment?.isVideo ?? false) {
+                iconData = Icons.videocam_outlined;
+              } else if (item.attachment?.isAudio ?? false) {
+                iconData = Icons.audiotrack_outlined;
+              } else {
+                iconData = Icons.description_outlined;
+              }
+
+              final subtitleText = item.isFolder
+                  ? '${l.folderFilesCount(item.folder!.files.length)} · ${l.fileSize(item.size)}'
+                  : '${l.fileSize(item.size)} · ${_formatDate(item.createdAt)}';
+
+              return ListTile(
+                leading: Icon(iconData, color: iconColor),
+                title: Row(
+                  children: [
+                    if (item.isPinned) ...[
+                      Icon(
+                        Icons.push_pin,
+                        size: 14,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 4),
+                    ],
+                    Expanded(
+                      child: Text(
+                        item.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (feed.canOpenExternally && !item.isFolder)
-                      PopupMenuItem(
-                        value: _FileItemAction.openWith,
-                        child: Row(
-                          children: [
-                            const Icon(Icons.open_in_new, size: 20),
-                            const SizedBox(width: 12),
-                            Text(l.openWith),
-                          ],
-                        ),
-                      ),
-                    if (!isReadOnly) ...[
-                      PopupMenuItem(
-                        value: _FileItemAction.delete,
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.delete_outline,
-                              size: 20,
-                              color: theme.colorScheme.error,
+                  ],
+                ),
+                subtitle: Text(
+                  subtitleText,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                onTap: isPending ? null : () => _openItem(context, feed, item),
+                trailing: isPending
+                    ? const SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : PopupMenuButton<_FileItemAction>(
+                        tooltip: l.actions,
+                        onSelected: (action) =>
+                            _onAction(context, feed, item, action),
+                        itemBuilder: (_) => [
+                          PopupMenuItem(
+                            value: _FileItemAction.save,
+                            child: Row(
+                              children: [
+                                const Icon(Icons.download, size: 20),
+                                const SizedBox(width: 12),
+                                Text(
+                                  item.isFolder ? l.saveFolder : l.actionSaveFile,
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 12),
-                            Text(
-                              l.delete,
-                              style: TextStyle(
-                                color: theme.colorScheme.error,
+                          ),
+                          if (feed.canOpenExternally && !item.isFolder)
+                            PopupMenuItem(
+                              value: _FileItemAction.openWith,
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.open_in_new, size: 20),
+                                  const SizedBox(width: 12),
+                                  Text(l.openWith),
+                                ],
+                              ),
+                            ),
+                          if (!isReadOnly)
+                            PopupMenuItem(
+                              value: _FileItemAction.pin,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    item.isPinned
+                                        ? Icons.push_pin_outlined
+                                        : Icons.push_pin,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(item.isPinned ? l.unpinPost : l.pinPost),
+                                ],
+                              ),
+                            ),
+                          if (!isReadOnly) ...[
+                            PopupMenuItem(
+                              value: _FileItemAction.delete,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.delete_outline,
+                                    size: 20,
+                                    color: theme.colorScheme.error,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    l.delete,
+                                    style: TextStyle(
+                                      color: theme.colorScheme.error,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
-                        ),
+                        ],
                       ),
-                    ],
-                  ],
-                ),
-        );
-      },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -928,6 +1218,8 @@ class _FilesListView extends StatelessWidget {
         }
       case _FileItemAction.openWith:
         await feed.openExternally(item.post);
+      case _FileItemAction.pin:
+        await feed.togglePin(item.post);
       case _FileItemAction.delete:
         final confirmed = await showDialog<bool>(
           context: context,
@@ -964,4 +1256,4 @@ class _FilesListView extends StatelessWidget {
   }
 }
 
-enum _FileItemAction { save, openWith, delete }
+enum _FileItemAction { save, openWith, pin, delete }

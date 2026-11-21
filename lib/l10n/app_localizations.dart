@@ -1963,6 +1963,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No accounts connected'**
   String get noAccountsConnected;
+
+  /// No description provided for @pinPost.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin'**
+  String get pinPost;
+
+  /// No description provided for @unpinPost.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin'**
+  String get unpinPost;
+
+  /// No description provided for @pinnedPost.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned message'**
+  String get pinnedPost;
+
+  /// No description provided for @pinnedPosts.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} pinned message} other{{count} pinned messages}}'**
+  String pinnedPosts(int count);
+
+  /// No description provided for @pinnedSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned'**
+  String get pinnedSection;
+
+  /// No description provided for @sortBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by'**
+  String get sortBy;
+
+  /// No description provided for @sortDateDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest first'**
+  String get sortDateDesc;
+
+  /// No description provided for @sortDateAsc.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest first'**
+  String get sortDateAsc;
+
+  /// No description provided for @sortNameAsc.
+  ///
+  /// In en, this message translates to:
+  /// **'By name (A–Z)'**
+  String get sortNameAsc;
+
+  /// No description provided for @sortNameDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'By name (Z–A)'**
+  String get sortNameDesc;
+
+  /// No description provided for @sortSizeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Largest first'**
+  String get sortSizeDesc;
+
+  /// No description provided for @sortSizeAsc.
+  ///
+  /// In en, this message translates to:
+  /// **'Smallest first'**
+  String get sortSizeAsc;
+
+  /// No description provided for @sortType.
+  ///
+  /// In en, this message translates to:
+  /// **'By type'**
+  String get sortType;
 }
 
 class _AppLocalizationsDelegate

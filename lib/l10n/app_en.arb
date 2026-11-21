@@ -385,5 +385,19 @@
   "selectAccount": "Select account",
   "disconnectAccountConfirm": "Sign out of account \"{name}\"?",
   "@disconnectAccountConfirm": { "placeholders": { "name": { "type": "String" } } },
-  "noAccountsConnected": "No accounts connected"
+  "noAccountsConnected": "No accounts connected",
+  "pinPost": "Pin",
+  "unpinPost": "Unpin",
+  "pinnedPost": "Pinned message",
+  "pinnedPosts": "{count, plural, one{{count} pinned message} other{{count} pinned messages}}",
+  "@pinnedPosts": { "placeholders": { "count": { "type": "int" } } },
+  "pinnedSection": "Pinned",
+  "sortBy": "Sort by",
+  "sortDateDesc": "Newest first",
+  "sortDateAsc": "Oldest first",
+  "sortNameAsc": "By name (A–Z)",
+  "sortNameDesc": "By name (Z–A)",
+  "sortSizeDesc": "Largest first",
+  "sortSizeAsc": "Smallest first",
+  "sortType": "By type"
 }

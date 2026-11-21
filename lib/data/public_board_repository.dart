@@ -208,6 +208,9 @@ class PublicBoardRepository implements PostRepository {
   Future<Post> setNote(Post post, String text) => _readOnly();
 
   @override
+  Future<Post> setPinned(Post post, bool isPinned) => _readOnly();
+
+  @override
   Future<Post> updateFileContent({
     required Post post,
     required Uint8List bytes,

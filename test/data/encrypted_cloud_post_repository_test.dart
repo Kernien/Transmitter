@@ -493,5 +493,35 @@ void main() {
       final posts = await pc.fetchPosts();
       expect(posts.single.folder!.name, 'новое_имя');
     });
+
+    test('setPinned закрепляет и открепляет пост, состояние видно на другом устройстве', () async {
+      final phone = device('Телефон');
+      final pc = device('ПК');
+
+      final post = await phone.sendText('Важная заметка');
+      expect(post.isPinned, isFalse);
+
+      final pinned = await phone.setPinned(post, true);
+      expect(pinned.isPinned, isTrue);
+
+      final pcPosts = await pc.fetchPosts();
+      expect(pcPosts.single.isPinned, isTrue);
+
+      // Проверяем наличие файла .pin в облаке
+      expect(cloud.files.keys.any((k) => k.endsWith('.pin')), isTrue);
+
+      // Открепляем
+      final unpinned = await pc.setPinned(pcPosts.single, false);
+      expect(unpinned.isPinned, isFalse);
+
+      final phonePosts = await phone.fetchPosts();
+      expect(phonePosts.single.isPinned, isFalse);
+
+      // Удаление поста удаляет и .pin
+      await phone.setPinned(phonePosts.single, true);
+      expect(cloud.files.keys.any((k) => k.endsWith('.pin')), isTrue);
+      await phone.deletePost(phonePosts.single);
+      expect(cloud.files.keys.any((k) => k.endsWith('.pin')), isFalse);
+    });
   });
 }

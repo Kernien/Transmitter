@@ -1109,4 +1109,52 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get noAccountsConnected => 'Нет подключённых аккаунтов';
+
+  @override
+  String get pinPost => 'Закрепить';
+
+  @override
+  String get unpinPost => 'Открепить';
+
+  @override
+  String get pinnedPost => 'Закреплённое сообщение';
+
+  @override
+  String pinnedPosts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count закреплённых сообщений',
+      few: '$count закреплённых сообщения',
+      one: '$count закреплённое сообщение',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pinnedSection => 'Закреплённые';
+
+  @override
+  String get sortBy => 'Сортировка';
+
+  @override
+  String get sortDateDesc => 'Сначала новые';
+
+  @override
+  String get sortDateAsc => 'Сначала старые';
+
+  @override
+  String get sortNameAsc => 'По имени (А–Я)';
+
+  @override
+  String get sortNameDesc => 'По имени (Я–А)';
+
+  @override
+  String get sortSizeDesc => 'Сначала крупные';
+
+  @override
+  String get sortSizeAsc => 'Сначала мелкие';
+
+  @override
+  String get sortType => 'По типу';
 }

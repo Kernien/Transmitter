@@ -908,6 +908,25 @@ class FeedController extends ChangeNotifier {
     }
   }
 
+  /// Список закреплённых постов доски (от новых к старым).
+  List<Post> get pinnedPosts =>
+      _posts.where((p) => p.isPinned).toList().reversed.toList();
+
+  /// Закрепляет или открепляет пост.
+  Future<bool> togglePin(Post post) async {
+    try {
+      final updated = await _repository.setPinned(post, !post.isPinned);
+      _posts = [for (final p in _posts) p.id == post.id ? updated : p];
+      _error = null;
+      return true;
+    } catch (e) {
+      _error = e;
+      return false;
+    } finally {
+      _notify();
+    }
+  }
+
   /// Задаёт комментарий к посту; пустой текст удаляет его.
   /// Возвращает `true`, если изменение сохранено в облаке.
   Future<bool> setNote(Post post, String text) async {

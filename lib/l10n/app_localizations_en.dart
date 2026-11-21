@@ -1107,4 +1107,51 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noAccountsConnected => 'No accounts connected';
+
+  @override
+  String get pinPost => 'Pin';
+
+  @override
+  String get unpinPost => 'Unpin';
+
+  @override
+  String get pinnedPost => 'Pinned message';
+
+  @override
+  String pinnedPosts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pinned messages',
+      one: '$count pinned message',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pinnedSection => 'Pinned';
+
+  @override
+  String get sortBy => 'Sort by';
+
+  @override
+  String get sortDateDesc => 'Newest first';
+
+  @override
+  String get sortDateAsc => 'Oldest first';
+
+  @override
+  String get sortNameAsc => 'By name (A–Z)';
+
+  @override
+  String get sortNameDesc => 'By name (Z–A)';
+
+  @override
+  String get sortSizeDesc => 'Largest first';
+
+  @override
+  String get sortSizeAsc => 'Smallest first';
+
+  @override
+  String get sortType => 'By type';
 }

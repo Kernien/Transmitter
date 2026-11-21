@@ -324,5 +324,18 @@
   "switchAccount": "Сменить аккаунт",
   "selectAccount": "Выберите аккаунт",
   "disconnectAccountConfirm": "Выйти из аккаунта «{name}»?",
-  "noAccountsConnected": "Нет подключённых аккаунтов"
+  "noAccountsConnected": "Нет подключённых аккаунтов",
+  "pinPost": "Закрепить",
+  "unpinPost": "Открепить",
+  "pinnedPost": "Закреплённое сообщение",
+  "pinnedPosts": "{count, plural, one{{count} закреплённое сообщение} few{{count} закреплённых сообщения} other{{count} закреплённых сообщений}}",
+  "pinnedSection": "Закреплённые",
+  "sortBy": "Сортировка",
+  "sortDateDesc": "Сначала новые",
+  "sortDateAsc": "Сначала старые",
+  "sortNameAsc": "По имени (А–Я)",
+  "sortNameDesc": "По имени (Я–А)",
+  "sortSizeDesc": "Сначала крупные",
+  "sortSizeAsc": "Сначала мелкие",
+  "sortType": "По типу"
 }

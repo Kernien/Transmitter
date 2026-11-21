@@ -485,6 +485,31 @@ void main() {
       expect(feed.posts.any((p) => p.id == postId), isTrue);
       feed.dispose();
     });
+
+    test('togglePin закрепляет и открепляет пост, pinnedPosts фильтрует посты', () async {
+      final feed = controllerFor('A');
+      await feed.sendText('Пост 1');
+      await feed.sendText('Пост 2');
+      expect(feed.pinnedPosts, isEmpty);
+
+      final p1 = feed.posts.firstWhere((p) => p.text == 'Пост 1');
+      final p2 = feed.posts.firstWhere((p) => p.text == 'Пост 2');
+
+      // Закрепляем Пост 1
+      expect(await feed.togglePin(p1), isTrue);
+      expect(feed.pinnedPosts.map((p) => p.text), ['Пост 1']);
+
+      // Закрепляем Пост 2
+      expect(await feed.togglePin(p2), isTrue);
+      expect(feed.pinnedPosts.map((p) => p.text), ['Пост 2', 'Пост 1']);
+
+      // Открепляем Пост 1
+      final p1Pinned = feed.posts.firstWhere((p) => p.text == 'Пост 1');
+      expect(await feed.togglePin(p1Pinned), isTrue);
+      expect(feed.pinnedPosts.map((p) => p.text), ['Пост 2']);
+
+      feed.dispose();
+    });
   });
 }
 

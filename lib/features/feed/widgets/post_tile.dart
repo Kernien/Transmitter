@@ -14,6 +14,7 @@ import '../text_viewer_screen.dart';
 
 enum _PostAction {
   select,
+  pin,
   note,
   share,
   save,
@@ -42,6 +43,7 @@ class PostTile extends StatelessWidget {
     required bool readOnly,
   }) => [
     _PostAction.select,
+    if (!readOnly) _PostAction.pin,
     if (!readOnly) _PostAction.note,
     if (canShare) _PostAction.share,
     if (post.attachment != null) ...[
@@ -140,6 +142,14 @@ class PostTile extends StatelessWidget {
                     if (post.note case final note?) _NoteView(note: note),
                     Row(
                       children: [
+                        if (post.isPinned) ...[
+                          Icon(
+                            Icons.push_pin,
+                            size: 14,
+                            color: theme.colorScheme.primary,
+                          ),
+                          const SizedBox(width: 4),
+                        ],
                         Expanded(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 12),
@@ -177,6 +187,7 @@ class PostTile extends StatelessWidget {
                                   child: _ActionLabel(
                                     action,
                                     hasNote: post.note != null,
+                                    isPinned: post.isPinned,
                                     isFolder: post.folder != null,
                                   ),
                                 ),
@@ -225,6 +236,8 @@ class PostTile extends StatelessWidget {
     switch (action) {
       case _PostAction.select:
         feed.toggleSelection(post);
+      case _PostAction.pin:
+        await feed.togglePin(post);
       case _PostAction.note:
         final text = await showDialog<String>(
           context: context,
@@ -430,11 +443,13 @@ class _ActionLabel extends StatelessWidget {
   const _ActionLabel(
     this.action, {
     required this.hasNote,
+    this.isPinned = false,
     this.isFolder = false,
   });
 
   final _PostAction action;
   final bool hasNote;
+  final bool isPinned;
   final bool isFolder;
 
   @override
@@ -442,6 +457,10 @@ class _ActionLabel extends StatelessWidget {
     final l = context.l10n;
     final (icon, text) = switch (action) {
       _PostAction.select => (Icons.check_box_outlined, l.actionSelect),
+      _PostAction.pin => (
+        isPinned ? Icons.push_pin_outlined : Icons.push_pin,
+        isPinned ? l.unpinPost : l.pinPost,
+      ),
       _PostAction.note => (
         hasNote ? Icons.edit_note : Icons.add_comment_outlined,
         hasNote ? l.actionEditNote : l.actionAddNote,

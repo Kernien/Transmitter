@@ -87,6 +87,10 @@ abstract interface class PostRepository {
   /// Возвращает пост с новым комментарием.
   Future<Post> setNote(Post post, String text);
 
+  /// Закрепляет или открепляет пост. Возвращает пост с обновлённым
+  /// статусом [Post.isPinned].
+  Future<Post> setPinned(Post post, bool isPinned);
+
   /// Заменяет содержимое отдельного поста-файла новыми байтами [bytes].
   Future<Post> updateFileContent({
     required Post post,
