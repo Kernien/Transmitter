@@ -18,7 +18,7 @@ Bytes.
 | 🐧 **Linux** | Flatpak mit automatischen Updates oder AppImage — eine einzige Datei ohne Installation; getestet auf dem Steam Deck |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — keine Installation nötig |
 
-Version **1.4.0**.
+Version **1.5.0**.
 
 > **Sprache der Oberfläche.** Die App gibt es auf Englisch und Russisch; auf
 > einem deutschen System ist sie auf Englisch (umschalten unter ⚙ „Settings“).
@@ -53,6 +53,8 @@ Computer und Browser.
 - **Ersetzen und Bearbeiten an Ort und Stelle.** Aktualisiere bereits gesendete Dateien oder Ordner ohne neuen Eintrag, benenne Anhänge um und bearbeite Textdateien (`.txt`, `.md`, `.json`, Quellcode) direkt in der App.
 - **Tab „Dateien“ und Sortierung.** Übersicht aller Dateien und Ordner des Boards mit Sortierung (nach Datum, Name, Größe oder Typ) und Bereich für angepinnte Dateien; Suche nach Text, Notizen und Dateinamen.
 - **Wichtige Beiträge anpinnen.** Hefte wichtige Beiträge und Dateien oben im Feed an (⋮ → *Pin post*): eine Anpinn-Leiste über dem Feed ermöglicht schnelles Wechseln zwischen angepinnten Einträgen, synchronisiert über alle Geräte.
+- **Eigene Board-Symbole und Personalisierung.** Wähle ein Symbol aus dem Katalog oder ein beliebiges Emoji für jedes Board (⋮ → *Board icon…*), synchronisiert über die Cloud.
+- **Kompakte und optimierte Oberfläche.** Elegante Squircle-Kacheln, prägnante Beschriftungen und eine moderne Eingabeleiste.
 - **„Teilen“ in beide Richtungen (Android).** Aus Browser, Galerie oder jeder
   anderen App direkt in Transmitter — und aus Transmitter in jede App.
 - **Mehrere Tresore.** Zum Beispiel einer für das Paar „privates ↔
