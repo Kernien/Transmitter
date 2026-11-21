@@ -202,7 +202,7 @@ class _VaultsScreenState extends State<VaultsScreen> {
         );
       }
       return ListView.separated(
-        padding: const EdgeInsets.fromLTRB(8, 8, 8, 96),
+        padding: EdgeInsets.fromLTRB(8, 8, 8, isWide ? 16 : 96),
         itemCount: filteredVaults.length + filteredBoards.length,
         separatorBuilder: (_, _) => const SizedBox(height: 4),
         itemBuilder: (context, i) {
@@ -271,25 +271,33 @@ class _VaultsScreenState extends State<VaultsScreen> {
                 icon: const Icon(Icons.search),
                 onPressed: () => setState(() => _isSearching = true),
               ),
+              if (isWide)
+                IconButton(
+                  tooltip: l.newKey,
+                  icon: const Icon(Icons.add),
+                  onPressed: () => _create(context),
+                ),
+              IconButton(
+                tooltip: l.addKey,
+                icon: const Icon(Icons.qr_code_scanner),
+                onPressed: () => _import(context),
+              ),
               // Оформление, язык и место на устройстве — в «Настройках».
               IconButton(
                 tooltip: l.settings,
                 icon: const Icon(Icons.settings_outlined),
                 onPressed: () => showSettingsSheet(context),
               ),
-              IconButton(
-                tooltip: l.addKey,
-                icon: const Icon(Icons.qr_code_scanner),
-                onPressed: () => _import(context),
-              ),
             ],
           );
 
-    final fab = FloatingActionButton.extended(
-      icon: const Icon(Icons.add),
-      label: Text(l.newKey),
-      onPressed: () => _create(context),
-    );
+    final fab = isWide
+        ? null
+        : FloatingActionButton.extended(
+            icon: const Icon(Icons.add),
+            label: Text(l.newKey),
+            onPressed: () => _create(context),
+          );
 
     if (!isWide) {
       return Scaffold(
@@ -310,7 +318,6 @@ class _VaultsScreenState extends State<VaultsScreen> {
                   Theme.of(context).colorScheme.surfaceContainerLow,
               appBar: appBar,
               body: buildList(),
-              floatingActionButton: fab,
             ),
           ),
           // Боковая панель темнее ленты, разделительная линия не нужна.
