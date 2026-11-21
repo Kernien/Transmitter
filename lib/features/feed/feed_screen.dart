@@ -588,19 +588,26 @@ class _FeedBody extends StatelessWidget {
             ],
           ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 6, 16, 4),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           child: Center(
             child: SegmentedButton<_ViewMode>(
               showSelectedIcon: false,
+              style: SegmentedButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
               segments: [
                 ButtonSegment(
                   value: _ViewMode.feed,
-                  icon: const Icon(Icons.forum_outlined, size: 18),
+                  icon: const Icon(Icons.forum_outlined, size: 16),
                   label: Text(l.feedTab),
                 ),
                 ButtonSegment(
                   value: _ViewMode.files,
-                  icon: const Icon(Icons.folder_outlined, size: 18),
+                  icon: const Icon(Icons.folder_outlined, size: 16),
                   label: Text(l.filesTab),
                 ),
               ],
