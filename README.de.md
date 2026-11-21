@@ -18,7 +18,7 @@ Bytes.
 | 🐧 **Linux** | Flatpak mit automatischen Updates oder AppImage — eine einzige Datei ohne Installation; getestet auf dem Steam Deck |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — keine Installation nötig |
 
-Version **1.3.0**.
+Version **1.4.0**.
 
 > **Sprache der Oberfläche.** Die App gibt es auf Englisch und Russisch; auf
 > einem deutschen System ist sie auf Englisch (umschalten unter ⚙ „Settings“).
@@ -51,7 +51,8 @@ Computer und Browser.
 - **Dateien jeder Größe** — Fotos, Dokumente, Videos, Archive. Die Grenze (25 MB, 100 MB, 500 MB, 1 GB, 2 GB oder „Ohne Limit“) wird für jeden Tresor beim Anlegen festgelegt und lässt sich jederzeit anpassen (⋮ → „Dateigröße…“). Streaming-Verschlüsselung in 4-MB-Blöcken, fortsetzbarer Upload mit Wiederaufnahme bei Netzwerkfehlern, Fortschritts- und Geschwindigkeitsanzeige. Über die 📎-Schaltfläche, per Drag & Drop ins Fenster (Windows und Browser) oder mit „Teilen“ aus jeder App unter Android.
 - **Mehrere Dateien und ganze Ordner senden.** Wähle mehrere Dateien über 📎, Fotos/Videos aus der Galerie oder hänge einen ganzen Ordner samt Unterordnern an (📁). Ordner öffnen sich direkt in der App wie im Dateimanager — mit Pfadnavigation, Suche sowie Hinzufügen, Umbenennen, Verschieben und Löschen von Dateien.
 - **Ersetzen und Bearbeiten an Ort und Stelle.** Aktualisiere bereits gesendete Dateien oder Ordner ohne neuen Eintrag, benenne Anhänge um und bearbeite Textdateien (`.txt`, `.md`, `.json`, Quellcode) direkt in der App.
-- **Tab „Dateien“ und Schnellsuche (🔍).** Wechsle zwischen dem chronologischen Verlauf und einer Übersicht aller Dateien und Ordner des Boards; durchsuche Tresore, Beiträge, Notizen und Dateinamen.
+- **Tab „Dateien“ und Sortierung.** Übersicht aller Dateien und Ordner des Boards mit Sortierung (nach Datum, Name, Größe oder Typ) und Bereich für angepinnte Dateien; Suche nach Text, Notizen und Dateinamen.
+- **Wichtige Beiträge anpinnen.** Hefte wichtige Beiträge und Dateien oben im Feed an (⋮ → *Pin post*): eine Anpinn-Leiste über dem Feed ermöglicht schnelles Wechseln zwischen angepinnten Einträgen, synchronisiert über alle Geräte.
 - **„Teilen“ in beide Richtungen (Android).** Aus Browser, Galerie oder jeder
   anderen App direkt in Transmitter — und aus Transmitter in jede App.
 - **Mehrere Tresore.** Zum Beispiel einer für das Paar „privates ↔

@@ -17,7 +17,7 @@ right on the device: the cloud only ever sees meaningless bytes.
 | 🐧 **Linux** | Flatpak with automatic updates, or AppImage — a single file, no installation; tested on Steam Deck |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — nothing to install |
 
-Version **1.3.0**. The interface is in **English and Russian** — it follows the
+Version **1.4.0**. The interface is in **English and Russian** — it follows the
 system language, or pick one in ⚙ *Settings*.
 
 ## Why
@@ -44,7 +44,8 @@ On an encrypted board, open **⋮ → Sub-boards** to create a separate feed ins
 - **Files of any size** — photos, documents, videos, archives. The limit (25 MB, 100 MB, 500 MB, 1 GB, 2 GB or “No limit”) is chosen for each vault when created and can be adjusted anytime (⋮ → *File size limit…*). Chunked streaming encryption (4 MB chunks), resumable chunked uploads, transfer progress and speed indicator. Use the 📎 button, drag files into the window (Windows and browser) or “Share” from any app on Android.
 - **Send multiple files and whole folders.** Pick a batch of files via 📎, photos/videos from Gallery, or attach an entire folder with nested subfolders (📁). Folders open right in the app like a file explorer — with breadcrumbs, search, and in-place file addition, renaming, moving, and deletion.
 - **In-place replacement & text editing.** Update an existing file or folder with a new version without recreating the post (*Replace file…* / *Replace folder…*), rename attachments, and edit text files (`.txt`, `.md`, `.json`, source code) directly inside the app.
-- **“Files” tab & instant search (🔍).** Switch between the chronological **Feed** and a structured **Files** view of all attachments and folders on the board; filter your vaults list or search across posts, notes, and file names.
+- **“Files” tab & sorting.** A consolidated view of all attachments and folders on the board with sorting (by date, name, size, or type) and a dedicated pinned section; search across posts, notes, and file names.
+- **Pinned posts.** Pin important posts and files to the top of your feed (⋮ → *Pin post*): a dedicated pinned bar appears above the feed for instant cycling between pins, with a pin indicator on post cards. Pinned state syncs across all devices via the cloud.
 - **“Share” both ways (Android).** From your browser, gallery or any app
   straight into Transmitter — and from Transmitter into any app.
 - **Several vaults.** For example, one for the “personal ↔ work profile” pair
