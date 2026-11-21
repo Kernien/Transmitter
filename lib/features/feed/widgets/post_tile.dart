@@ -83,6 +83,7 @@ class PostTile extends StatelessWidget {
     final isPending = post.id.startsWith('pending_');
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       color: selected ? theme.colorScheme.primaryContainer : null,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -152,11 +153,11 @@ class PostTile extends StatelessWidget {
                         ],
                         Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(vertical: 4),
                             child: Text(
                               '${post.senderDevice} · $date $time',
                               style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.outline,
+                                color: theme.colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ),
@@ -164,10 +165,13 @@ class PostTile extends StatelessWidget {
                         if (!selecting && !isPending)
                           PopupMenuButton<_PostAction>(
                             tooltip: context.l10n.actions,
+                            iconSize: 18,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
                             icon: Icon(
                               Icons.more_vert,
                               size: 18,
-                              color: theme.colorScheme.outline,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                             onSelected: (action) => _perform(context, action),
                             itemBuilder: (_) => [
