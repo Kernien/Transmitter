@@ -204,7 +204,7 @@ class _VaultsScreenState extends State<VaultsScreen> {
       return ListView.separated(
         padding: const EdgeInsets.fromLTRB(8, 8, 8, 96),
         itemCount: filteredVaults.length + filteredBoards.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 6),
+        separatorBuilder: (_, _) => const SizedBox(height: 4),
         itemBuilder: (context, i) {
           if (i < filteredVaults.length) {
             final v = filteredVaults[i];
@@ -440,11 +440,26 @@ class _VaultTile extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return ListTile(
       selected: selected,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      contentPadding: const EdgeInsetsDirectional.fromSTEB(14, 8, 8, 8),
+      dense: true,
+      visualDensity: const VisualDensity(horizontal: 0, vertical: -2),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      contentPadding: const EdgeInsetsDirectional.fromSTEB(10, 2, 6, 2),
       selectedTileColor: colorScheme.primaryContainer.withValues(alpha: 0.45),
-      leading: CircleAvatar(
-        child: Icon(vault.isEncrypted ? Icons.lock_outline : Icons.folder_open_outlined),
+      leading: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: selected
+              ? colorScheme.primary.withValues(alpha: 0.18)
+              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        alignment: Alignment.center,
+        child: Icon(
+          vault.isEncrypted ? Icons.lock_outline : Icons.folder_open_outlined,
+          size: 18,
+          color: selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+        ),
       ),
       title: Row(
         children: [
@@ -452,18 +467,7 @@ class _VaultTile extends StatelessWidget {
             child: Text(
               vault.label.isEmpty ? l.untitled : vault.label,
               overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          Tooltip(
-            message:
-                vault.isEncrypted ? l.vaultEncryptedBadge : l.vaultPlainBadge,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 6),
-              child: Icon(
-                vault.isEncrypted ? Icons.lock : Icons.folder_open,
-                size: 16,
-                color: colorScheme.outline,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
             ),
           ),
           if (isPinned)
@@ -471,7 +475,7 @@ class _VaultTile extends StatelessWidget {
               padding: const EdgeInsets.only(left: 6),
               child: Icon(
                 Icons.push_pin,
-                size: 16,
+                size: 14,
                 color: colorScheme.primary,
               ),
             ),
@@ -489,9 +493,20 @@ class _VaultTile extends StatelessWidget {
             : (vault.isEncrypted
                   ? l.vaultSubtitleNotConnected(vault.provider.title)
                   : l.vaultSubtitleNotConnectedPlain(vault.provider.title)),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 12,
+          color: connected
+              ? colorScheme.onSurfaceVariant
+              : colorScheme.error,
+        ),
       ),
       onTap: onTap ?? () => openVault(context, vault),
       trailing: PopupMenuButton<_VaultAction>(
+        iconSize: 18,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
         onSelected: (action) => _onAction(context, action),
         itemBuilder: (_) => [
           PopupMenuItem(value: _VaultAction.share, child: Text(l.showKeyQr)),
@@ -752,27 +767,34 @@ class _BoardTile extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return ListTile(
       selected: selected,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      contentPadding: const EdgeInsetsDirectional.fromSTEB(14, 8, 8, 8),
+      dense: true,
+      visualDensity: const VisualDensity(horizontal: 0, vertical: -2),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      contentPadding: const EdgeInsetsDirectional.fromSTEB(10, 2, 6, 2),
       selectedTileColor: colorScheme.primaryContainer.withValues(alpha: 0.45),
-      leading: const CircleAvatar(child: Icon(Icons.public)),
+      leading: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: selected
+              ? colorScheme.primary.withValues(alpha: 0.18)
+              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        alignment: Alignment.center,
+        child: Icon(
+          Icons.public,
+          size: 18,
+          color: selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+        ),
+      ),
       title: Row(
         children: [
           Expanded(
             child: Text(
               board.label.isEmpty ? l.untitled : board.label,
               overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          Tooltip(
-            message: l.boardReaderBadge,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 6),
-              child: Icon(
-                Icons.visibility,
-                size: 16,
-                color: colorScheme.outline,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
             ),
           ),
           if (isPinned)
@@ -780,15 +802,26 @@ class _BoardTile extends StatelessWidget {
               padding: const EdgeInsets.only(left: 6),
               child: Icon(
                 Icons.push_pin,
-                size: 16,
+                size: 14,
                 color: colorScheme.primary,
               ),
             ),
         ],
       ),
-      subtitle: Text(l.boardSubtitle(board.provider.title)),
+      subtitle: Text(
+        '${board.provider.title} · ${l.boardReaderBadge}',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 12,
+          color: colorScheme.onSurfaceVariant,
+        ),
+      ),
       onTap: onTap ?? () => openBoard(context, board),
       trailing: PopupMenuButton<_BoardAction>(
+        iconSize: 18,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
         onSelected: (action) => _onAction(context, action),
         itemBuilder: (_) => [
           PopupMenuItem(value: _BoardAction.share, child: Text(l.showKeyQr)),
