@@ -121,22 +121,22 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String vaultSubtitleConnected(String provider, String limit) {
-    return '$provider · файлы до $limit';
+    return '$provider · $limit';
   }
 
   @override
   String vaultSubtitleConnectedUnlimited(String provider) {
-    return '$provider · файлы без лимита';
+    return '$provider · без лимита';
   }
 
   @override
   String vaultSubtitleConnectedPlain(String provider, String limit) {
-    return '$provider · без шифрования · файлы до $limit';
+    return '$provider · открытая · $limit';
   }
 
   @override
   String vaultSubtitleConnectedPlainUnlimited(String provider) {
-    return '$provider · без шифрования · файлы без лимита';
+    return '$provider · открытая · без лимита';
   }
 
   @override
@@ -146,7 +146,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String vaultSubtitleNotConnectedPlain(String provider) {
-    return '$provider · без шифрования · не подключено';
+    return '$provider · открытая · не подключено';
   }
 
   @override

@@ -171,7 +171,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Фото архив'), findsOneWidget);
-    expect(find.textContaining('без шифрования'), findsOneWidget);
+    expect(find.textContaining('открытая'), findsOneWidget);
     expect(find.byIcon(Icons.folder_open_outlined), findsOneWidget);
   });
 

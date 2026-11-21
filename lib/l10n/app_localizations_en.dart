@@ -121,22 +121,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String vaultSubtitleConnected(String provider, String limit) {
-    return '$provider · files up to $limit';
+    return '$provider · $limit';
   }
 
   @override
   String vaultSubtitleConnectedUnlimited(String provider) {
-    return '$provider · files without limit';
+    return '$provider · unlimited';
   }
 
   @override
   String vaultSubtitleConnectedPlain(String provider, String limit) {
-    return '$provider · unencrypted · files up to $limit';
+    return '$provider · open · $limit';
   }
 
   @override
   String vaultSubtitleConnectedPlainUnlimited(String provider) {
-    return '$provider · unencrypted · files without limit';
+    return '$provider · open · unlimited';
   }
 
   @override
@@ -146,7 +146,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String vaultSubtitleNotConnectedPlain(String provider) {
-    return '$provider · unencrypted · not connected';
+    return '$provider · open · not connected';
   }
 
   @override

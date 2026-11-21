@@ -299,25 +299,25 @@ abstract class AppLocalizations {
   /// No description provided for @vaultSubtitleConnected.
   ///
   /// In en, this message translates to:
-  /// **'{provider} · files up to {limit}'**
+  /// **'{provider} · {limit}'**
   String vaultSubtitleConnected(String provider, String limit);
 
   /// No description provided for @vaultSubtitleConnectedUnlimited.
   ///
   /// In en, this message translates to:
-  /// **'{provider} · files without limit'**
+  /// **'{provider} · unlimited'**
   String vaultSubtitleConnectedUnlimited(String provider);
 
   /// No description provided for @vaultSubtitleConnectedPlain.
   ///
   /// In en, this message translates to:
-  /// **'{provider} · unencrypted · files up to {limit}'**
+  /// **'{provider} · open · {limit}'**
   String vaultSubtitleConnectedPlain(String provider, String limit);
 
   /// No description provided for @vaultSubtitleConnectedPlainUnlimited.
   ///
   /// In en, this message translates to:
-  /// **'{provider} · unencrypted · files without limit'**
+  /// **'{provider} · open · unlimited'**
   String vaultSubtitleConnectedPlainUnlimited(String provider);
 
   /// No description provided for @vaultSubtitleNotConnected.
@@ -329,7 +329,7 @@ abstract class AppLocalizations {
   /// No description provided for @vaultSubtitleNotConnectedPlain.
   ///
   /// In en, this message translates to:
-  /// **'{provider} · unencrypted · not connected'**
+  /// **'{provider} · open · not connected'**
   String vaultSubtitleNotConnectedPlain(String provider);
 
   /// No description provided for @pinVault.
