@@ -18,6 +18,7 @@ class VaultKey {
     this.isEncrypted = true,
     this.accountId,
     this.accountEmail,
+    this.icon,
   }) : secret = Uint8List.fromList(secret) {
     if (secret.length != secretLength) {
       throw ArgumentError('Secret must be $secretLength bytes');
@@ -34,6 +35,7 @@ class VaultKey {
     bool isEncrypted = true,
     String? accountId,
     String? accountEmail,
+    String? icon,
     Random? random,
   }) {
     final rnd = random ?? Random.secure();
@@ -45,6 +47,7 @@ class VaultKey {
       isEncrypted: isEncrypted,
       accountId: accountId,
       accountEmail: accountEmail,
+      icon: icon,
     );
   }
 
@@ -98,11 +101,16 @@ class VaultKey {
   /// нужного аккаунта на других устройствах).
   final String? accountEmail;
 
+  /// Значок доски (код из каталога или эмодзи), `null` — по умолчанию.
+  final String? icon;
+
   VaultKey copyWith({
     String? label,
     int? maxFileSize,
     String? accountId,
     String? accountEmail,
+    String? icon,
+    bool clearIcon = false,
   }) => VaultKey(
     secret: secret,
     provider: provider,
@@ -111,6 +119,7 @@ class VaultKey {
     isEncrypted: isEncrypted,
     accountId: accountId ?? this.accountId,
     accountEmail: accountEmail ?? this.accountEmail,
+    icon: clearIcon ? null : (icon ?? this.icon),
   );
 
   /// Один и тот же ключ, даже если локальные названия различаются.
@@ -126,7 +135,8 @@ class VaultKey {
       label == other.label &&
       maxFileSize == other.maxFileSize &&
       accountId == other.accountId &&
-      accountEmail == other.accountEmail;
+      accountEmail == other.accountEmail &&
+      icon == other.icon;
 
   @override
   int get hashCode => Object.hash(
@@ -136,6 +146,7 @@ class VaultKey {
     isEncrypted,
     accountId,
     accountEmail,
+    icon,
     Object.hashAll(secret),
   );
 }

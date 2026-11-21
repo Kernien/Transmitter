@@ -6,6 +6,8 @@ import '../../core/storage/cloud_account.dart';
 import '../../core/storage/cloud_connection_service.dart';
 import '../../core/storage/cloud_provider_id.dart';
 import '../../core/vault/vault_key.dart';
+import 'select_vault_icon_dialog.dart';
+import 'vault_icon.dart';
 import 'vaults_controller.dart';
 
 /// Создание нового ключа: название и облако, где будет лежать база.
@@ -22,6 +24,7 @@ class _CreateVaultDialogState extends State<CreateVaultDialog> {
   CloudAccount? _selectedAccount;
   int _maxFileSize = VaultKey.defaultMaxFileSize;
   bool _isEncrypted = true;
+  String? _selectedIcon;
 
   @override
   void initState() {
@@ -55,10 +58,50 @@ class _CreateVaultDialogState extends State<CreateVaultDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
-              controller: _label,
-              autofocus: true,
-              decoration: InputDecoration(labelText: l.keyNameLabel),
+            Row(
+              children: [
+                InkWell(
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: () async {
+                    final icon = await SelectVaultIconDialog.show(
+                      context,
+                      initialIcon: _selectedIcon,
+                    );
+                    if (icon != null) {
+                      setState(() => _selectedIcon = icon.isEmpty ? null : icon);
+                    }
+                  },
+                  child: Tooltip(
+                    message: l.selectIconTitle,
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest
+                            .withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      alignment: Alignment.center,
+                      child: VaultIcon.buildWidget(
+                        _selectedIcon,
+                        isEncrypted: _isEncrypted,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _label,
+                    autofocus: true,
+                    decoration: InputDecoration(labelText: l.keyNameLabel),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<CloudProviderId>(
@@ -159,6 +202,7 @@ class _CreateVaultDialogState extends State<CreateVaultDialog> {
       isEncrypted: _isEncrypted,
       accountId: account?.id,
       accountEmail: account?.email,
+      icon: _selectedIcon,
     );
     if (mounted) Navigator.pop(context, key);
   }

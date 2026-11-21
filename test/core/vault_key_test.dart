@@ -161,4 +161,23 @@ void main() {
     );
     expect(() => CloudProviderId.fromCode('onedrive'), throwsFormatException);
   });
+
+  test('значок доски (код или эмодзи) сохраняется при кодировании', () {
+    const codec = VaultKeyCodec();
+    final keyWithIcon = VaultKey.generate(
+      provider: CloudProviderId.dropbox,
+      label: 'Работа',
+      icon: 'work',
+    );
+    final decodedIcon = codec.decode(codec.encode(keyWithIcon));
+    expect(decodedIcon.icon, 'work');
+
+    final keyWithEmoji = VaultKey.generate(
+      provider: CloudProviderId.googleDrive,
+      label: 'Поездки',
+      icon: '✈️',
+    );
+    final decodedEmoji = codec.decode(codec.encode(keyWithEmoji));
+    expect(decodedEmoji.icon, '✈️');
+  });
 }

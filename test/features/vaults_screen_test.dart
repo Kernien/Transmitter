@@ -207,6 +207,36 @@ void main() {
     expect(vaults.isPinned(vaults.vaults.first), isFalse);
   });
 
+  testWidgets('смена значка базы обновляет значок в списке', (tester) async {
+    final settings = FakeSettings();
+    final vaults = await pumpScreen(tester, settings);
+
+    // Изначально стандартный замок
+    expect(find.byIcon(Icons.lock_outline), findsOneWidget);
+
+    // Открываем меню базы
+    await tester.tap(find.byIcon(Icons.more_vert).first);
+    await tester.pumpAndSettle();
+    expect(find.text('Значок доски…'), findsOneWidget);
+
+    // Открываем диалог выбора значка
+    await tester.tap(find.text('Значок доски…'));
+    await tester.pumpAndSettle();
+    expect(find.text('Значок доски'), findsOneWidget);
+
+    // Выбираем иконку работы (портфель)
+    await tester.tap(find.byIcon(Icons.work_outline));
+    await tester.pumpAndSettle();
+
+    // Сохраняем
+    await tester.tap(find.text('Сохранить'));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.work_outline), findsOneWidget);
+    expect(vaults.vaults.first.icon, 'work');
+    expect(settings.saved['Работа']!.icon, 'work');
+  });
+
   testWidgets('широкий монитор: список досок и открытая лента рядом (Master-Detail)', (tester) async {
     tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1.0;

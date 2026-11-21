@@ -168,6 +168,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rename => 'Rename';
 
   @override
+  String get vaultIconAction => 'Board icon…';
+
+  @override
+  String get selectIconTitle => 'Board icon';
+
+  @override
+  String get iconsTab => 'Icons';
+
+  @override
+  String get emojisTab => 'Emojis';
+
+  @override
+  String get customEmojiHint => 'Any custom emoji';
+
+  @override
+  String get resetToDefault => 'Default';
+
+  @override
   String get removeFromDevice => 'Remove from device';
 
   @override

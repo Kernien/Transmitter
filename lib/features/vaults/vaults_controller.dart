@@ -150,6 +150,7 @@ class VaultsController extends ChangeNotifier {
     bool isEncrypted = true,
     String? accountId,
     String? accountEmail,
+    String? icon,
   }) async {
     final key = VaultKey.generate(
       provider: provider,
@@ -158,6 +159,7 @@ class VaultsController extends ChangeNotifier {
       isEncrypted: isEncrypted,
       accountId: accountId,
       accountEmail: accountEmail,
+      icon: icon,
     );
     await _save([..._vaults, key]);
     return key;
@@ -213,6 +215,11 @@ class VaultsController extends ChangeNotifier {
   Future<void> setMaxFileSize(VaultKey key, int maxFileSize) =>
       _change(key, (k) => k.copyWith(maxFileSize: maxFileSize));
 
+  /// Новый значок базы (код из каталога или эмодзи, либо null для сброса) —
+  /// синхронизируется через настройки в облаке.
+  Future<void> setIcon(VaultKey key, String? icon) =>
+      _change(key, (k) => k.copyWith(icon: icon, clearIcon: icon == null));
+
   Future<void> _change(
     VaultKey key,
     VaultKey Function(VaultKey current) update,
@@ -224,6 +231,7 @@ class VaultsController extends ChangeNotifier {
         label: next.label,
         maxFileSize: next.maxFileSize,
         updatedAt: _clock().toUtc(),
+        icon: next.icon,
       ),
     );
     await _replace(next);
@@ -249,7 +257,12 @@ class VaultsController extends ChangeNotifier {
         continue;
       }
       await _replace(
-        current.copyWith(label: remote.label, maxFileSize: remote.maxFileSize),
+        current.copyWith(
+          label: remote.label,
+          maxFileSize: remote.maxFileSize,
+          icon: remote.icon,
+          clearIcon: remote.icon == null,
+        ),
       );
     }
   }

@@ -17,7 +17,9 @@ import '../settings/settings_sheet.dart';
 import 'board_access_sheet.dart';
 import 'create_vault_dialog.dart';
 import 'import_vault_screen.dart';
+import 'select_vault_icon_dialog.dart';
 import 'share_vault_sheet.dart';
+import 'vault_icon.dart';
 import 'vaults_controller.dart';
 
 /// Порог ширины окна, начиная с которого список досок и открытая лента
@@ -462,9 +464,9 @@ class _VaultTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
         ),
         alignment: Alignment.center,
-        child: Icon(
-          vault.isEncrypted ? Icons.lock_outline : Icons.folder_open_outlined,
-          size: 18,
+        child: VaultIcon.buildWidget(
+          vault.icon,
+          isEncrypted: vault.isEncrypted,
           color: selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
         ),
       ),
@@ -536,6 +538,10 @@ class _VaultTile extends StatelessWidget {
             ),
           PopupMenuItem(value: _VaultAction.rename, child: Text(l.rename)),
           PopupMenuItem(
+            value: _VaultAction.icon,
+            child: Text(l.vaultIconAction),
+          ),
+          PopupMenuItem(
             value: _VaultAction.fileSize,
             child: Text(l.fileSizeAction),
           ),
@@ -566,6 +572,15 @@ class _VaultTile extends StatelessWidget {
           return;
         }
         if (context.mounted) await _renameBoard(context, label.trim());
+      case _VaultAction.icon:
+        final selected = await SelectVaultIconDialog.show(
+          context,
+          initialIcon: vault.icon,
+        );
+        if (selected != null && context.mounted) {
+          final newIcon = selected.isEmpty ? null : selected;
+          await _saveChange(context, controller.setIcon(vault, newIcon));
+        }
       case _VaultAction.fileSize:
         final size = await _askFileSize(context, vault.maxFileSize);
         if (size == null || size == vault.maxFileSize || !context.mounted) {
@@ -752,7 +767,7 @@ Future<int?> _askFileSize(BuildContext context, int current) {
   );
 }
 
-enum _VaultAction { share, board, pin, switchAccount, rename, fileSize, remove }
+enum _VaultAction { share, board, pin, switchAccount, rename, icon, fileSize, remove }
 
 /// Публичная доска, которую на этом устройстве можно только читать.
 class _BoardTile extends StatelessWidget {

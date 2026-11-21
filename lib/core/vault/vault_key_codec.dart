@@ -71,6 +71,7 @@ class VaultKeyCodec {
     if (!key.isEncrypted) 'e': false,
     if (key.accountId != null) 'a': key.accountId,
     if (key.accountEmail != null) 'ae': key.accountEmail,
+    if (key.icon != null) 'i': key.icon,
   };
 
   VaultKey fromJson(Map<String, dynamic> json) {
@@ -89,6 +90,7 @@ class VaultKeyCodec {
         isEncrypted: (encrypted as bool?) ?? true,
         accountId: json['a'] as String?,
         accountEmail: json['ae'] as String?,
+        icon: json['i'] as String?,
       );
     } catch (_) {
       throw const InvalidVaultKeyException(ErrorCode.keyCorrupted);

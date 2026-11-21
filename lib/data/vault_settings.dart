@@ -14,21 +14,24 @@ class VaultSettings {
     required this.label,
     required this.maxFileSize,
     required this.updatedAt,
+    this.icon,
   });
 
   final String label;
   final int maxFileSize;
   final DateTime updatedAt;
+  final String? icon;
 
   /// Отличаются ли настройки от того, что записано в ключе на устройстве.
   bool differsFrom(VaultKey key) =>
-      label != key.label || maxFileSize != key.maxFileSize;
+      label != key.label || maxFileSize != key.maxFileSize || icon != key.icon;
 
   Map<String, Object> toJson() => {
     'v': 1,
     'label': label,
     'm': maxFileSize,
     'ts': updatedAt.toUtc().toIso8601String(),
+    if (icon case final icon?) 'icon': icon,
   };
 
   /// Бросает [FormatException], если данные не похожи на настройки.
@@ -36,6 +39,7 @@ class VaultSettings {
     final label = json['label'];
     final size = json['m'];
     final ts = json['ts'];
+    final icon = json['icon'] as String?;
     if (label is! String ||
         size is! int ||
         ts is! String ||
@@ -47,6 +51,7 @@ class VaultSettings {
       label: label,
       maxFileSize: size,
       updatedAt: DateTime.parse(ts),
+      icon: icon,
     );
   }
 }

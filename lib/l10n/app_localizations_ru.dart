@@ -168,6 +168,24 @@ class AppLocalizationsRu extends AppLocalizations {
   String get rename => 'Переименовать';
 
   @override
+  String get vaultIconAction => 'Значок доски…';
+
+  @override
+  String get selectIconTitle => 'Значок доски';
+
+  @override
+  String get iconsTab => 'Значки';
+
+  @override
+  String get emojisTab => 'Эмодзи';
+
+  @override
+  String get customEmojiHint => 'Любой свой эмодзи';
+
+  @override
+  String get resetToDefault => 'По умолчанию';
+
+  @override
   String get removeFromDevice => 'Удалить с устройства';
 
   @override

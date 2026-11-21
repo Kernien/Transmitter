@@ -368,6 +368,42 @@ abstract class AppLocalizations {
   /// **'Rename'**
   String get rename;
 
+  /// No description provided for @vaultIconAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Board icon…'**
+  String get vaultIconAction;
+
+  /// No description provided for @selectIconTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Board icon'**
+  String get selectIconTitle;
+
+  /// No description provided for @iconsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Icons'**
+  String get iconsTab;
+
+  /// No description provided for @emojisTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Emojis'**
+  String get emojisTab;
+
+  /// No description provided for @customEmojiHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Any custom emoji'**
+  String get customEmojiHint;
+
+  /// No description provided for @resetToDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get resetToDefault;
+
   /// No description provided for @removeFromDevice.
   ///
   /// In en, this message translates to:
