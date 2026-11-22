@@ -7,6 +7,7 @@ import '../../app/app_lock_controller.dart';
 import '../../app/l10n.dart';
 import '../../app/vault_session_factory.dart';
 import '../../app/widgets/content_width.dart';
+import '../../app/widgets/empty_state_view.dart';
 import '../../core/files/external_opener.dart';
 import '../../core/files/file_transfer_service.dart';
 import '../../core/files/media_picker.dart';
@@ -677,11 +678,17 @@ class _FeedBody extends StatelessWidget {
           }).toList();
 
     if (filtered.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(l.searchNoResults, textAlign: TextAlign.center),
-        ),
+      if (q.isNotEmpty) {
+        return EmptyStateView(
+          icon: Icons.search_off_outlined,
+          title: l.searchNoResults,
+          subtitle: l.searchNoResultsSubtitle,
+        );
+      }
+      return EmptyStateView(
+        icon: Icons.forum_outlined,
+        title: l.feedEmptyTitle,
+        subtitle: l.feedEmptySubtitle,
       );
     }
 
@@ -947,11 +954,17 @@ class _FilesListViewState extends State<_FilesListView> {
           }).toList();
 
     if (filtered.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(l.searchNoResults, textAlign: TextAlign.center),
-        ),
+      if (q.isNotEmpty) {
+        return EmptyStateView(
+          icon: Icons.search_off_outlined,
+          title: l.searchNoResults,
+          subtitle: l.searchNoResultsSubtitle,
+        );
+      }
+      return EmptyStateView(
+        icon: Icons.folder_open_outlined,
+        title: l.noFilesYet,
+        subtitle: l.filesEmptySubtitle,
       );
     }
 

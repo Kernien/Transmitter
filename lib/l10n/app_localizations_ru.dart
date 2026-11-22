@@ -1175,4 +1175,29 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get sortType => 'По типу';
+
+  @override
+  String get feedEmptyTitle => 'Лента пуста';
+
+  @override
+  String get feedEmptySubtitle =>
+      'Отправляйте ссылки, файлы или фото через строку внизу';
+
+  @override
+  String get filesEmptySubtitle =>
+      'Файлы и папки, отправленные на эту доску, появятся здесь';
+
+  @override
+  String get searchNoResultsSubtitle => 'Попробуйте изменить поисковый запрос';
+
+  @override
+  String get noSubVaultsSubtitle =>
+      'Создайте поддоску с отдельной лентой внутри этой доски';
+
+  @override
+  String get folderEmptySubtitle =>
+      'Нажмите кнопку + внизу, чтобы добавить файлы или подпапки';
+
+  @override
+  String get vaultsEmptyTitle => 'Нет подключённых досок';
 }

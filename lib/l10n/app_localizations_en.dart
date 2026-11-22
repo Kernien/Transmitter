@@ -1172,4 +1172,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sortType => 'By type';
+
+  @override
+  String get feedEmptyTitle => 'Feed is empty';
+
+  @override
+  String get feedEmptySubtitle =>
+      'Send links, files, or photos using the bar below';
+
+  @override
+  String get filesEmptySubtitle =>
+      'Files and folders sent to this board will appear here';
+
+  @override
+  String get searchNoResultsSubtitle => 'Try changing the search query';
+
+  @override
+  String get noSubVaultsSubtitle =>
+      'Create a sub-board to have a separate feed inside this board';
+
+  @override
+  String get folderEmptySubtitle =>
+      'Use the + button below to add files or subfolders';
+
+  @override
+  String get vaultsEmptyTitle => 'No connected boards';
 }

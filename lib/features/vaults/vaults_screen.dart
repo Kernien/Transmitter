@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../app/app_lock_controller.dart';
 import '../../app/l10n.dart';
 import '../../app/widgets/content_width.dart';
+import '../../app/widgets/empty_state_view.dart';
 import '../../app/vault_session_factory.dart';
 import '../../core/storage/cloud_account.dart';
 import '../../core/storage/cloud_connection_service.dart';
@@ -193,14 +194,24 @@ class _VaultsScreenState extends State<VaultsScreen> {
 
     Widget buildList() {
       if (vaults.isEmpty && boards.isEmpty) {
-        return const _EmptyState();
+        return EmptyStateView(
+          compact: isWide,
+          icon: Icons.cloud_queue_outlined,
+          title: l.vaultsEmptyTitle,
+          subtitle: l.vaultsEmpty,
+          action: FilledButton.icon(
+            onPressed: () => _create(context),
+            icon: const Icon(Icons.add),
+            label: Text(l.newKey),
+          ),
+        );
       }
       if (filteredVaults.isEmpty && filteredBoards.isEmpty) {
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Text(l.searchNoResults, textAlign: TextAlign.center),
-          ),
+        return EmptyStateView(
+          compact: isWide,
+          icon: Icons.search_off_outlined,
+          title: l.searchNoResults,
+          subtitle: l.searchNoResultsSubtitle,
         );
       }
       return ListView.separated(
@@ -897,16 +908,3 @@ class _BoardTile extends StatelessWidget {
 
 enum _BoardAction { share, pin, rename, remove }
 
-class _EmptyState extends StatelessWidget {
-  const _EmptyState();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Text(context.l10n.vaultsEmpty, textAlign: TextAlign.center),
-      ),
-    );
-  }
-}

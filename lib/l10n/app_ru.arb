@@ -343,5 +343,12 @@
   "sortNameDesc": "По имени (Я–А)",
   "sortSizeDesc": "Сначала крупные",
   "sortSizeAsc": "Сначала мелкие",
-  "sortType": "По типу"
+  "sortType": "По типу",
+  "feedEmptyTitle": "Лента пуста",
+  "feedEmptySubtitle": "Отправляйте ссылки, файлы или фото через строку внизу",
+  "filesEmptySubtitle": "Файлы и папки, отправленные на эту доску, появятся здесь",
+  "searchNoResultsSubtitle": "Попробуйте изменить поисковый запрос",
+  "noSubVaultsSubtitle": "Создайте поддоску с отдельной лентой внутри этой доски",
+  "folderEmptySubtitle": "Нажмите кнопку + внизу, чтобы добавить файлы или подпапки",
+  "vaultsEmptyTitle": "Нет подключённых досок"
 }

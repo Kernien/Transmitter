@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/l10n.dart';
 import '../../app/widgets/content_width.dart';
+import '../../app/widgets/empty_state_view.dart';
 import '../../domain/post.dart';
 import 'feed_controller.dart';
 import 'image_viewer_screen.dart';
@@ -300,14 +301,17 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
               if (!isSearching) _buildBreadcrumbs(theme),
               Expanded(
                 child: totalItems == 0
-                    ? Center(
-                        child: Text(
-                          l.folderEmpty,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.outline,
-                          ),
-                        ),
-                      )
+                    ? (isSearching
+                        ? EmptyStateView(
+                            icon: Icons.search_off_outlined,
+                            title: l.searchNoResults,
+                            subtitle: l.searchNoResultsSubtitle,
+                          )
+                        : EmptyStateView(
+                            icon: Icons.folder_open_outlined,
+                            title: l.folderEmpty,
+                            subtitle: isReadOnly ? null : l.folderEmptySubtitle,
+                          ))
                     : ListView.separated(
                         itemCount: totalItems,
                         separatorBuilder: (_, _) => const Divider(height: 1),

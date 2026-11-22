@@ -405,5 +405,12 @@
   "sortNameDesc": "By name (Z–A)",
   "sortSizeDesc": "Largest first",
   "sortSizeAsc": "Smallest first",
-  "sortType": "By type"
+  "sortType": "By type",
+  "feedEmptyTitle": "Feed is empty",
+  "feedEmptySubtitle": "Send links, files, or photos using the bar below",
+  "filesEmptySubtitle": "Files and folders sent to this board will appear here",
+  "searchNoResultsSubtitle": "Try changing the search query",
+  "noSubVaultsSubtitle": "Create a sub-board to have a separate feed inside this board",
+  "folderEmptySubtitle": "Use the + button below to add files or subfolders",
+  "vaultsEmptyTitle": "No connected boards"
 }

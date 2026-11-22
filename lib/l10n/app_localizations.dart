@@ -2077,6 +2077,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'By type'**
   String get sortType;
+
+  /// No description provided for @feedEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Feed is empty'**
+  String get feedEmptyTitle;
+
+  /// No description provided for @feedEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send links, files, or photos using the bar below'**
+  String get feedEmptySubtitle;
+
+  /// No description provided for @filesEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Files and folders sent to this board will appear here'**
+  String get filesEmptySubtitle;
+
+  /// No description provided for @searchNoResultsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Try changing the search query'**
+  String get searchNoResultsSubtitle;
+
+  /// No description provided for @noSubVaultsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a sub-board to have a separate feed inside this board'**
+  String get noSubVaultsSubtitle;
+
+  /// No description provided for @folderEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the + button below to add files or subfolders'**
+  String get folderEmptySubtitle;
+
+  /// No description provided for @vaultsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No connected boards'**
+  String get vaultsEmptyTitle;
 }
 
 class _AppLocalizationsDelegate

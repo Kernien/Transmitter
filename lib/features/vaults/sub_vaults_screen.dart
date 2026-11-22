@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../app/l10n.dart';
 import '../../app/widgets/content_width.dart';
+import '../../app/widgets/empty_state_view.dart';
 import '../../core/vault/vault_key.dart';
 import '../../data/sub_vault_store.dart';
 import 'board_access_sheet.dart';
@@ -272,14 +273,34 @@ class _SubVaultsScreenState extends State<SubVaultsScreen> {
                         // FutureBuilder показывает ошибку загрузки.
                       }
                     },
-                    child: ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.only(bottom: 88),
-                      children: [
-                        if (children.isEmpty)
-                          ListTile(title: Text(l.noSubVaults)),
-                        for (final child in children)
-                          ListTile(
+                    child: children.isEmpty
+                        ? LayoutBuilder(
+                            builder: (context, constraints) =>
+                                SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  minHeight: constraints.maxHeight,
+                                ),
+                                child: EmptyStateView(
+                                  icon: Icons.account_tree_outlined,
+                                  title: l.noSubVaults,
+                                  subtitle: l.noSubVaultsSubtitle,
+                                  action: FilledButton.icon(
+                                    onPressed: _busy ? null : _create,
+                                    icon: const Icon(Icons.add),
+                                    label: Text(l.createSubVault),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                        : ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.only(bottom: 88),
+                            children: [
+                              for (final child in children)
+                                ListTile(
                             leading: Container(
                               width: 36,
                               height: 36,
