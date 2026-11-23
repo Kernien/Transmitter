@@ -18,6 +18,7 @@ import '../settings/settings_sheet.dart';
 import 'board_access_sheet.dart';
 import 'create_vault_dialog.dart';
 import 'import_vault_screen.dart';
+import 'manage_tags_dialog.dart';
 import 'select_vault_icon_dialog.dart';
 import 'share_vault_sheet.dart';
 import 'vault_icon.dart';
@@ -553,6 +554,10 @@ class _VaultTile extends StatelessWidget {
             child: Text(l.vaultIconAction),
           ),
           PopupMenuItem(
+            value: _VaultAction.tags,
+            child: Text(l.vaultTagsAction),
+          ),
+          PopupMenuItem(
             value: _VaultAction.fileSize,
             child: Text(l.fileSizeAction),
           ),
@@ -591,6 +596,15 @@ class _VaultTile extends StatelessWidget {
         if (selected != null && context.mounted) {
           final newIcon = selected.isEmpty ? null : selected;
           await _saveChange(context, controller.setIcon(vault, newIcon));
+        }
+      case _VaultAction.tags:
+        final selected = await ManageTagsDialog.show(
+          context,
+          initialTags: vault.tags,
+          availableTags: controller.allTags,
+        );
+        if (selected != null && context.mounted) {
+          await _saveChange(context, controller.setTags(vault, selected));
         }
       case _VaultAction.fileSize:
         final size = await _askFileSize(context, vault.maxFileSize);
@@ -778,7 +792,7 @@ Future<int?> _askFileSize(BuildContext context, int current) {
   );
 }
 
-enum _VaultAction { share, board, pin, switchAccount, rename, icon, fileSize, remove }
+enum _VaultAction { share, board, pin, switchAccount, rename, icon, tags, fileSize, remove }
 
 /// Публичная доска, которую на этом устройстве можно только читать.
 class _BoardTile extends StatelessWidget {
