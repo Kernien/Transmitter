@@ -17,7 +17,7 @@ right on the device: the cloud only ever sees meaningless bytes.
 | 🐧 **Linux** | Flatpak with automatic updates, or AppImage — a single file, no installation; tested on Steam Deck |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — nothing to install |
 
-Version **1.5.1**. The interface is in **English and Russian** — it follows the
+Version **1.6.0**. The interface is in **English and Russian** — it follows the
 system language, or pick one in ⚙ *Settings*.
 
 ## Why
@@ -47,6 +47,7 @@ On any board, open **⋮ → Sub-boards** to create a separate feed inside it. A
 - **“Files” tab & sorting.** A consolidated view of all attachments and folders on the board with sorting (by date, name, size, or type) and a dedicated pinned section; search across posts, notes, and file names.
 - **Pinned posts.** Pin important posts and files to the top of your feed (⋮ → *Pin post*): a dedicated pinned bar appears above the feed for instant cycling between pins, with a pin indicator on post cards. Pinned state syncs across all devices via the cloud.
 - **Custom board icons & personalization.** Select a custom icon from the catalog or any emoji for each board (⋮ → *Board icon…*), seamlessly synced across all devices.
+- **Tags for boards & posts.** Assign tags to boards (⋮ → *Tags…*) for quick organization and chip-based filtering in the sidebar. Use hashtags (`#work`, `#project`) in post text and comments to enable one-tap filtering in the feed and Files tab.
 - **Refined and compact UI.** Polished squircle board tiles, concise labels, desktop-friendly action placements, and a modern smooth compose bar.
 - **“Share” both ways (Android).** From your browser, gallery or any app
   straight into Transmitter — and from Transmitter into any app.
