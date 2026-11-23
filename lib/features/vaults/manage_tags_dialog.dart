@@ -119,6 +119,7 @@ class _ManageTagsDialogState extends State<ManageTagsDialog> {
                     for (final tag in _tags)
                       InputChip(
                         label: Text('#$tag'),
+                        deleteIcon: const Icon(Icons.close, size: 16),
                         onDeleted: () => _removeTag(tag),
                         deleteIconColor: colorScheme.onSurfaceVariant,
                         visualDensity: VisualDensity.compact,

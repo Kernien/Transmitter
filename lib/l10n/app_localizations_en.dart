@@ -171,6 +171,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vaultIconAction => 'Board icon…';
 
   @override
+  String get vaultTagsAction => 'Tags…';
+
+  @override
+  String get manageTagsTitle => 'Board tags';
+
+  @override
+  String get tagHint => 'Tag name';
+
+  @override
+  String get existingTags => 'Existing tags';
+
+  @override
+  String get noTagsYet => 'No tags yet';
+
+  @override
+  String get filterAll => 'All';
+
+  @override
   String get selectIconTitle => 'Board icon';
 
   @override

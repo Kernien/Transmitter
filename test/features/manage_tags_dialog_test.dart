@@ -1,18 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:transmitter/app/l10n.dart';
 import 'package:transmitter/features/vaults/manage_tags_dialog.dart';
+import 'package:transmitter/l10n/app_localizations.dart';
 
 void main() {
   Widget buildApp(Widget child) {
     return MaterialApp(
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ],
-      supportedLocales: const [Locale('ru'), Locale('en')],
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       locale: const Locale('ru'),
       home: Scaffold(body: child),
     );
@@ -91,13 +86,25 @@ void main() {
     await tester.pumpAndSettle();
 
     // Удаляем тег 'Работа' нажатием на крестик
-    final deleteButtons = find.byIcon(Icons.cancel);
+    final deleteButtons = find.byIcon(Icons.close);
     expect(deleteButtons, findsNWidgets(2));
     await tester.tap(deleteButtons.first);
     await tester.pumpAndSettle();
 
-    expect(find.text('#Работа'), findsNothing);
-    expect(find.text('#Архив'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(InputChip),
+        matching: find.text('#Работа'),
+      ),
+      findsNothing,
+    );
+    expect(
+      find.descendant(
+        of: find.byType(InputChip),
+        matching: find.text('#Архив'),
+      ),
+      findsOneWidget,
+    );
 
     // Сохраняем
     await tester.tap(find.text('Сохранить'));

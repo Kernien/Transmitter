@@ -389,7 +389,7 @@ void main() {
   ) async {
     final settings = FakeSettings();
     final vaults = await pumpScreen(tester, settings);
-    final personal = await vaults.create(
+    await vaults.create(
       label: 'Личное',
       provider: CloudProviderId.googleDrive,
     );

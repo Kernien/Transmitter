@@ -374,6 +374,42 @@ abstract class AppLocalizations {
   /// **'Board icon…'**
   String get vaultIconAction;
 
+  /// No description provided for @vaultTagsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Tags…'**
+  String get vaultTagsAction;
+
+  /// No description provided for @manageTagsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Board tags'**
+  String get manageTagsTitle;
+
+  /// No description provided for @tagHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tag name'**
+  String get tagHint;
+
+  /// No description provided for @existingTags.
+  ///
+  /// In en, this message translates to:
+  /// **'Existing tags'**
+  String get existingTags;
+
+  /// No description provided for @noTagsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No tags yet'**
+  String get noTagsYet;
+
+  /// No description provided for @filterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterAll;
+
   /// No description provided for @selectIconTitle.
   ///
   /// In en, this message translates to:

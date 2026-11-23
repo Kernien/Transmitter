@@ -36,7 +36,7 @@ class VaultSettings {
     'label': label,
     'm': maxFileSize,
     'ts': updatedAt.toUtc().toIso8601String(),
-    if (icon case final icon?) 'icon': icon,
+    if (icon != null) 'icon': icon!,
     if (tags.isNotEmpty) 'tags': tags,
   };
 

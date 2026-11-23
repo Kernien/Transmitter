@@ -1,10 +1,6 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:transmitter/app/l10n.dart';
 import 'package:transmitter/app/vault_session_factory.dart';
 import 'package:transmitter/core/crypto/aes_gcm_cipher.dart';
 import 'package:transmitter/core/files/external_opener.dart';
@@ -16,8 +12,8 @@ import 'package:transmitter/core/storage/in_memory_cloud_storage.dart';
 import 'package:transmitter/core/vault/vault_key.dart';
 import 'package:transmitter/data/encrypted_cloud_post_repository.dart';
 import 'package:transmitter/data/post_repository.dart';
-import 'package:transmitter/features/feed/feed_controller.dart';
 import 'package:transmitter/features/feed/feed_screen.dart';
+import 'package:transmitter/l10n/app_localizations.dart';
 
 import '../support/fake_file_transfer_service.dart';
 
@@ -47,16 +43,8 @@ void main() {
     final files = FakeFileTransferService();
 
     // Создаём посты
-    await repo.savePost(
-      text: 'Пост 1 #работа #проект',
-      attachment: null,
-      folder: null,
-    );
-    await repo.savePost(
-      text: 'Пост 2 #личное',
-      attachment: null,
-      folder: null,
-    );
+    await repo.sendText('Пост 1 #работа #проект');
+    await repo.sendText('Пост 2 #личное');
 
     final key = VaultKey(
       secret: List<int>.filled(32, 1),
@@ -77,12 +65,8 @@ void main() {
         ],
         child: MaterialApp(
           locale: const Locale('ru'),
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-          ],
-          supportedLocales: const [Locale('ru'), Locale('en')],
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: FeedScreen.vault(key),
         ),
       ),

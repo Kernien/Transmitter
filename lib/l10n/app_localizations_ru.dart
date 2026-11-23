@@ -171,6 +171,24 @@ class AppLocalizationsRu extends AppLocalizations {
   String get vaultIconAction => 'Значок доски…';
 
   @override
+  String get vaultTagsAction => 'Теги…';
+
+  @override
+  String get manageTagsTitle => 'Теги доски';
+
+  @override
+  String get tagHint => 'Имя тега';
+
+  @override
+  String get existingTags => 'Имеющиеся теги';
+
+  @override
+  String get noTagsYet => 'Нет тегов';
+
+  @override
+  String get filterAll => 'Все';
+
+  @override
   String get selectIconTitle => 'Значок доски';
 
   @override
