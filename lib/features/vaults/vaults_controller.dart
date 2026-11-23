@@ -42,6 +42,17 @@ class VaultsController extends ChangeNotifier {
 
   List<VaultKey> get vaults => List.unmodifiable(_vaults);
 
+  /// Все уникальные теги среди баз пользователя, отсортированные по алфавиту.
+  List<String> get allTags {
+    final set = <String>{};
+    for (final v in _vaults) {
+      set.addAll(v.tags);
+    }
+    final list = set.toList();
+    list.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return List.unmodifiable(list);
+  }
+
   final Map<String, Set<String>> _subVaultIds = {};
 
   /// Скрывает повторно импортированный ключ, если путь к нему уже найден.
@@ -220,6 +231,10 @@ class VaultsController extends ChangeNotifier {
   Future<void> setIcon(VaultKey key, String? icon) =>
       _change(key, (k) => k.copyWith(icon: icon, clearIcon: icon == null));
 
+  /// Список тегов базы — синхронизируется через настройки в облаке.
+  Future<void> setTags(VaultKey key, List<String> tags) =>
+      _change(key, (k) => k.copyWith(tags: tags));
+
   Future<void> _change(
     VaultKey key,
     VaultKey Function(VaultKey current) update,
@@ -232,6 +247,7 @@ class VaultsController extends ChangeNotifier {
         maxFileSize: next.maxFileSize,
         updatedAt: _clock().toUtc(),
         icon: next.icon,
+        tags: next.tags,
       ),
     );
     await _replace(next);
@@ -262,6 +278,7 @@ class VaultsController extends ChangeNotifier {
           maxFileSize: remote.maxFileSize,
           icon: remote.icon,
           clearIcon: remote.icon == null,
+          tags: remote.tags,
         ),
       );
     }

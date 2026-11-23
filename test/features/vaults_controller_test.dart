@@ -180,4 +180,24 @@ void main() {
     await reloaded.remove(vault1);
     expect(reloaded.pinnedKey, isNull);
   });
+
+  test('управление тегами доски и allTags в контроллере', () async {
+    final c = controller();
+    await c.load();
+    final vault1 = await c.create(label: 'База 1', provider: CloudProviderId.dropbox);
+    final vault2 = await c.create(label: 'База 2', provider: CloudProviderId.googleDrive);
+
+    expect(c.allTags, isEmpty);
+
+    await c.setTags(vault1, ['Работа', 'Проект']);
+    await c.setTags(vault2, ['Архив', 'Работа']);
+
+    // allTags собирает уникальные теги по алфавиту
+    expect(c.allTags, ['Архив', 'Проект', 'Работа']);
+
+    final reloaded = controller();
+    await reloaded.load();
+    expect(reloaded.allTags, ['Архив', 'Проект', 'Работа']);
+    expect(reloaded.vaults.firstWhere((v) => v.sameVaultAs(vault1)).tags, ['Работа', 'Проект']);
+  });
 }

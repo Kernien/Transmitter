@@ -7,6 +7,7 @@ import 'package:transmitter/core/storage/cloud_provider_id.dart';
 import 'package:transmitter/core/vault/vault_key.dart';
 import 'package:transmitter/core/vault/vault_key_codec.dart';
 import 'package:transmitter/core/vault/vault_key_store.dart';
+import 'package:transmitter/data/vault_settings.dart';
 
 void main() {
   const codec = VaultKeyCodec();
@@ -179,5 +180,59 @@ void main() {
     );
     final decodedEmoji = codec.decode(codec.encode(keyWithEmoji));
     expect(decodedEmoji.icon, '✈️');
+  });
+
+  group('теги доски', () {
+    test('normalizeTag обрезает решётки и пробелы', () {
+      expect(VaultKey.normalizeTag('  #Работа  '), 'Работа');
+      expect(VaultKey.normalizeTag('###Dev'), 'Dev');
+      expect(VaultKey.normalizeTag('   '), isNull);
+      expect(VaultKey.normalizeTag('###'), isNull);
+    });
+
+    test('дедупликация и очистка тегов в VaultKey', () {
+      final key = VaultKey.generate(
+        provider: CloudProviderId.dropbox,
+        label: 'Тест',
+        tags: ['#Работа', 'работа', '  Проект  ', '#'],
+      );
+      expect(key.tags, ['Работа', 'Проект']);
+    });
+
+    test('теги сохраняются при кодировании ключа', () {
+      const codec = VaultKeyCodec();
+      final key = VaultKey.generate(
+        provider: CloudProviderId.dropbox,
+        label: 'Тест',
+        tags: ['Работа', 'Личное'],
+      );
+      final decoded = codec.decode(codec.encode(key));
+      expect(decoded.tags, ['Работа', 'Личное']);
+    });
+
+    test('VaultSettings сериализует и сравнивает теги', () {
+      final now = DateTime.now();
+      final settings = VaultSettings(
+        label: 'Тест',
+        maxFileSize: 25 * 1024 * 1024,
+        updatedAt: now,
+        tags: ['Работа', 'Архив'],
+      );
+      final json = settings.toJson();
+      expect(json['tags'], ['Работа', 'Архив']);
+
+      final restored = VaultSettings.fromJson(json);
+      expect(restored.tags, ['Работа', 'Архив']);
+
+      final key = VaultKey.generate(
+        provider: CloudProviderId.dropbox,
+        label: 'Тест',
+        tags: ['Работа', 'Архив'],
+      );
+      expect(restored.differsFrom(key), isFalse);
+
+      final keyDiff = key.copyWith(tags: ['Работа']);
+      expect(restored.differsFrom(keyDiff), isTrue);
+    });
   });
 }
