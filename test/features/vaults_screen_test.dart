@@ -383,6 +383,44 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(TextField), findsNothing);
   });
+
+  testWidgets('теги досок: отображение бейджей и фильтрация по чипам', (
+    tester,
+  ) async {
+    final settings = FakeSettings();
+    final vaults = await pumpScreen(tester, settings);
+    final personal = await vaults.create(
+      label: 'Личное',
+      provider: CloudProviderId.googleDrive,
+    );
+    await tester.pumpAndSettle();
+
+    // Пока тегов нет — панель чипов скрыта
+    expect(find.byType(FilterChip), findsNothing);
+
+    // Добавляем тег первой базе
+    final work = vaults.vaults.firstWhere((v) => v.label == 'Работа');
+    await vaults.setTags(work, ['Важное']);
+    await tester.pumpAndSettle();
+
+    // Появился бейдж на карточке и панель фильтрации
+    expect(find.text('#Важное'), findsNWidgets(2)); // один в чипе фильтра, один в карточке
+    expect(find.text('Все'), findsOneWidget);
+
+    // Нажимаем чип '#Важное' — отображается только база 'Работа'
+    await tester.tap(find.widgetWithText(FilterChip, '#Важное'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Работа'), findsOneWidget);
+    expect(find.text('Личное'), findsNothing);
+
+    // Нажимаем чип 'Все' — снова видны обе базы
+    await tester.tap(find.widgetWithText(FilterChip, 'Все'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Работа'), findsOneWidget);
+    expect(find.text('Личное'), findsOneWidget);
+  });
 }
 
 class _FakeAdapter implements CloudProviderAdapter {

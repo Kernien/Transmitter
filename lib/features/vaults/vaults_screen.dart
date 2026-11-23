@@ -54,6 +54,7 @@ class _VaultsScreenState extends State<VaultsScreen> {
   bool _isSearching = false;
   String _searchQuery = '';
   final _searchController = TextEditingController();
+  String? _selectedTag;
 
   @override
   void dispose() {
@@ -175,38 +176,41 @@ class _VaultsScreenState extends State<VaultsScreen> {
     final isWide = MediaQuery.sizeOf(context).width >= kWideScreenBreakpoint;
     final selected = isWide ? _resolveSelected(vaults, boards) : null;
 
-    final q = _searchQuery;
-    final filteredVaults = q.isEmpty
-        ? controller.rootVaults
-        : vaults.where((v) {
-            final label =
-                (v.label.isEmpty ? l.untitled : v.label).toLowerCase();
-            final provider = v.provider.title.toLowerCase();
-            return label.contains(q) || provider.contains(q);
-          }).toList();
-    final filteredBoards = q.isEmpty
-        ? boards
-        : boards.where((b) {
-            final label =
-                (b.label.isEmpty ? l.untitled : b.label).toLowerCase();
-            final provider = b.provider.title.toLowerCase();
-            return label.contains(q) || provider.contains(q);
-          }).toList();
+    final allTags = controller.allTags;
+    if (_selectedTag != null && !allTags.contains(_selectedTag)) {
+      _selectedTag = null;
+    }
+
+    final q = _searchQuery.trim().toLowerCase();
+    final tagFilter = _selectedTag;
+
+    final baseVaults = q.isEmpty ? controller.rootVaults : vaults;
+    final filteredVaults = baseVaults.where((v) {
+      if (tagFilter != null && !v.tags.contains(tagFilter)) {
+        return false;
+      }
+      if (q.isNotEmpty) {
+        final label =
+            (v.label.isEmpty ? l.untitled : v.label).toLowerCase();
+        final provider = v.provider.title.toLowerCase();
+        final matchesTag = v.tags.any((t) => t.toLowerCase().contains(q));
+        return label.contains(q) || provider.contains(q) || matchesTag;
+      }
+      return true;
+    }).toList();
+
+    final filteredBoards = tagFilter != null
+        ? const <ReaderKey>[]
+        : (q.isEmpty
+            ? boards
+            : boards.where((b) {
+                final label =
+                    (b.label.isEmpty ? l.untitled : b.label).toLowerCase();
+                final provider = b.provider.title.toLowerCase();
+                return label.contains(q) || provider.contains(q);
+              }).toList());
 
     Widget buildList() {
-      if (vaults.isEmpty && boards.isEmpty) {
-        return EmptyStateView(
-          compact: isWide,
-          icon: Icons.cloud_queue_outlined,
-          title: l.vaultsEmptyTitle,
-          subtitle: l.vaultsEmpty,
-          action: FilledButton.icon(
-            onPressed: () => _create(context),
-            icon: const Icon(Icons.add),
-            label: Text(l.newKey),
-          ),
-        );
-      }
       if (filteredVaults.isEmpty && filteredBoards.isEmpty) {
         return EmptyStateView(
           compact: isWide,
@@ -238,6 +242,61 @@ class _VaultsScreenState extends State<VaultsScreen> {
             );
           }
         },
+      );
+    }
+
+    Widget buildBody() {
+      if (vaults.isEmpty && boards.isEmpty) {
+        return EmptyStateView(
+          compact: isWide,
+          icon: Icons.cloud_queue_outlined,
+          title: l.vaultsEmptyTitle,
+          subtitle: l.vaultsEmpty,
+          action: FilledButton.icon(
+            onPressed: () => _create(context),
+            icon: const Icon(Icons.add),
+            label: Text(l.newKey),
+          ),
+        );
+      }
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (allTags.isNotEmpty)
+            SizedBox(
+              height: 44,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: FilterChip(
+                      label: Text(l.filterAll),
+                      selected: _selectedTag == null,
+                      onSelected: (_) => setState(() => _selectedTag = null),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                  for (final tag in allTags)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: FilterChip(
+                        label: Text('#$tag'),
+                        selected: _selectedTag == tag,
+                        onSelected: (selected) {
+                          setState(() {
+                            _selectedTag = selected ? tag : null;
+                          });
+                        },
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          Expanded(child: buildList()),
+        ],
       );
     }
 
@@ -316,7 +375,7 @@ class _VaultsScreenState extends State<VaultsScreen> {
     if (!isWide) {
       return Scaffold(
         appBar: appBar,
-        body: ContentWidth(child: buildList()),
+        body: ContentWidth(child: buildBody()),
         floatingActionButton: fab,
       );
     }
@@ -331,7 +390,7 @@ class _VaultsScreenState extends State<VaultsScreen> {
               backgroundColor:
                   Theme.of(context).colorScheme.surfaceContainerLow,
               appBar: appBar,
-              body: buildList(),
+              body: buildBody(),
             ),
           ),
           // Боковая панель темнее ленты, разделительная линия не нужна.
@@ -502,26 +561,61 @@ class _VaultTile extends StatelessWidget {
             ),
         ],
       ),
-      subtitle: Text(
-        connected
-            ? l.vaultConnectedSubtitle(
-                vault,
-                context
-                    .read<CloudConnectionService>()
-                    .findAccountForVault(vault)
-                    ?.displayName,
-              )
-            : (vault.isEncrypted
-                  ? l.vaultSubtitleNotConnected(vault.provider.title)
-                  : l.vaultSubtitleNotConnectedPlain(vault.provider.title)),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontSize: 12,
-          color: connected
-              ? colorScheme.onSurfaceVariant
-              : colorScheme.error,
-        ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            connected
+                ? l.vaultConnectedSubtitle(
+                    vault,
+                    context
+                        .read<CloudConnectionService>()
+                        .findAccountForVault(vault)
+                        ?.displayName,
+                  )
+                : (vault.isEncrypted
+                      ? l.vaultSubtitleNotConnected(vault.provider.title)
+                      : l.vaultSubtitleNotConnectedPlain(vault.provider.title)),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12,
+              color: connected
+                  ? colorScheme.onSurfaceVariant
+                  : colorScheme.error,
+            ),
+          ),
+          if (vault.tags.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Wrap(
+                spacing: 4,
+                runSpacing: 2,
+                children: [
+                  for (final tag in vault.tags)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '#$tag',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+        ],
       ),
       onTap: onTap ?? () => openVault(context, vault),
       trailing: PopupMenuButton<_VaultAction>(
