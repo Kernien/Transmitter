@@ -289,6 +289,52 @@ void main() {
 
     feed.dispose();
   });
+
+  testWidgets('PostTile: отображает теги и вызывает onTagTap при клике', (
+    tester,
+  ) async {
+    final feed = FeedController(
+      EncryptedCloudPostRepository(
+        storage: InMemoryCloudStorage(),
+        vaultId: 'v',
+        cipher: AesGcmCipher(List<int>.filled(32, 1)),
+        deviceName: 'A',
+      ),
+      files: FakeFileTransferService(),
+      pollInterval: const Duration(hours: 1),
+    );
+    await tester.runAsync(() async {
+      await feed.sendText('Заметка #проект #важное');
+    });
+
+    String? tappedTag;
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: feed,
+        child: MaterialApp(
+          locale: const Locale('ru'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: PostTile(
+              post: feed.posts.single,
+              onTagTap: (tag) => tappedTag = tag,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('#проект'), findsOneWidget);
+    expect(find.text('#важное'), findsOneWidget);
+
+    await tester.tap(find.text('#важное'));
+    await tester.pumpAndSettle();
+
+    expect(tappedTag, 'важное');
+    feed.dispose();
+  });
 }
 
 class _BlockingCloud extends InMemoryCloudStorage {

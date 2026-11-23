@@ -290,6 +290,24 @@ class Post {
   /// Закреплена ли запись наверху доски.
   final bool isPinned;
 
+  static final RegExp _tagRegex = RegExp(
+    r'(?:^|\s)#([\p{L}\p{N}_-]+)',
+    unicode: true,
+  );
+
+  /// Все уникальные теги, найденные в тексте записи и комментарии.
+  List<String> get tags {
+    final result = <String>{};
+    final combined = note != null ? '$text ${note!.text}' : text;
+    for (final match in _tagRegex.allMatches(combined)) {
+      final tag = match.group(1);
+      if (tag != null && tag.isNotEmpty) {
+        result.add(tag);
+      }
+    }
+    return List.unmodifiable(result.toList());
+  }
+
   /// Та же запись с другим комментарием (`null` — без комментария).
   Post withNote(PostNote? note) => Post(
     id: id,

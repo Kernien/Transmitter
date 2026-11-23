@@ -510,6 +510,16 @@ void main() {
 
       feed.dispose();
     });
+
+    test('allTags собирает уникальные теги из постов по алфавиту', () async {
+      final feed = controllerFor('A');
+      await feed.sendText('Заметка 1 #работа #проект');
+      await feed.sendText('Заметка 2 #архив #работа');
+      await feed.sendText('Заметка 3 без тегов');
+
+      expect(feed.allTags, ['архив', 'проект', 'работа']);
+      feed.dispose();
+    });
   });
 }
 

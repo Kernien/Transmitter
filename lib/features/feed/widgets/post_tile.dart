@@ -33,9 +33,10 @@ enum _PostAction {
 /// нажатие выделяет пост (см. режим выделения в FeedController), остальные
 /// действия — через кнопку ⋮.
 class PostTile extends StatelessWidget {
-  const PostTile({super.key, required this.post});
+  const PostTile({super.key, required this.post, this.onTagTap});
 
   final Post post;
+  final ValueChanged<String>? onTagTap;
 
   List<_PostAction> _actions({
     required bool canShare,
@@ -141,6 +142,44 @@ class PostTile extends StatelessWidget {
                       child: _content(theme),
                     ),
                     if (post.note case final note?) _NoteView(note: note),
+                    if (post.tags.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6, bottom: 4, right: 8),
+                        child: Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          children: [
+                            for (final tag in post.tags)
+                              InkWell(
+                                borderRadius: BorderRadius.circular(4),
+                                onTap: onTagTap != null
+                                    ? () => onTagTap!(tag)
+                                    : null,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.secondaryContainer
+                                        .withValues(alpha: 0.6),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    '#$tag',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                      color: theme
+                                          .colorScheme
+                                          .onSecondaryContainer,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                     Row(
                       children: [
                         if (post.isPinned) ...[

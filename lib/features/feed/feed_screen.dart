@@ -194,6 +194,7 @@ class _FeedViewState extends State<_FeedView> {
   bool _isSearching = false;
   String _searchQuery = '';
   final _searchController = TextEditingController();
+  String? _selectedTag;
 
   @override
   void dispose() {
@@ -273,6 +274,8 @@ class _FeedViewState extends State<_FeedView> {
             child: _FeedBody(
               viewMode: _viewMode,
               searchQuery: _searchQuery,
+              selectedTag: _selectedTag,
+              onSelectTag: (tag) => setState(() => _selectedTag = tag),
               onModeChanged: (mode) => setState(() => _viewMode = mode),
             ),
           ),
@@ -563,11 +566,15 @@ class _FeedBody extends StatelessWidget {
   const _FeedBody({
     required this.viewMode,
     required this.searchQuery,
+    this.selectedTag,
+    required this.onSelectTag,
     required this.onModeChanged,
   });
 
   final _ViewMode viewMode;
   final String searchQuery;
+  final String? selectedTag;
+  final ValueChanged<String?> onSelectTag;
   final ValueChanged<_ViewMode> onModeChanged;
 
   @override
@@ -617,13 +624,47 @@ class _FeedBody extends StatelessWidget {
             ),
           ),
         ),
+        if (feed.allTags.isNotEmpty)
+          SizedBox(
+            height: 38,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: FilterChip(
+                    label: Text(l.filterAll),
+                    selected: selectedTag == null,
+                    onSelected: (_) => onSelectTag(null),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+                for (final tag in feed.allTags)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: FilterChip(
+                      label: Text('#$tag'),
+                      selected: selectedTag == tag,
+                      onSelected: (selected) =>
+                          onSelectTag(selected ? tag : null),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+              ],
+            ),
+          ),
         if (viewMode == _ViewMode.feed &&
             searchQuery.isEmpty &&
             feed.pinnedPosts.isNotEmpty)
           _PinnedPostsBar(feed: feed, pinnedPosts: feed.pinnedPosts),
         Expanded(
           child: viewMode == _ViewMode.files
-              ? _FilesListView(feed: feed, searchQuery: searchQuery)
+              ? _FilesListView(
+                  feed: feed,
+                  searchQuery: searchQuery,
+                  selectedTag: selectedTag,
+                )
               : _buildFeedList(context, feed, posts, l),
         ),
         if (viewMode == _ViewMode.feed &&
@@ -657,28 +698,29 @@ class _FeedBody extends StatelessWidget {
             );
     }
     final q = searchQuery;
-    final filtered = q.isEmpty
-        ? posts
-        : posts.where((p) {
-            if (p.text.toLowerCase().contains(q)) return true;
-            if (p.note?.text.toLowerCase().contains(q) == true) return true;
-            if (p.attachment?.fileName.toLowerCase().contains(q) == true) {
-              return true;
-            }
-            if (p.folder?.name.toLowerCase().contains(q) == true) return true;
-            if (p.folder?.files.any(
-                  (f) =>
-                      f.fileName.toLowerCase().contains(q) ||
-                      f.relativePath.toLowerCase().contains(q),
-                ) ==
-                true) {
-              return true;
-            }
-            return false;
-          }).toList();
+    final tagFilter = selectedTag;
+    final filtered = posts.where((p) {
+      if (tagFilter != null && !p.tags.contains(tagFilter)) return false;
+      if (q.isEmpty) return true;
+      if (p.text.toLowerCase().contains(q)) return true;
+      if (p.note?.text.toLowerCase().contains(q) == true) return true;
+      if (p.attachment?.fileName.toLowerCase().contains(q) == true) {
+        return true;
+      }
+      if (p.folder?.name.toLowerCase().contains(q) == true) return true;
+      if (p.folder?.files.any(
+            (f) =>
+                f.fileName.toLowerCase().contains(q) ||
+                f.relativePath.toLowerCase().contains(q),
+          ) ==
+          true) {
+        return true;
+      }
+      return false;
+    }).toList();
 
     if (filtered.isEmpty) {
-      if (q.isNotEmpty) {
+      if (q.isNotEmpty || tagFilter != null) {
         return EmptyStateView(
           icon: Icons.search_off_outlined,
           title: l.searchNoResults,
@@ -692,14 +734,15 @@ class _FeedBody extends StatelessWidget {
       );
     }
 
+    final isFiltered = q.isNotEmpty || tagFilter != null;
     return ListView.builder(
-      reverse: q.isEmpty,
+      reverse: !isFiltered,
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: filtered.length,
       itemBuilder: (context, i) {
         final post =
-            q.isEmpty ? filtered[filtered.length - 1 - i] : filtered[i];
-        return PostTile(post: post);
+            !isFiltered ? filtered[filtered.length - 1 - i] : filtered[i];
+        return PostTile(post: post, onTagTap: onSelectTag);
       },
     );
   }
@@ -853,10 +896,12 @@ class _FilesListView extends StatefulWidget {
   const _FilesListView({
     required this.feed,
     required this.searchQuery,
+    this.selectedTag,
   });
 
   final FeedController feed;
   final String searchQuery;
+  final String? selectedTag;
 
   @override
   State<_FilesListView> createState() => _FilesListViewState();
@@ -939,22 +984,23 @@ class _FilesListViewState extends State<_FilesListView> {
     }
 
     final q = widget.searchQuery;
-    final filtered = q.isEmpty
-        ? allItems
-        : allItems.where((it) {
-            if (it.name.toLowerCase().contains(q)) return true;
-            if (it.isFolder) {
-              return it.folder!.files.any(
-                (f) =>
-                    f.fileName.toLowerCase().contains(q) ||
-                    f.relativePath.toLowerCase().contains(q),
-              );
-            }
-            return false;
-          }).toList();
+    final tagFilter = widget.selectedTag;
+    final filtered = allItems.where((it) {
+      if (tagFilter != null && !it.post.tags.contains(tagFilter)) return false;
+      if (q.isEmpty) return true;
+      if (it.name.toLowerCase().contains(q)) return true;
+      if (it.isFolder) {
+        return it.folder!.files.any(
+          (f) =>
+              f.fileName.toLowerCase().contains(q) ||
+              f.relativePath.toLowerCase().contains(q),
+        );
+      }
+      return false;
+    }).toList();
 
     if (filtered.isEmpty) {
-      if (q.isNotEmpty) {
+      if (q.isNotEmpty || tagFilter != null) {
         return EmptyStateView(
           icon: Icons.search_off_outlined,
           title: l.searchNoResults,

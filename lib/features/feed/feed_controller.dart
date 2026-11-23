@@ -60,6 +60,17 @@ class FeedController extends ChangeNotifier {
   Object? _error;
 
   List<Post> get posts => _posts;
+
+  /// Все уникальные теги постов в текущей ленте, отсортированные по алфавиту.
+  List<String> get allTags {
+    final set = <String>{};
+    for (final p in _posts) {
+      set.addAll(p.tags);
+    }
+    final list = set.toList();
+    list.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return List.unmodifiable(list);
+  }
   bool get isInitialLoad => _initialLoad;
   bool get isSending => _sending;
 
