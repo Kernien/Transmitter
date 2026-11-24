@@ -17,7 +17,7 @@ right on the device: the cloud only ever sees meaningless bytes.
 | 🐧 **Linux** | Flatpak with automatic updates, or AppImage — a single file, no installation; tested on Steam Deck |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — nothing to install |
 
-Version **1.6.0**. The interface is in **English and Russian** — it follows the
+Version **1.6.1**. The interface is in **English and Russian** — it follows the
 system language, or pick one in ⚙ *Settings*.
 
 ## Why
@@ -70,7 +70,7 @@ On any board, open **⋮ → Sub-boards** to create a separate feed inside it. A
   preset: *Ocean*, *Forest*, *Sunset*, *Night (black)* — the black background
   saves battery on OLED screens. Popular dark code-editor themes too: Dracula,
   Nord, One Dark, Solarized Dark, Gruvbox, Catppuccin Mocha, Tokyo Night,
-  Monokai, GitHub Dark, Rosé Pine, Ayu Mirage, Everforest.
+  Monokai, GitHub Dark, Rosé Pine, Ayu Mirage, Everforest, Vice City.
 - **Photos right in the feed.** Previews for items with pictures and a
   full-screen viewer with zoom. Large photos (over 10 MB) load on request.
 - **Documents right in the app.** Text files (`.txt`, `.csv`, `.json`, `.log`,

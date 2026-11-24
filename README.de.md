@@ -18,7 +18,7 @@ Bytes.
 | 🐧 **Linux** | Flatpak mit automatischen Updates oder AppImage — eine einzige Datei ohne Installation; getestet auf dem Steam Deck |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — keine Installation nötig |
 
-Version **1.6.0**.
+Version **1.6.1**.
 
 > **Sprache der Oberfläche.** Die App gibt es auf Englisch und Russisch; auf
 > einem deutschen System ist sie auf Englisch (umschalten unter ⚙ „Settings“).
@@ -76,7 +76,7 @@ Computer und Browser.
   schwarze Hintergrund schont den Akku bei OLED-Bildschirmen. Dazu beliebte
   dunkle Editor-Designs: Dracula, Nord, One Dark, Solarized Dark, Gruvbox,
   Catppuccin Mocha, Tokyo Night, Monokai, GitHub Dark, Rosé Pine,
-  Ayu Mirage, Everforest.
+  Ayu Mirage, Everforest, Vice City.
 - **Fotos direkt im Verlauf.** Vorschauen bei Einträgen mit Bildern und eine
   Vollbildansicht mit Zoom. Große Fotos (über 10 MB) werden auf Knopfdruck
   geladen.

@@ -13,7 +13,7 @@
 | 🐧 **Linux** | 可自动更新的 Flatpak，或 AppImage——单个文件，无需安装；已在 Steam Deck 上测试 |
 | 🌐 **浏览器** | https://kernien.github.io/transmitter-web/ ——无需安装 |
 
-版本 **1.6.0**。
+版本 **1.6.1**。
 
 > **界面语言。** 应用界面有英语和俄语；在中文系统上显示为英语（可在 ⚙ 设置“Settings”中切换）。本指南中的按钮名称先给出中文，括号内是应用中实际显示的英文，例如 **新建密钥**（“New key”）。
 
@@ -45,7 +45,7 @@
 - **在所有设备上删除。** 删除的条目会从所有设备上消失，云盘中的文件也一并删除。
 - **设备名称。** 每个条目都显示来源设备：“Redmi 10”、“Redmi 10 · work”、“笔记本”。
 - **英语和俄语界面。** 语言跟随系统，或在应用中选择。
-- **自选外观。** 浅色或深色主题、跟随系统，或选择配色预设：海洋（Ocean）、森林（Forest）、日落（Sunset）、夜晚（Night，纯黑背景，在 OLED 屏幕上更省电）。还有流行的深色编辑器主题：Dracula、Nord、One Dark、Solarized Dark、Gruvbox、Catppuccin Mocha、Tokyo Night、Monokai、GitHub Dark、Rosé Pine、Ayu Mirage、Everforest。
+- **自选外观。** 浅色或深色主题、跟随系统，或选择配色预设：海洋（Ocean）、森林（Forest）、日落（Sunset）、夜晚（Night，纯黑背景，在 OLED 屏幕上更省电）。还有流行的深色编辑器主题：Dracula、Nord、One Dark、Solarized Dark、Gruvbox、Catppuccin Mocha、Tokyo Night、Monokai、GitHub Dark、Rosé Pine、Ayu Mirage、Everforest、Vice City。
 - **在列表中直接看照片。** 带图片的条目显示预览，可全屏查看并缩放。较大的照片（超过 10 MB）点击按钮后才加载。
 - **在应用内直接阅读文档。** 文本文件（`.txt`、`.csv`、`.json`、`.log`、源代码）、带格式的 Markdown 和 Word `.docx` 文档点击即可打开：可选择、复制，可切换等宽字体。
 - **在应用内直接播放视频和音乐**（Android、Windows、浏览器）：支持拖动进度和全屏，几乎支持所有格式（`.mp4`、`.mkv`、`.avi`、`.mp3`、`.flac`…）。播放视频时屏幕不会熄灭；关闭屏幕后音乐仍会继续播放。
