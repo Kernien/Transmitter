@@ -29,8 +29,8 @@ enum AppTheme {
   ayuMirage(Color(0xFFFFCC66), Brightness.dark, _ayuMirage),
   everforest(Color(0xFFA7C080), Brightness.dark, _everforest),
 
-  /// Неоновый стиль Вайс-Сити в честь GTA VI: розовый неон, бирюза и ночное небо.
-  viceCity(Color(0xFFFF2A85), Brightness.dark, _viceCity);
+  /// Неоновый стиль Vice City в честь GTA VI: закатный розовый, бирюза и сумеречное небо.
+  viceCity(Color(0xFFFF5C8D), Brightness.dark, _viceCity);
 
   const AppTheme(this.seed, this.brightness, [this.palette]);
 
@@ -315,17 +315,17 @@ const _everforest = ThemePalette(
 
 const _viceCity = ThemePalette(
   backgrounds: [
-    Color(0xFF120824),
-    Color(0xFF180D2F),
-    Color(0xFF20123D),
-    Color(0xFF2B1A52),
-    Color(0xFF38236A),
+    Color(0xFF100C22),
+    Color(0xFF15102C),
+    Color(0xFF1D1739),
+    Color(0xFF261F49),
+    Color(0xFF332A5E),
   ],
   text: Color(0xFFFDF0F8),
-  dimText: Color(0xFFBCA7D8),
-  comment: Color(0xFF7A4E9E),
+  dimText: Color(0xFFC0AECF),
+  comment: Color(0xFF70568C),
   secondary: Color(0xFF00F0FF),
-  error: Color(0xFFFF3366),
+  error: Color(0xFFFF4D6D),
 );
 
 /// Выбор оформления. Хранится только на этом устройстве, как язык.

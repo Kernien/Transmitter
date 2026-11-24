@@ -93,9 +93,9 @@ void main() {
     }, hasLength(13));
 
     final viceCity = AppTheme.viceCity.data(Brightness.light).colorScheme;
-    expect(viceCity.primary, const Color(0xFFFF2A85));
+    expect(viceCity.primary, const Color(0xFFFF5C8D));
     expect(viceCity.secondary, const Color(0xFF00F0FF));
-    expect(viceCity.surface, const Color(0xFF20123D));
+    expect(viceCity.surface, const Color(0xFF1D1739));
   });
 
   testWidgets('«Настройки» → «Оформление» → пресет', (tester) async {
