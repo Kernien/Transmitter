@@ -233,6 +233,7 @@
   "themeRosePine": "Rosé Pine",
   "themeAyuMirage": "Ayu Mirage",
   "themeEverforest": "Everforest",
+  "themeViceCity": "Вайс-Сити",
   "storageLimitValue": "Лимит: {size}",
   "storageTitle": "Место на устройстве",
   "storageIntro": "Открытые файлы хранятся на устройстве (зашифрованными), чтобы открываться сразу и без интернета. Когда место заканчивается, первыми удаляются давно не открытые. Сами записи остаются всегда.",

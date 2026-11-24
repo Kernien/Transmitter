@@ -27,7 +27,10 @@ enum AppTheme {
   githubDark(Color(0xFF58A6FF), Brightness.dark, _githubDark),
   rosePine(Color(0xFFC4A7E7), Brightness.dark, _rosePine),
   ayuMirage(Color(0xFFFFCC66), Brightness.dark, _ayuMirage),
-  everforest(Color(0xFFA7C080), Brightness.dark, _everforest);
+  everforest(Color(0xFFA7C080), Brightness.dark, _everforest),
+
+  /// Неоновый стиль Вайс-Сити в честь GTA VI: розовый неон, бирюза и ночное небо.
+  viceCity(Color(0xFFFF2A85), Brightness.dark, _viceCity);
 
   const AppTheme(this.seed, this.brightness, [this.palette]);
 
@@ -308,6 +311,21 @@ const _everforest = ThemePalette(
   comment: Color(0xFF859289),
   secondary: Color(0xFF7FBBB3),
   error: Color(0xFFE67E80),
+);
+
+const _viceCity = ThemePalette(
+  backgrounds: [
+    Color(0xFF120824),
+    Color(0xFF180D2F),
+    Color(0xFF20123D),
+    Color(0xFF2B1A52),
+    Color(0xFF38236A),
+  ],
+  text: Color(0xFFFDF0F8),
+  dimText: Color(0xFFBCA7D8),
+  comment: Color(0xFF7A4E9E),
+  secondary: Color(0xFF00F0FF),
+  error: Color(0xFFFF3366),
 );
 
 /// Выбор оформления. Хранится только на этом устройстве, как язык.

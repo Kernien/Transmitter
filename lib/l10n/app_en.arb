@@ -264,6 +264,7 @@
   "themeRosePine": "Rosé Pine",
   "themeAyuMirage": "Ayu Mirage",
   "themeEverforest": "Everforest",
+  "themeViceCity": "Vice City",
   "storageLimitValue": "Limit: {size}",
   "@storageLimitValue": { "placeholders": { "size": { "type": "String" } } },
   "storageTitle": "Storage on this device",

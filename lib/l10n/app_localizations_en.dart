@@ -768,6 +768,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themeEverforest => 'Everforest';
 
   @override
+  String get themeViceCity => 'Vice City';
+
+  @override
   String storageLimitValue(String size) {
     return 'Limit: $size';
   }

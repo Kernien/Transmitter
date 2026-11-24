@@ -770,6 +770,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get themeEverforest => 'Everforest';
 
   @override
+  String get themeViceCity => 'Вайс-Сити';
+
+  @override
   String storageLimitValue(String size) {
     return 'Лимит: $size';
   }

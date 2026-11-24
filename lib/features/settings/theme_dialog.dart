@@ -25,6 +25,7 @@ String themeName(AppLocalizations l, AppTheme theme) => switch (theme) {
   AppTheme.rosePine => l.themeRosePine,
   AppTheme.ayuMirage => l.themeAyuMirage,
   AppTheme.everforest => l.themeEverforest,
+  AppTheme.viceCity => l.themeViceCity,
 };
 
 /// Выбор оформления: как в системе или один из пресетов (с образцом цвета).

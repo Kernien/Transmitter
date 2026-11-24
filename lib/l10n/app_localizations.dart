@@ -1430,6 +1430,12 @@ abstract class AppLocalizations {
   /// **'Everforest'**
   String get themeEverforest;
 
+  /// No description provided for @themeViceCity.
+  ///
+  /// In en, this message translates to:
+  /// **'Vice City'**
+  String get themeViceCity;
+
   /// No description provided for @storageLimitValue.
   ///
   /// In en, this message translates to:
