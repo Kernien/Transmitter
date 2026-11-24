@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/l10n.dart';
 import '../../app/widgets/content_width.dart';
+import '../../app/widgets/context_menu_region.dart';
 import '../../app/widgets/empty_state_view.dart';
 import '../../domain/post.dart';
 import 'feed_controller.dart';
@@ -320,7 +321,7 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
                             final subName = sortedSubdirs[index];
                             final subInfo = subdirs[subName]!;
                             final subPath = prefix + subName;
-                            return ListTile(
+                            final tile = ListTile(
                               leading: Icon(
                                 Icons.folder,
                                 color: theme.colorScheme.primary,
@@ -349,35 +350,26 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
                                         subName: subName,
                                         subPath: subPath,
                                       ),
-                                      itemBuilder: (_) => [
-                                        PopupMenuItem(
-                                          value: _SubdirMenuAction.rename,
-                                          child: _menuRow(
-                                            Icons.drive_file_rename_outline,
-                                            l.rename,
-                                          ),
-                                        ),
-                                        PopupMenuItem(
-                                          value: _SubdirMenuAction.move,
-                                          child: _menuRow(
-                                            Icons.drive_file_move_outlined,
-                                            l.moveItem,
-                                          ),
-                                        ),
-                                        PopupMenuItem(
-                                          value: _SubdirMenuAction.delete,
-                                          child: _menuRow(
-                                            Icons.delete_outline,
-                                            l.delete,
-                                          ),
-                                        ),
-                                      ],
+                                      itemBuilder: (_) =>
+                                          _buildSubdirMenuItems(l),
                                     ),
                                   const Icon(Icons.chevron_right),
                                 ],
                               ),
                               onTap: () =>
                                   setState(() => _currentSubdir = subPath),
+                            );
+
+                            return ContextMenuRegion<_SubdirMenuAction>(
+                              enabled: !isReadOnly && !_busy,
+                              itemBuilder: (_) => _buildSubdirMenuItems(l),
+                              onSelected: (action) => _onSubdirAction(
+                                context,
+                                action,
+                                subName: subName,
+                                subPath: subPath,
+                              ),
+                              child: tile,
                             );
                           }
 
@@ -390,7 +382,7 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
                               attachment.isText &&
                               !attachment.isDocx;
 
-                          return ListTile(
+                          final tile = ListTile(
                             leading: _fileIcon(entry, theme),
                             title: Text(
                               isSearching
@@ -428,55 +420,29 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
                                                 action,
                                                 entry,
                                               ),
-                                          itemBuilder: (_) => [
-                                            if (canEditText)
-                                              PopupMenuItem(
-                                                value: _EntryMenuAction.edit,
-                                                child: _menuRow(
-                                                  Icons.edit,
-                                                  l.editText,
-                                                ),
+                                          itemBuilder: (_) =>
+                                              _buildEntryMenuItems(
+                                                l,
+                                                canEditText,
                                               ),
-                                            PopupMenuItem(
-                                              value: _EntryMenuAction.rename,
-                                              child: _menuRow(
-                                                Icons.drive_file_rename_outline,
-                                                l.rename,
-                                              ),
-                                            ),
-                                            PopupMenuItem(
-                                              value: _EntryMenuAction.move,
-                                              child: _menuRow(
-                                                Icons.drive_file_move_outlined,
-                                                l.moveItem,
-                                              ),
-                                            ),
-                                            PopupMenuItem(
-                                              value: _EntryMenuAction.replace,
-                                              child: _menuRow(
-                                                Icons.upload_file_outlined,
-                                                l.replaceFile,
-                                              ),
-                                            ),
-                                            PopupMenuItem(
-                                              value: _EntryMenuAction.save,
-                                              child: _menuRow(
-                                                Icons.download_outlined,
-                                                l.actionSaveFile,
-                                              ),
-                                            ),
-                                            PopupMenuItem(
-                                              value: _EntryMenuAction.delete,
-                                              child: _menuRow(
-                                                Icons.delete_outline,
-                                                l.delete,
-                                              ),
-                                            ),
-                                          ],
                                         ),
                                     ],
                                   ),
                             onTap: () => _openEntry(context, entry),
+                          );
+
+                          return ContextMenuRegion<_EntryMenuAction>(
+                            enabled: !isReadOnly && !_busy,
+                            itemBuilder: (_) => _buildEntryMenuItems(
+                              l,
+                              canEditText,
+                            ),
+                            onSelected: (action) => _onEntryAction(
+                              context,
+                              action,
+                              entry,
+                            ),
+                            child: tile,
                           );
                         },
                       ),
@@ -487,6 +453,54 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
       ),
     );
   }
+
+  List<PopupMenuEntry<_SubdirMenuAction>> _buildSubdirMenuItems(
+    AppLocalizations l,
+  ) => [
+    PopupMenuItem(
+      value: _SubdirMenuAction.rename,
+      child: _menuRow(Icons.drive_file_rename_outline, l.rename),
+    ),
+    PopupMenuItem(
+      value: _SubdirMenuAction.move,
+      child: _menuRow(Icons.drive_file_move_outlined, l.moveItem),
+    ),
+    PopupMenuItem(
+      value: _SubdirMenuAction.delete,
+      child: _menuRow(Icons.delete_outline, l.delete),
+    ),
+  ];
+
+  List<PopupMenuEntry<_EntryMenuAction>> _buildEntryMenuItems(
+    AppLocalizations l,
+    bool canEditText,
+  ) => [
+    if (canEditText)
+      PopupMenuItem(
+        value: _EntryMenuAction.edit,
+        child: _menuRow(Icons.edit, l.editText),
+      ),
+    PopupMenuItem(
+      value: _EntryMenuAction.rename,
+      child: _menuRow(Icons.drive_file_rename_outline, l.rename),
+    ),
+    PopupMenuItem(
+      value: _EntryMenuAction.move,
+      child: _menuRow(Icons.drive_file_move_outlined, l.moveItem),
+    ),
+    PopupMenuItem(
+      value: _EntryMenuAction.replace,
+      child: _menuRow(Icons.upload_file_outlined, l.replaceFile),
+    ),
+    PopupMenuItem(
+      value: _EntryMenuAction.save,
+      child: _menuRow(Icons.download_outlined, l.actionSaveFile),
+    ),
+    PopupMenuItem(
+      value: _EntryMenuAction.delete,
+      child: _menuRow(Icons.delete_outline, l.delete),
+    ),
+  ];
 
   Widget _menuRow(IconData icon, String text) => Row(
     children: [

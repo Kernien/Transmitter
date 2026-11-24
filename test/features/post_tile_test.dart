@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -333,6 +334,49 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tappedTag, 'важное');
+    feed.dispose();
+  });
+
+  testWidgets('ПКМ на карточке поста открывает меню действий', (tester) async {
+    final feed = FeedController(
+      EncryptedCloudPostRepository(
+        storage: InMemoryCloudStorage(),
+        vaultId: 'v',
+        cipher: AesGcmCipher(List<int>.filled(32, 1)),
+        deviceName: 'A',
+      ),
+      files: FakeFileTransferService(),
+      pollInterval: const Duration(hours: 1),
+    );
+    await tester.runAsync(() async {
+      await feed.sendText('Текст поста');
+    });
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: feed,
+        child: MaterialApp(
+          locale: const Locale('ru'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(body: PostTile(post: feed.posts.single)),
+        ),
+      ),
+    );
+
+    // ПКМ на посте
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Текст поста')),
+      kind: PointerDeviceKind.mouse,
+      buttons: kSecondaryMouseButton,
+    );
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Выбрать'), findsOneWidget);
+    expect(find.text('Копировать текст'), findsOneWidget);
+    expect(find.text('Удалить для всех устройств'), findsOneWidget);
+
     feed.dispose();
   });
 }

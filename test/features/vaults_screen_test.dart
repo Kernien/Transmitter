@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -420,6 +421,38 @@ void main() {
 
     expect(find.text('Работа'), findsOneWidget);
     expect(find.text('Личное'), findsOneWidget);
+  });
+
+  testWidgets('ПКМ и долгий тап на доске открывают контекстное меню действий', (tester) async {
+    final settings = FakeSettings();
+    await pumpScreen(tester, settings);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Работа'), findsOneWidget);
+
+    // ПКМ на карточке доски
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Работа')),
+      kind: PointerDeviceKind.mouse,
+      buttons: kSecondaryMouseButton,
+    );
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Показать ключ / QR'), findsOneWidget);
+    expect(find.text('Размер файлов…'), findsOneWidget);
+
+    // Закрываем меню тапом в пустоту
+    await tester.tapAt(Offset.zero);
+    await tester.pumpAndSettle();
+    expect(find.text('Показать ключ / QR'), findsNothing);
+
+    // Долгий тап на доске
+    await tester.longPress(find.text('Работа'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Показать ключ / QR'), findsOneWidget);
+    expect(find.text('Размер файлов…'), findsOneWidget);
   });
 }
 

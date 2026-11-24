@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../app/l10n.dart';
 import '../../app/widgets/content_width.dart';
+import '../../app/widgets/context_menu_region.dart';
 import '../../app/widgets/empty_state_view.dart';
 import '../../core/vault/vault_key.dart';
 import '../../data/sub_vault_store.dart';
@@ -300,62 +301,49 @@ class _SubVaultsScreenState extends State<SubVaultsScreen> {
                             padding: const EdgeInsets.only(bottom: 88),
                             children: [
                               for (final child in children)
-                                ListTile(
-                            leading: Container(
-                              width: 36,
-                              height: 36,
-                              decoration: ShapeDecoration(
-                                color: theme.colorScheme.surfaceContainerHighest,
-                                shape: const ContinuousRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(16)),
+                                ContextMenuRegion<_SubVaultAction>(
+                                  itemBuilder: (ctx) => _menuItems(ctx, l),
+                                  onSelected: (action) =>
+                                      _onAction(child, action),
+                                  child: ListTile(
+                                    leading: Container(
+                                      width: 36,
+                                      height: 36,
+                                      decoration: ShapeDecoration(
+                                        color: theme.colorScheme
+                                            .surfaceContainerHighest,
+                                        shape: const ContinuousRectangleBorder(
+                                          borderRadius: BorderRadius.all(
+                                            Radius.circular(16),
+                                          ),
+                                        ),
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: VaultIcon.buildWidget(
+                                        child.icon,
+                                        isEncrypted: child.isEncrypted,
+                                        color:
+                                            theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                    title: Text(child.label),
+                                    subtitle: Text(
+                                      l.vaultConnectedSubtitle(
+                                        child,
+                                        context.read<VaultsController?>() ==
+                                                null
+                                            ? null
+                                            : null,
+                                      ),
+                                    ),
+                                    onTap: () => _open(child),
+                                    trailing: PopupMenuButton<_SubVaultAction>(
+                                      onSelected: (action) =>
+                                          _onAction(child, action),
+                                      itemBuilder: (ctx) => _menuItems(ctx, l),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              alignment: Alignment.center,
-                              child: VaultIcon.buildWidget(
-                                child.icon,
-                                isEncrypted: child.isEncrypted,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            title: Text(child.label),
-                            subtitle: Text(
-                              l.vaultConnectedSubtitle(
-                                child,
-                                context
-                                    .read<VaultsController?>() ==
-                                        null
-                                    ? null
-                                    : null,
-                              ),
-                            ),
-                            onTap: () => _open(child),
-                            trailing: PopupMenuButton<_SubVaultAction>(
-                              onSelected: (action) => _onAction(child, action),
-                              itemBuilder: (_) => [
-                                PopupMenuItem(
-                                  value: _SubVaultAction.share,
-                                  child: Text(l.showKeyQr),
-                                ),
-                                PopupMenuItem(
-                                  value: _SubVaultAction.board,
-                                  child: Text(l.boardAccessAction),
-                                ),
-                                PopupMenuItem(
-                                  value: _SubVaultAction.rename,
-                                  child: Text(l.rename),
-                                ),
-                                PopupMenuItem(
-                                  value: _SubVaultAction.fileSize,
-                                  child: Text(l.fileSizeAction),
-                                ),
-                                PopupMenuItem(
-                                  value: _SubVaultAction.delete,
-                                  child: Text(l.delete),
-                                ),
-                              ],
-                            ),
-                          ),
                       ],
                     ),
                   );
@@ -367,6 +355,32 @@ class _SubVaultsScreenState extends State<SubVaultsScreen> {
       ),
     );
   }
+
+  List<PopupMenuEntry<_SubVaultAction>> _menuItems(
+    BuildContext context,
+    AppLocalizations l,
+  ) => [
+    PopupMenuItem(
+      value: _SubVaultAction.share,
+      child: Text(l.showKeyQr),
+    ),
+    PopupMenuItem(
+      value: _SubVaultAction.board,
+      child: Text(l.boardAccessAction),
+    ),
+    PopupMenuItem(
+      value: _SubVaultAction.rename,
+      child: Text(l.rename),
+    ),
+    PopupMenuItem(
+      value: _SubVaultAction.fileSize,
+      child: Text(l.fileSizeAction),
+    ),
+    PopupMenuItem(
+      value: _SubVaultAction.delete,
+      child: Text(l.delete),
+    ),
+  ];
 }
 
 class _SubVaultNameDialog extends StatefulWidget {

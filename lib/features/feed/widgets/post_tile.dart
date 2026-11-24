@@ -38,6 +38,26 @@ class PostTile extends StatelessWidget {
   final Post post;
   final ValueChanged<String>? onTagTap;
 
+  List<PopupMenuEntry<_PostAction>> _buildMenuItems(BuildContext context) {
+    final feed = context.read<FeedController>();
+    return [
+      for (final action in _actions(
+        canShare: feed.canShare,
+        canOpen: feed.canOpenExternally,
+        readOnly: feed.isReadOnly,
+      ))
+        PopupMenuItem(
+          value: action,
+          child: _ActionLabel(
+            action,
+            hasNote: post.note != null,
+            isPinned: post.isPinned,
+            isFolder: post.folder != null,
+          ),
+        ),
+    ];
+  }
+
   List<_PostAction> _actions({
     required bool canShare,
     required bool canOpen,
@@ -123,6 +143,33 @@ class PostTile extends StatelessWidget {
                 PostKind.text => null,
               },
         onLongPress: toggle,
+        onSecondaryTapUp: (!selecting && !isPending)
+            ? (details) async {
+                final overlay = Overlay.of(context)
+                    .context
+                    .findRenderObject() as RenderBox?;
+                if (overlay == null) return;
+                final position = RelativeRect.fromRect(
+                  Rect.fromLTWH(
+                    details.globalPosition.dx,
+                    details.globalPosition.dy,
+                    0,
+                    0,
+                  ),
+                  Offset.zero & overlay.size,
+                );
+                final items = _buildMenuItems(context);
+                if (items.isEmpty) return;
+                final selected = await showMenu<_PostAction>(
+                  context: context,
+                  position: position,
+                  items: items,
+                );
+                if (selected != null && context.mounted) {
+                  _perform(context, selected);
+                }
+              }
+            : null,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -213,28 +260,7 @@ class PostTile extends StatelessWidget {
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
                             onSelected: (action) => _perform(context, action),
-                            itemBuilder: (_) => [
-                              for (final action in _actions(
-                                canShare: context
-                                    .read<FeedController>()
-                                    .canShare,
-                                canOpen: context
-                                    .read<FeedController>()
-                                    .canOpenExternally,
-                                readOnly: context
-                                    .read<FeedController>()
-                                    .isReadOnly,
-                              ))
-                                PopupMenuItem(
-                                  value: action,
-                                  child: _ActionLabel(
-                                    action,
-                                    hasNote: post.note != null,
-                                    isPinned: post.isPinned,
-                                    isFolder: post.folder != null,
-                                  ),
-                                ),
-                            ],
+                            itemBuilder: _buildMenuItems,
                           ),
                       ],
                     ),

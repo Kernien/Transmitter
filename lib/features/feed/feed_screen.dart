@@ -7,6 +7,7 @@ import '../../app/app_lock_controller.dart';
 import '../../app/l10n.dart';
 import '../../app/vault_session_factory.dart';
 import '../../app/widgets/content_width.dart';
+import '../../app/widgets/context_menu_region.dart';
 import '../../app/widgets/empty_state_view.dart';
 import '../../core/files/external_opener.dart';
 import '../../core/files/file_transfer_service.dart';
@@ -1135,7 +1136,7 @@ class _FilesListViewState extends State<_FilesListView> {
                   ? '${l.folderFilesCount(item.folder!.files.length)} · ${l.fileSize(item.size)}'
                   : '${l.fileSize(item.size)} · ${_formatDate(item.createdAt)}';
 
-              return ListTile(
+              final tile = ListTile(
                 leading: Icon(iconData, color: iconColor),
                 title: Row(
                   children: [
@@ -1172,69 +1173,28 @@ class _FilesListViewState extends State<_FilesListView> {
                         tooltip: l.actions,
                         onSelected: (action) =>
                             _onAction(context, feed, item, action),
-                        itemBuilder: (_) => [
-                          PopupMenuItem(
-                            value: _FileItemAction.save,
-                            child: Row(
-                              children: [
-                                const Icon(Icons.download, size: 20),
-                                const SizedBox(width: 12),
-                                Text(
-                                  item.isFolder ? l.saveFolder : l.actionSaveFile,
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (feed.canOpenExternally && !item.isFolder)
-                            PopupMenuItem(
-                              value: _FileItemAction.openWith,
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.open_in_new, size: 20),
-                                  const SizedBox(width: 12),
-                                  Text(l.openWith),
-                                ],
-                              ),
-                            ),
-                          if (!isReadOnly)
-                            PopupMenuItem(
-                              value: _FileItemAction.pin,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    item.isPinned
-                                        ? Icons.push_pin_outlined
-                                        : Icons.push_pin,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(item.isPinned ? l.unpinPost : l.pinPost),
-                                ],
-                              ),
-                            ),
-                          if (!isReadOnly) ...[
-                            PopupMenuItem(
-                              value: _FileItemAction.delete,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.delete_outline,
-                                    size: 20,
-                                    color: theme.colorScheme.error,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    l.delete,
-                                    style: TextStyle(
-                                      color: theme.colorScheme.error,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ],
+                        itemBuilder: (_) => _buildFileItemMenu(
+                          feed: feed,
+                          item: item,
+                          l: l,
+                          theme: theme,
+                          isReadOnly: isReadOnly,
+                        ),
                       ),
+              );
+
+              return ContextMenuRegion<_FileItemAction>(
+                enabled: !isPending,
+                itemBuilder: (_) => _buildFileItemMenu(
+                  feed: feed,
+                  item: item,
+                  l: l,
+                  theme: theme,
+                  isReadOnly: isReadOnly,
+                ),
+                onSelected: (action) =>
+                    _onAction(context, feed, item, action),
+                child: tile,
               );
             },
           ),
@@ -1242,6 +1202,68 @@ class _FilesListViewState extends State<_FilesListView> {
       ],
     );
   }
+
+  List<PopupMenuEntry<_FileItemAction>> _buildFileItemMenu({
+    required FeedController feed,
+    required _FileItem item,
+    required AppLocalizations l,
+    required ThemeData theme,
+    required bool isReadOnly,
+  }) => [
+    PopupMenuItem(
+      value: _FileItemAction.save,
+      child: Row(
+        children: [
+          const Icon(Icons.download, size: 20),
+          const SizedBox(width: 12),
+          Text(item.isFolder ? l.saveFolder : l.actionSaveFile),
+        ],
+      ),
+    ),
+    if (feed.canOpenExternally && !item.isFolder)
+      PopupMenuItem(
+        value: _FileItemAction.openWith,
+        child: Row(
+          children: [
+            const Icon(Icons.open_in_new, size: 20),
+            const SizedBox(width: 12),
+            Text(l.openWith),
+          ],
+        ),
+      ),
+    if (!isReadOnly)
+      PopupMenuItem(
+        value: _FileItemAction.pin,
+        child: Row(
+          children: [
+            Icon(
+              item.isPinned ? Icons.push_pin_outlined : Icons.push_pin,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Text(item.isPinned ? l.unpinPost : l.pinPost),
+          ],
+        ),
+      ),
+    if (!isReadOnly)
+      PopupMenuItem(
+        value: _FileItemAction.delete,
+        child: Row(
+          children: [
+            Icon(
+              Icons.delete_outline,
+              size: 20,
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              l.delete,
+              style: TextStyle(color: theme.colorScheme.error),
+            ),
+          ],
+        ),
+      ),
+  ];
 
   void _openItem(BuildContext context, FeedController feed, _FileItem item) {
     final post = item.post;

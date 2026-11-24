@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../app/app_lock_controller.dart';
 import '../../app/l10n.dart';
 import '../../app/widgets/content_width.dart';
+import '../../app/widgets/context_menu_region.dart';
 import '../../app/widgets/empty_state_view.dart';
 import '../../app/vault_session_factory.dart';
 import '../../core/storage/cloud_account.dart';
@@ -518,7 +519,7 @@ class _VaultTile extends StatelessWidget {
       vault.provider,
     );
     final colorScheme = Theme.of(context).colorScheme;
-    return ListTile(
+    final tile = ListTile(
       selected: selected,
       dense: true,
       visualDensity: const VisualDensity(horizontal: 0, vertical: -2),
@@ -623,45 +624,57 @@ class _VaultTile extends StatelessWidget {
         padding: EdgeInsets.zero,
         constraints: const BoxConstraints(),
         onSelected: (action) => _onAction(context, action),
-        itemBuilder: (_) => [
-          PopupMenuItem(value: _VaultAction.share, child: Text(l.showKeyQr)),
-          PopupMenuItem(
-            value: _VaultAction.board,
-            child: Text(l.boardAccessAction),
-          ),
-          PopupMenuItem(
-            value: _VaultAction.pin,
-            child: Text(isPinned ? l.unpinVault : l.pinVault),
-          ),
-          if (context
-                  .read<CloudConnectionService>()
-                  .accountsFor(vault.provider)
-                  .length >
-              1)
-            PopupMenuItem(
-              value: _VaultAction.switchAccount,
-              child: Text(l.switchAccount),
-            ),
-          PopupMenuItem(value: _VaultAction.rename, child: Text(l.rename)),
-          PopupMenuItem(
-            value: _VaultAction.icon,
-            child: Text(l.vaultIconAction),
-          ),
-          PopupMenuItem(
-            value: _VaultAction.tags,
-            child: Text(l.vaultTagsAction),
-          ),
-          PopupMenuItem(
-            value: _VaultAction.fileSize,
-            child: Text(l.fileSizeAction),
-          ),
-          PopupMenuItem(
-            value: _VaultAction.remove,
-            child: Text(l.removeFromDevice),
-          ),
-        ],
+        itemBuilder: _menuItems,
       ),
     );
+
+    return ContextMenuRegion<_VaultAction>(
+      itemBuilder: _menuItems,
+      onSelected: (action) => _onAction(context, action),
+      child: tile,
+    );
+  }
+
+  List<PopupMenuEntry<_VaultAction>> _menuItems(BuildContext context) {
+    final l = context.l10n;
+    final isPinned = context.read<VaultsController>().isPinned(vault);
+    return [
+      PopupMenuItem(value: _VaultAction.share, child: Text(l.showKeyQr)),
+      PopupMenuItem(
+        value: _VaultAction.board,
+        child: Text(l.boardAccessAction),
+      ),
+      PopupMenuItem(
+        value: _VaultAction.pin,
+        child: Text(isPinned ? l.unpinVault : l.pinVault),
+      ),
+      if (context
+              .read<CloudConnectionService>()
+              .accountsFor(vault.provider)
+              .length >
+          1)
+        PopupMenuItem(
+          value: _VaultAction.switchAccount,
+          child: Text(l.switchAccount),
+        ),
+      PopupMenuItem(value: _VaultAction.rename, child: Text(l.rename)),
+      PopupMenuItem(
+        value: _VaultAction.icon,
+        child: Text(l.vaultIconAction),
+      ),
+      PopupMenuItem(
+        value: _VaultAction.tags,
+        child: Text(l.vaultTagsAction),
+      ),
+      PopupMenuItem(
+        value: _VaultAction.fileSize,
+        child: Text(l.fileSizeAction),
+      ),
+      PopupMenuItem(
+        value: _VaultAction.remove,
+        child: Text(l.removeFromDevice),
+      ),
+    ];
   }
 
   Future<void> _onAction(BuildContext context, _VaultAction action) async {
@@ -906,7 +919,7 @@ class _BoardTile extends StatelessWidget {
     final controller = context.watch<VaultsController>();
     final isPinned = controller.isPinned(board);
     final colorScheme = Theme.of(context).colorScheme;
-    return ListTile(
+    final tile = ListTile(
       selected: selected,
       dense: true,
       visualDensity: const VisualDensity(horizontal: 0, vertical: -2),
@@ -964,20 +977,32 @@ class _BoardTile extends StatelessWidget {
         padding: EdgeInsets.zero,
         constraints: const BoxConstraints(),
         onSelected: (action) => _onAction(context, action),
-        itemBuilder: (_) => [
-          PopupMenuItem(value: _BoardAction.share, child: Text(l.showKeyQr)),
-          PopupMenuItem(
-            value: _BoardAction.pin,
-            child: Text(isPinned ? l.unpinVault : l.pinVault),
-          ),
-          PopupMenuItem(value: _BoardAction.rename, child: Text(l.rename)),
-          PopupMenuItem(
-            value: _BoardAction.remove,
-            child: Text(l.removeFromDevice),
-          ),
-        ],
+        itemBuilder: _menuItems,
       ),
     );
+
+    return ContextMenuRegion<_BoardAction>(
+      itemBuilder: _menuItems,
+      onSelected: (action) => _onAction(context, action),
+      child: tile,
+    );
+  }
+
+  List<PopupMenuEntry<_BoardAction>> _menuItems(BuildContext context) {
+    final l = context.l10n;
+    final isPinned = context.read<VaultsController>().isPinned(board);
+    return [
+      PopupMenuItem(value: _BoardAction.share, child: Text(l.showKeyQr)),
+      PopupMenuItem(
+        value: _BoardAction.pin,
+        child: Text(isPinned ? l.unpinVault : l.pinVault),
+      ),
+      PopupMenuItem(value: _BoardAction.rename, child: Text(l.rename)),
+      PopupMenuItem(
+        value: _BoardAction.remove,
+        child: Text(l.removeFromDevice),
+      ),
+    ];
   }
 
   Future<void> _onAction(BuildContext context, _BoardAction action) async {
