@@ -154,13 +154,20 @@ Future<void> main() async {
     appLock.load(),
   ]);
   // Названия и лимиты могли поменять на другом устройстве — в фоне.
+  // P2P-синхронизация запускается по требованию, только если есть P2P-доски.
   final p2pSyncEngine = P2pSyncEngine(storage: p2pStorage);
-  unawaited(p2pSyncEngine.start());
 
   void updateP2pVaults() {
-    final p2pKeys = vaults.vaults.where((v) => v.provider == CloudProviderId.p2p);
+    final p2pKeys = vaults.vaults
+        .where((v) => v.provider == CloudProviderId.p2p)
+        .toSet();
     for (final key in p2pKeys) {
       p2pSyncEngine.registerVault(key);
+    }
+    for (final key in p2pSyncEngine.registeredVaults.toList()) {
+      if (!p2pKeys.contains(key)) {
+        p2pSyncEngine.unregisterVault(key);
+      }
     }
   }
   vaults.addListener(updateP2pVaults);

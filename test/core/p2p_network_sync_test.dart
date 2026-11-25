@@ -133,7 +133,9 @@ void main() {
         sync: syncServiceA,
       );
 
+      expect(engine.isRunning, isFalse);
       await engine.registerVault(key);
+      expect(engine.isRunning, isTrue);
       expect(engine.activePeersFor(key), 0);
 
       // Эмулируем обнаружение пира
@@ -151,6 +153,7 @@ void main() {
 
       engine.unregisterVault(key);
       expect(engine.activePeersFor(key), 0);
+      expect(engine.isRunning, isFalse);
       engine.dispose();
     });
   });
