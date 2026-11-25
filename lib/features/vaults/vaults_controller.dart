@@ -260,6 +260,48 @@ class VaultsController extends ChangeNotifier {
   Future<void> setTags(VaultKey key, List<String> tags) =>
       _change(key, (k) => k.copyWith(tags: tags));
 
+  /// Удаляет тег из глобального пула известных тегов, а также снимает его
+  /// со всех баз пользователя и поддосок.
+  Future<void> deleteTag(String tag) async {
+    final norm = VaultKey.normalizeTag(tag);
+    if (norm == null) return;
+    final lower = norm.toLowerCase();
+    final initialKnownLen = _knownTags.length;
+    _knownTags.removeWhere((t) => t.toLowerCase() == lower);
+    var changed = _knownTags.length != initialKnownLen;
+
+    for (final v in [..._vaults]) {
+      if (v.tags.any((t) => t.toLowerCase() == lower)) {
+        final newTags = v.tags.where((t) => t.toLowerCase() != lower).toList();
+        await setTags(v, newTags);
+        changed = true;
+      }
+    }
+
+    for (final entry in _subVaultsMap.entries) {
+      final list = entry.value;
+      var subChanged = false;
+      final newList = <VaultKey>[];
+      for (final child in list) {
+        if (child.tags.any((t) => t.toLowerCase() == lower)) {
+          final newTags = child.tags.where((t) => t.toLowerCase() != lower).toList();
+          newList.add(child.copyWith(tags: newTags));
+          subChanged = true;
+        } else {
+          newList.add(child);
+        }
+      }
+      if (subChanged) {
+        _subVaultsMap[entry.key] = newList;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      notifyListeners();
+    }
+  }
+
   Future<void> _change(
     VaultKey key,
     VaultKey Function(VaultKey current) update,

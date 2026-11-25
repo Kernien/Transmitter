@@ -166,4 +166,65 @@ void main() {
     expect(find.text('#важно'), findsAtLeastNWidgets(1));
     expect(find.text('#отчёт'), findsAtLeastNWidgets(1));
   });
+
+  testWidgets('лента: удаление тега через контекстное меню чипа', (tester) async {
+    final cloud = InMemoryCloudStorage();
+    final repo = EncryptedCloudPostRepository(
+      storage: cloud,
+      vaultId: 'v',
+      cipher: AesGcmCipher(List<int>.filled(32, 1)),
+      deviceName: 'Device',
+    );
+    final files = FakeFileTransferService();
+
+    final post = await repo.sendText('Заметка без тегов в тексте');
+    await repo.updatePostTags(post, ['вручную']);
+
+    final key = VaultKey(
+      secret: List<int>.filled(32, 1),
+      provider: CloudProviderId.dropbox,
+      label: 'Доска',
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<VaultSessionFactory>(
+            create: (_) => _FakeSessionFactory(repo),
+          ),
+          Provider<FileTransferService>(create: (_) => files),
+          Provider<MediaPicker>(create: (_) => const NoMediaPicker()),
+          Provider<ExternalOpener>(create: (_) => const NoExternalOpener()),
+          Provider<ShareSender>(create: (_) => const DisabledShareSender()),
+        ],
+        child: MaterialApp(
+          locale: const Locale('ru'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: FeedScreen.vault(key),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('#вручную'), findsAtLeastNWidgets(1));
+
+    // Вызываем контекстное меню по долгому тапу или вторичному клику
+    await tester.longPress(find.widgetWithText(FilterChip, '#вручную'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Удалить тег'), findsOneWidget);
+
+    await tester.tap(find.text('Удалить тег'));
+    await tester.pumpAndSettle();
+
+    // Диалог подтверждения
+    expect(find.text('Удалить тег #вручную?'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Удалить тег'));
+    await tester.pumpAndSettle();
+
+    // Тег удалён из ленты и из явных тегов
+    expect(find.widgetWithText(FilterChip, '#вручную'), findsNothing);
+  });
 }

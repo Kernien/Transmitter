@@ -404,6 +404,30 @@ abstract class AppLocalizations {
   /// **'No tags yet'**
   String get noTagsYet;
 
+  /// No description provided for @deleteTagTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete tag #{tag}?'**
+  String deleteTagTitle(String tag);
+
+  /// No description provided for @deleteTagConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'The tag will be removed from the list and unassigned from all items.'**
+  String get deleteTagConfirm;
+
+  /// No description provided for @deleteTagAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete tag'**
+  String get deleteTagAction;
+
+  /// No description provided for @tagDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Tag #{tag} deleted'**
+  String tagDeleted(String tag);
+
   /// No description provided for @filterAll.
   ///
   /// In en, this message translates to:

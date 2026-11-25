@@ -176,4 +176,53 @@ void main() {
 
     expect(result, ['vault']);
   });
+
+  testWidgets('ManageTagsDialog: удаление тега из существующих через диалог подтверждения', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      buildApp(
+        Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () async {
+              await ManageTagsDialog.show(
+                context,
+                initialTags: ['Работа'],
+                availableTags: ['Работа', 'Опечатка'],
+              );
+            },
+            child: const Text('Открыть'),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Открыть'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('#Опечатка'), findsOneWidget);
+
+    // Нажимаем на иконку корзинки у тега '#Опечатка'
+    final trashIcon = find.descendant(
+      of: find.widgetWithText(RawChip, '#Опечатка'),
+      matching: find.byIcon(Icons.delete_outline),
+    );
+    expect(trashIcon, findsOneWidget);
+    await tester.tap(trashIcon);
+    await tester.pumpAndSettle();
+
+    // Открылся диалог подтверждения
+    expect(find.text('Удалить тег #Опечатка?'), findsOneWidget);
+    expect(
+      find.text('Тег будет удалён из списка и снят со всех связанных элементов.'),
+      findsOneWidget,
+    );
+
+    // Нажимаем «Удалить тег»
+    await tester.tap(find.text('Удалить тег'));
+    await tester.pumpAndSettle();
+
+    // Тег '#Опечатка' исчез из диалога
+    expect(find.text('#Опечатка'), findsNothing);
+  });
 }

@@ -283,15 +283,45 @@ class _VaultsScreenState extends State<VaultsScreen> {
                   for (final tag in allTags)
                     Padding(
                       padding: const EdgeInsets.only(right: 6),
-                      child: FilterChip(
-                        label: Text('#$tag'),
-                        selected: _selectedTag == tag,
-                        onSelected: (selected) {
-                          setState(() {
-                            _selectedTag = selected ? tag : null;
-                          });
+                      child: ContextMenuRegion<String>(
+                        onSelected: (_) async {
+                          final deleted =
+                              await ManageTagsDialog.confirmAndDelete(context, tag);
+                          if (deleted && mounted && _selectedTag == tag) {
+                            setState(() => _selectedTag = null);
+                          }
                         },
-                        visualDensity: VisualDensity.compact,
+                        itemBuilder: (ctx) => [
+                          PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.delete_outline,
+                                  size: 20,
+                                  color: Theme.of(ctx).colorScheme.error,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  l.deleteTagAction,
+                                  style: TextStyle(
+                                    color: Theme.of(ctx).colorScheme.error,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        child: FilterChip(
+                          label: Text('#$tag'),
+                          selected: _selectedTag == tag,
+                          onSelected: (selected) {
+                            setState(() {
+                              _selectedTag = selected ? tag : null;
+                            });
+                          },
+                          visualDensity: VisualDensity.compact,
+                        ),
                       ),
                     ),
                 ],

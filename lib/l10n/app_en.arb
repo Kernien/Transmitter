@@ -65,6 +65,20 @@
   "tagHint": "Tag name",
   "existingTags": "Existing tags",
   "noTagsYet": "No tags yet",
+  "deleteTagTitle": "Delete tag #{tag}?",
+  "@deleteTagTitle": {
+    "placeholders": {
+      "tag": { "type": "String" }
+    }
+  },
+  "deleteTagConfirm": "The tag will be removed from the list and unassigned from all items.",
+  "deleteTagAction": "Delete tag",
+  "tagDeleted": "Tag #{tag} deleted",
+  "@tagDeleted": {
+    "placeholders": {
+      "tag": { "type": "String" }
+    }
+  },
   "filterAll": "All",
   "selectIconTitle": "Board icon",
   "iconsTab": "Icons",

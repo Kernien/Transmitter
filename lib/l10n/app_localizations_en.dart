@@ -186,6 +186,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noTagsYet => 'No tags yet';
 
   @override
+  String deleteTagTitle(String tag) {
+    return 'Delete tag #$tag?';
+  }
+
+  @override
+  String get deleteTagConfirm =>
+      'The tag will be removed from the list and unassigned from all items.';
+
+  @override
+  String get deleteTagAction => 'Delete tag';
+
+  @override
+  String tagDeleted(String tag) {
+    return 'Tag #$tag deleted';
+  }
+
+  @override
   String get filterAll => 'All';
 
   @override

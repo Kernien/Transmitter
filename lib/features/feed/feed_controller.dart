@@ -9,6 +9,7 @@ import '../../core/files/file_transfer_service.dart';
 import '../../core/files/media_picker.dart';
 import '../../core/share/outgoing_share.dart';
 import '../../core/utils/clock.dart';
+import '../../core/vault/vault_key.dart';
 import '../../data/post_repository.dart';
 import '../../domain/post.dart';
 import '../../domain/transfer_progress.dart';
@@ -968,6 +969,84 @@ class FeedController extends ChangeNotifier {
     } finally {
       _notify();
     }
+  }
+
+  /// Удаляет тег из явных тегов постов, а также тегов файлов и папок в текущей ленте.
+  Future<void> deleteTagGlobally(String tag) async {
+    final norm = VaultKey.normalizeTag(tag);
+    if (norm == null) return;
+    final lower = norm.toLowerCase();
+
+    for (final post in [..._posts]) {
+      var postModified = false;
+      var currentPost = post;
+
+      if (currentPost.explicitTags.any((t) => t.toLowerCase() == lower)) {
+        final nextExplicit = currentPost.explicitTags
+            .where((t) => t.toLowerCase() != lower)
+            .toList();
+        try {
+          final updated = await _repository.updatePostTags(currentPost, nextExplicit);
+          currentPost = updated;
+          postModified = true;
+        } catch (e) {
+          debugPrint('Failed to update explicit tags on post ${post.id}: $e');
+        }
+      }
+
+      if (currentPost.folder != null) {
+        final folder = currentPost.folder!;
+        var folderModified = false;
+
+        final nextDirs = <String, List<String>>{};
+        for (final entry in folder.dirTags.entries) {
+          final filtered = entry.value
+              .where((t) => t.toLowerCase() != lower)
+              .toList();
+          if (filtered.isNotEmpty) {
+            nextDirs[entry.key] = filtered;
+          }
+          if (filtered.length != entry.value.length) {
+            folderModified = true;
+          }
+        }
+
+        final nextFiles = folder.files.map((f) {
+          if (f.tags.any((t) => t.toLowerCase() == lower)) {
+            folderModified = true;
+            return f.withTags(
+              f.tags.where((t) => t.toLowerCase() != lower).toList(),
+            );
+          }
+          return f;
+        }).toList();
+
+        if (folderModified) {
+          final updatedFolder = folder.copyWith(
+            files: nextFiles,
+            dirTags: nextDirs,
+          );
+          try {
+            final updatedPost = await _repository.updateFolderStructure(
+              post: currentPost,
+              updatedFolder: updatedFolder,
+            );
+            if (updatedPost != null) {
+              currentPost = updatedPost;
+              postModified = true;
+            }
+          } catch (e) {
+            debugPrint('Failed to update folder structure on post ${post.id}: $e');
+          }
+        }
+      }
+
+      if (postModified) {
+        _posts = [for (final p in _posts) p.id == currentPost.id ? currentPost : p];
+      }
+    }
+
+    _notify();
   }
 
   /// Обновляет содержимое файла поста (например, после редактирования текста

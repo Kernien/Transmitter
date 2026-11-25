@@ -54,6 +54,20 @@
   "tagHint": "Имя тега",
   "existingTags": "Имеющиеся теги",
   "noTagsYet": "Нет тегов",
+  "deleteTagTitle": "Удалить тег #{tag}?",
+  "@deleteTagTitle": {
+    "placeholders": {
+      "tag": { "type": "String" }
+    }
+  },
+  "deleteTagConfirm": "Тег будет удалён из списка и снят со всех связанных элементов.",
+  "deleteTagAction": "Удалить тег",
+  "tagDeleted": "Тег #{tag} удалён",
+  "@tagDeleted": {
+    "placeholders": {
+      "tag": { "type": "String" }
+    }
+  },
   "filterAll": "Все",
   "selectIconTitle": "Значок доски",
   "iconsTab": "Значки",

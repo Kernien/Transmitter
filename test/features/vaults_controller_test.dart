@@ -200,4 +200,29 @@ void main() {
     expect(reloaded.allTags, ['Архив', 'Проект', 'Работа']);
     expect(reloaded.vaults.firstWhere((v) => v.sameVaultAs(vault1)).tags, ['Работа', 'Проект']);
   });
+
+  test('VaultsController: deleteTag удаляет тег из knownTags, баз и поддосок', () async {
+    final c = controller();
+    await c.load();
+    final vault1 = await c.create(
+      provider: CloudProviderId.googleDrive,
+      label: 'База 1',
+    );
+    final vault2 = await c.create(
+      provider: CloudProviderId.googleDrive,
+      label: 'База 2',
+    );
+
+    c.registerTags(['СпецТег', 'Временный']);
+    await c.setTags(vault1, ['Работа', 'СпецТег']);
+    await c.setTags(vault2, ['Архив', 'СпецТег']);
+
+    expect(c.allTags, ['Архив', 'Временный', 'Работа', 'СпецТег']);
+
+    await c.deleteTag('СпецТег');
+
+    expect(c.allTags, ['Архив', 'Временный', 'Работа']);
+    expect(c.vaults.firstWhere((v) => v.sameVaultAs(vault1)).tags, ['Работа']);
+    expect(c.vaults.firstWhere((v) => v.sameVaultAs(vault2)).tags, ['Архив']);
+  });
 }

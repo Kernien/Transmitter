@@ -186,6 +186,23 @@ class AppLocalizationsRu extends AppLocalizations {
   String get noTagsYet => 'Нет тегов';
 
   @override
+  String deleteTagTitle(String tag) {
+    return 'Удалить тег #$tag?';
+  }
+
+  @override
+  String get deleteTagConfirm =>
+      'Тег будет удалён из списка и снят со всех связанных элементов.';
+
+  @override
+  String get deleteTagAction => 'Удалить тег';
+
+  @override
+  String tagDeleted(String tag) {
+    return 'Тег #$tag удалён';
+  }
+
+  @override
   String get filterAll => 'Все';
 
   @override

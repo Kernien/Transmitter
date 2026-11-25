@@ -403,13 +403,54 @@ class _SubVaultsScreenState extends State<SubVaultsScreen> {
                                       ),
                                       for (final tag in sortedTags) ...[
                                         const SizedBox(width: 6),
-                                        FilterChip(
-                                          label: Text('#$tag'),
-                                          selected: _selectedTag == tag,
-                                          onSelected: (selected) => setState(() {
-                                            _selectedTag =
-                                                selected ? tag : null;
-                                          }),
+                                        ContextMenuRegion<String>(
+                                          onSelected: (_) async {
+                                            final deleted =
+                                                await ManageTagsDialog.confirmAndDelete(
+                                              context,
+                                              tag,
+                                            );
+                                            if (deleted &&
+                                                mounted &&
+                                                _selectedTag == tag) {
+                                              setState(
+                                                () => _selectedTag = null,
+                                              );
+                                            }
+                                          },
+                                          itemBuilder: (ctx) => [
+                                            PopupMenuItem(
+                                              value: 'delete',
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.delete_outline,
+                                                    size: 20,
+                                                    color: Theme.of(ctx)
+                                                        .colorScheme
+                                                        .error,
+                                                  ),
+                                                  const SizedBox(width: 12),
+                                                  Text(
+                                                    l.deleteTagAction,
+                                                    style: TextStyle(
+                                                      color: Theme.of(ctx)
+                                                          .colorScheme
+                                                          .error,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                          child: FilterChip(
+                                            label: Text('#$tag'),
+                                            selected: _selectedTag == tag,
+                                            onSelected: (selected) => setState(() {
+                                              _selectedTag =
+                                                  selected ? tag : null;
+                                            }),
+                                          ),
                                         ),
                                       ],
                                     ],
