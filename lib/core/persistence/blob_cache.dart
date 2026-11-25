@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'dart:typed_data';
+
+import 'package:crypto/crypto.dart';
 
 /// Кеш файлов на устройстве: зашифрованные записи, комментарии, опись
 /// доски — в том же виде, что и в облаке, поэтому без ключа базы он
@@ -22,12 +25,19 @@ abstract interface class BlobCache {
 const int defaultFileCacheLimit = 1024 * 1024 * 1024;
 
 /// Ключ кеша для вложения (только ASCII-символы, безопасные для файловой системы).
+/// Ограничивает длину имени файла, чтобы не превышать лимит файловой системы (255 символов),
+/// особенно на длинных именах с не-ASCII символами (кириллица и др.).
 String attachmentCacheKey(String attachmentId) {
   final safe = attachmentId.replaceAllMapped(
     RegExp(r'[^a-zA-Z0-9._-]'),
     (m) => '_${m[0]!.codeUnitAt(0).toRadixString(16)}_',
   );
-  return 'att-$safe.bin';
+  if (safe.length <= 100) {
+    return 'att-$safe.bin';
+  }
+  final hash = sha256.convert(utf8.encode(attachmentId)).toString();
+  final prefix = safe.length > 40 ? safe.substring(0, 40) : safe;
+  return 'att-${prefix}_$hash.bin';
 }
 
 bool isAttachmentCacheKey(String key) =>

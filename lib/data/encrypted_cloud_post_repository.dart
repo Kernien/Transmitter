@@ -343,9 +343,7 @@ class EncryptedCloudPostRepository implements PostRepository {
       encrypted,
       onProgress: onProgress,
     );
-    if (encrypted.length <= maxCachedAttachmentSize) {
-      await _blobs.write(attachmentCacheKey(attachment.id), encrypted);
-    }
+    await _safeCacheBlob(attachmentCacheKey(attachment.id), encrypted);
     return _publish(
       _newPost(
         kind: PostKind.file,
@@ -502,9 +500,7 @@ class EncryptedCloudPostRepository implements PostRepository {
             ),
             isCancelled: isCancelled,
           );
-          if (encrypted.length <= maxCachedAttachmentSize) {
-            await _blobs.write(attachmentCacheKey(attachment.id), encrypted);
-          }
+          await _safeCacheBlob(attachmentCacheKey(attachment.id), encrypted);
         } else {
           final encryptedLength = _cipher.encryptedLength(file.size);
           await _uploadWithRetry(
@@ -648,9 +644,7 @@ class EncryptedCloudPostRepository implements PostRepository {
       onProgress: onProgress,
     );
     final bytes = await _cipher.decrypt(encrypted);
-    if (encrypted.length <= maxCachedAttachmentSize) {
-      await _blobs.write(key, encrypted);
-    }
+    await _safeCacheBlob(key, encrypted);
     return bytes;
   }
 
@@ -799,9 +793,7 @@ class EncryptedCloudPostRepository implements PostRepository {
       encrypted,
       onProgress: onProgress,
     );
-    if (encrypted.length <= maxCachedAttachmentSize) {
-      await _blobs.write(attachmentCacheKey(newAttachment.id), encrypted);
-    }
+    await _safeCacheBlob(attachmentCacheKey(newAttachment.id), encrypted);
     final updatedPost = await _replacePostRecord(
       post,
       post.withAttachment(newAttachment),
@@ -848,9 +840,7 @@ class EncryptedCloudPostRepository implements PostRepository {
         encrypted,
         onProgress: onProgress,
       );
-      if (encrypted.length <= maxCachedAttachmentSize) {
-        await _blobs.write(attachmentCacheKey(newAttachment.id), encrypted);
-      }
+      await _safeCacheBlob(attachmentCacheKey(newAttachment.id), encrypted);
     } else {
       final encryptedLength = _cipher.encryptedLength(file.size);
       final encryptedStream = _cipher.encryptStream(file.openRead());
@@ -1049,9 +1039,7 @@ class EncryptedCloudPostRepository implements PostRepository {
       encrypted,
       onProgress: onProgress,
     );
-    if (encrypted.length <= maxCachedAttachmentSize) {
-      await _blobs.write(attachmentCacheKey(newEntry.id), encrypted);
-    }
+    await _safeCacheBlob(attachmentCacheKey(newEntry.id), encrypted);
 
     final updatedFiles = [...folder.files];
     updatedFiles[oldIndex] = newEntry;
@@ -1188,9 +1176,7 @@ class EncryptedCloudPostRepository implements PostRepository {
           ),
           isCancelled: isCancelled,
         );
-        if (encrypted.length <= maxCachedAttachmentSize) {
-          await _blobs.write(attachmentCacheKey(attachment.id), encrypted);
-        }
+        await _safeCacheBlob(attachmentCacheKey(attachment.id), encrypted);
       } else {
         final encryptedLength = _cipher.encryptedLength(file.size);
         await _uploadWithRetry(
@@ -1368,6 +1354,16 @@ class EncryptedCloudPostRepository implements PostRepository {
     await _blobs.write(fileName, encrypted);
     _cache[fileName] = post;
     return post;
+  }
+
+  Future<void> _safeCacheBlob(String key, Uint8List encrypted) async {
+    if (encrypted.length <= maxCachedAttachmentSize) {
+      try {
+        await _blobs.write(key, encrypted);
+      } catch (e) {
+        debugPrint('Failed to cache blob ($key): $e');
+      }
+    }
   }
 
   String _attachmentPath(Attachment a) =>

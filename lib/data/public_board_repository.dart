@@ -139,7 +139,11 @@ class PublicBoardRepository implements PostRepository {
     final encrypted = await _reader.download(locator, onProgress: onProgress);
     final bytes = await _cipher.decrypt(encrypted);
     if (encrypted.length <= EncryptedCloudPostRepository.maxCachedAttachmentSize) {
-      await _blobs.write(key, encrypted);
+      try {
+        await _blobs.write(key, encrypted);
+      } catch (_) {
+        // Ошибка кеширования не должна прерывать скачивание.
+      }
     }
     return bytes;
   }
