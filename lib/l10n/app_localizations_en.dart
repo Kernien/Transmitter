@@ -659,6 +659,51 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings => 'Settings';
 
   @override
+  String get aboutAppTitle => 'About';
+
+  @override
+  String appVersionLabel(String version) {
+    return 'Version $version';
+  }
+
+  @override
+  String get checkForUpdates => 'Check for updates';
+
+  @override
+  String get checkingForUpdates => 'Checking for updates…';
+
+  @override
+  String get latestVersionInstalled => 'You have the latest version installed';
+
+  @override
+  String updateAvailable(String version) {
+    return 'New version available: $version';
+  }
+
+  @override
+  String get updateAppAction => 'Update app';
+
+  @override
+  String get updatingApp => 'Updating…';
+
+  @override
+  String downloadingUpdate(int percent) {
+    return 'Downloading update: $percent%';
+  }
+
+  @override
+  String get updateSuccessRestart => 'Update downloaded! Click to restart.';
+
+  @override
+  String get restartNow => 'Restart';
+
+  @override
+  String get viewReleaseNotes => 'Release notes on GitHub';
+
+  @override
+  String get updateCheckFailed => 'Could not check for updates';
+
+  @override
   String get appLockTitle => 'App lock';
 
   @override

@@ -662,6 +662,52 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settings => 'Настройки';
 
   @override
+  String get aboutAppTitle => 'О программе';
+
+  @override
+  String appVersionLabel(String version) {
+    return 'Версия $version';
+  }
+
+  @override
+  String get checkForUpdates => 'Проверить обновления';
+
+  @override
+  String get checkingForUpdates => 'Проверка обновлений…';
+
+  @override
+  String get latestVersionInstalled => 'У вас установлена актуальная версия';
+
+  @override
+  String updateAvailable(String version) {
+    return 'Доступна новая версия: $version';
+  }
+
+  @override
+  String get updateAppAction => 'Обновить приложение';
+
+  @override
+  String get updatingApp => 'Обновление…';
+
+  @override
+  String downloadingUpdate(int percent) {
+    return 'Загрузка обновления: $percent%';
+  }
+
+  @override
+  String get updateSuccessRestart =>
+      'Обновление загружено! Нажмите для перезапуска.';
+
+  @override
+  String get restartNow => 'Перезапустить';
+
+  @override
+  String get viewReleaseNotes => 'Список изменений на GitHub';
+
+  @override
+  String get updateCheckFailed => 'Не удалось проверить обновления';
+
+  @override
   String get appLockTitle => 'Блокировка приложения';
 
   @override

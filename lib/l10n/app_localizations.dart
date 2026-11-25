@@ -1202,6 +1202,84 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settings;
 
+  /// No description provided for @aboutAppTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get aboutAppTitle;
+
+  /// No description provided for @appVersionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version}'**
+  String appVersionLabel(String version);
+
+  /// No description provided for @checkForUpdates.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for updates'**
+  String get checkForUpdates;
+
+  /// No description provided for @checkingForUpdates.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking for updates…'**
+  String get checkingForUpdates;
+
+  /// No description provided for @latestVersionInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'You have the latest version installed'**
+  String get latestVersionInstalled;
+
+  /// No description provided for @updateAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'New version available: {version}'**
+  String updateAvailable(String version);
+
+  /// No description provided for @updateAppAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Update app'**
+  String get updateAppAction;
+
+  /// No description provided for @updatingApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating…'**
+  String get updatingApp;
+
+  /// No description provided for @downloadingUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading update: {percent}%'**
+  String downloadingUpdate(int percent);
+
+  /// No description provided for @updateSuccessRestart.
+  ///
+  /// In en, this message translates to:
+  /// **'Update downloaded! Click to restart.'**
+  String get updateSuccessRestart;
+
+  /// No description provided for @restartNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart'**
+  String get restartNow;
+
+  /// No description provided for @viewReleaseNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Release notes on GitHub'**
+  String get viewReleaseNotes;
+
+  /// No description provided for @updateCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not check for updates'**
+  String get updateCheckFailed;
+
   /// No description provided for @appLockTitle.
   ///
   /// In en, this message translates to:

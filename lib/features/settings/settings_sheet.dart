@@ -7,9 +7,11 @@ import '../../app/l10n.dart';
 import '../../app/language_controller.dart';
 import '../../app/theme_controller.dart';
 import '../../core/device/device_identity.dart';
+import '../../core/update/app_update_service.dart';
 import '../cloud_connect/clouds_screen.dart';
 import '../device/device_name_dialog.dart';
 import '../app_lock/app_lock_settings_screen.dart';
+import 'about_dialog.dart';
 import 'language_dialog.dart';
 import 'storage_dialog.dart';
 import 'theme_dialog.dart';
@@ -92,6 +94,12 @@ class _SettingsSheet extends StatelessWidget {
                 ),
                 onTap: () => showStorageDialog(context),
               ),
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: Text(l.aboutAppTitle),
+              subtitle: Text(l.appVersionLabel(AppUpdateService.defaultCurrentVersion)),
+              onTap: () => showAboutAppDialog(context),
+            ),
             const SizedBox(height: 8),
           ],
         ),

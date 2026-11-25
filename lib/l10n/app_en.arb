@@ -235,6 +235,34 @@
   "pause": "Pause",
   "playbackFailed": "This file can't be played here — open it in another app",
   "settings": "Settings",
+  "aboutAppTitle": "About",
+  "appVersionLabel": "Version {version}",
+  "@appVersionLabel": {
+    "placeholders": {
+      "version": { "type": "String" }
+    }
+  },
+  "checkForUpdates": "Check for updates",
+  "checkingForUpdates": "Checking for updates…",
+  "latestVersionInstalled": "You have the latest version installed",
+  "updateAvailable": "New version available: {version}",
+  "@updateAvailable": {
+    "placeholders": {
+      "version": { "type": "String" }
+    }
+  },
+  "updateAppAction": "Update app",
+  "updatingApp": "Updating…",
+  "downloadingUpdate": "Downloading update: {percent}%",
+  "@downloadingUpdate": {
+    "placeholders": {
+      "percent": { "type": "int" }
+    }
+  },
+  "updateSuccessRestart": "Update downloaded! Click to restart.",
+  "restartNow": "Restart",
+  "viewReleaseNotes": "Release notes on GitHub",
+  "updateCheckFailed": "Could not check for updates",
   "appLockTitle": "App lock",
   "appLockEnabledSubtitle": "PIN enabled · locks after 5 minutes in the background",
   "appLockDisabledSubtitle": "Protect the app with a PIN",

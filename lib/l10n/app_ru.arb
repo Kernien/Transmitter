@@ -204,6 +204,34 @@
   "pause": "Пауза",
   "playbackFailed": "Этот файл здесь не воспроизвести — откройте его в другом приложении",
   "settings": "Настройки",
+  "aboutAppTitle": "О программе",
+  "appVersionLabel": "Версия {version}",
+  "@appVersionLabel": {
+    "placeholders": {
+      "version": { "type": "String" }
+    }
+  },
+  "checkForUpdates": "Проверить обновления",
+  "checkingForUpdates": "Проверка обновлений…",
+  "latestVersionInstalled": "У вас установлена актуальная версия",
+  "updateAvailable": "Доступна новая версия: {version}",
+  "@updateAvailable": {
+    "placeholders": {
+      "version": { "type": "String" }
+    }
+  },
+  "updateAppAction": "Обновить приложение",
+  "updatingApp": "Обновление…",
+  "downloadingUpdate": "Загрузка обновления: {percent}%",
+  "@downloadingUpdate": {
+    "placeholders": {
+      "percent": { "type": "int" }
+    }
+  },
+  "updateSuccessRestart": "Обновление загружено! Нажмите для перезапуска.",
+  "restartNow": "Перезапустить",
+  "viewReleaseNotes": "Список изменений на GitHub",
+  "updateCheckFailed": "Не удалось проверить обновления",
   "appLockTitle": "Блокировка приложения",
   "appLockEnabledSubtitle": "ПИН-код включён · блокировка через 5 минут в фоне",
   "appLockDisabledSubtitle": "Защитить приложение ПИН-кодом",
