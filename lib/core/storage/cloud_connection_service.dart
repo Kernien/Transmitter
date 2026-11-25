@@ -119,6 +119,7 @@ class CloudConnectionService extends ChangeNotifier {
 
   /// Подключён ли провайдер (или конкретный аккаунт, если передан [accountId]).
   bool isConnected(CloudProviderId id, {String? accountId}) {
+    if (id == CloudProviderId.p2p) return true;
     if (accountId != null) {
       return _accounts.any((a) => a.id == accountId);
     }
@@ -301,6 +302,12 @@ class CloudConnectionService extends ChangeNotifier {
 
   /// Возвращает [CloudStorage] для облака или конкретного аккаунта.
   CloudStorage storageFor(CloudProviderId id, {String? accountId}) {
+    if (id == CloudProviderId.p2p) {
+      return _registry
+          .adapterFor(id)
+          .createStorage('', onCredentialsChanged: (_) async {});
+    }
+
     CloudAccount? account;
     if (accountId != null) {
       account = accountById(accountId);

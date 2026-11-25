@@ -235,6 +235,24 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get providerP2p => 'Прямая связь (P2P)';
+
+  @override
+  String p2pPeersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count устройств в сети',
+      few: '$count устройства в сети',
+      one: '1 устройство в сети',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get p2pWaitingPeers => 'Ожидание устройств в сети';
+
+  @override
   String get maxFileSizeLabel => 'Максимальный размер файла';
 
   @override

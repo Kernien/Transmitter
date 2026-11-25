@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -12,7 +14,9 @@ import '../../app/widgets/empty_state_view.dart';
 import '../../core/files/external_opener.dart';
 import '../../core/files/file_transfer_service.dart';
 import '../../core/files/media_picker.dart';
+import '../../core/p2p/p2p_sync_engine.dart';
 import '../../core/share/outgoing_share.dart';
+import '../../core/storage/cloud_provider_id.dart';
 import '../../core/vault/reader_key.dart';
 import '../../core/vault/vault_key.dart';
 import '../../data/post_repository.dart';
@@ -197,9 +201,25 @@ class _FeedViewState extends State<_FeedView> {
   String _searchQuery = '';
   final _searchController = TextEditingController();
   String? _selectedTag;
+  StreamSubscription? _p2pSub;
+
+  @override
+  void initState() {
+    super.initState();
+    final p2pEngine = Provider.of<P2pSyncEngine?>(context, listen: false);
+    final key = widget.boardKey;
+    if (p2pEngine != null &&
+        key is VaultKey &&
+        key.provider == CloudProviderId.p2p) {
+      _p2pSub = p2pEngine.onBoardSynced.listen((_) {
+        if (mounted) context.read<FeedController>().refresh();
+      });
+    }
+  }
 
   @override
   void dispose() {
+    _p2pSub?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -323,6 +343,41 @@ class _FeedViewState extends State<_FeedView> {
               avatar: const Icon(Icons.visibility_outlined, size: 18),
               label: Text(context.l10n.readOnly),
             ),
+          ),
+        if (key is VaultKey && key.provider == CloudProviderId.p2p)
+          Consumer<P2pSyncEngine?>(
+            builder: (context, engine, _) {
+              if (engine == null) return const SizedBox.shrink();
+              final peers = engine.activePeersFor(key);
+              final hasPeers = peers > 0;
+              return Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: Tooltip(
+                  message: hasPeers
+                      ? context.l10n.p2pPeersCount(peers)
+                      : context.l10n.p2pWaitingPeers,
+                  child: Chip(
+                    avatar: Icon(
+                      hasPeers
+                          ? Icons.wifi_tethering
+                          : Icons.wifi_tethering_off,
+                      size: 16,
+                      color: hasPeers
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.outline,
+                    ),
+                    label: Text(
+                      hasPeers
+                          ? context.l10n.p2pPeersCount(peers)
+                          : context.l10n.p2pWaitingPeers,
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              );
+            },
           ),
         IconButton(
           tooltip: context.l10n.searchAction,

@@ -235,6 +235,23 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get providerP2p => 'Direct (P2P)';
+
+  @override
+  String p2pPeersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count devices online',
+      one: '1 device online',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get p2pWaitingPeers => 'Waiting for devices online';
+
+  @override
   String get maxFileSizeLabel => 'Maximum file size';
 
   @override

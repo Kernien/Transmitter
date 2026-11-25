@@ -15,6 +15,7 @@ import '../features/vaults/vaults_controller.dart';
 import '../features/vaults/vaults_screen.dart';
 import '../l10n/app_localizations.dart';
 import 'cache_settings.dart';
+import '../core/p2p/p2p_sync_engine.dart';
 import 'app_lock_controller.dart';
 import 'language_controller.dart';
 import 'theme_controller.dart';
@@ -36,8 +37,10 @@ class TransmitterApp extends StatelessWidget {
     this.opener = const NoExternalOpener(),
     required this.incomingShares,
     required this.shareSender,
+    this.p2pSyncEngine,
   }) : _navigatorKey = GlobalKey<NavigatorState>();
 
+  final P2pSyncEngine? p2pSyncEngine;
   final AppLockController appLock;
   final CloudConnectionService connections;
   final VaultsController vaults;
@@ -64,6 +67,7 @@ class TransmitterApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: cacheSettings),
         ChangeNotifierProvider.value(value: theme),
         ChangeNotifierProvider.value(value: appLock),
+        ChangeNotifierProvider<P2pSyncEngine?>.value(value: p2pSyncEngine),
         Provider.value(value: sessions),
         Provider<FileTransferService>.value(value: files),
         Provider<MediaPicker>.value(value: media),

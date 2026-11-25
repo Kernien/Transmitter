@@ -29,12 +29,12 @@ class CountingCloud extends InMemoryCloudStorage {
 }
 
 class FakeAdapter implements CloudProviderAdapter {
-  FakeAdapter(this.cloud);
+  FakeAdapter(this.cloud, {this.id = CloudProviderId.dropbox});
 
   final CloudStorage cloud;
 
   @override
-  CloudProviderId get id => CloudProviderId.dropbox;
+  final CloudProviderId id;
 
   @override
   bool get isConfigured => true;
@@ -308,6 +308,32 @@ void main() {
       final list = await sessions.listSubVaults(plainKey);
       expect(list.single.isEncrypted, isFalse);
       expect(list.single.label, 'Вложенная');
+    });
+
+    test('P2P доска открывается без учетных записей и отправляет посты', () async {
+      final p2pStorage = InMemoryCloudStorage();
+      final p2pAdapter = FakeAdapter(p2pStorage, id: CloudProviderId.p2p);
+      final p2pRegistry = CloudProviderRegistry([p2pAdapter]);
+      final p2pConnections = CloudConnectionService(p2pRegistry, InMemoryKeyValueStore());
+
+      final p2pSessions = VaultSessionFactory(
+        connections: p2pConnections,
+        deviceName: () => 'TestDevice',
+      );
+
+      final p2pKey = VaultKey(
+        secret: List<int>.filled(32, 9),
+        provider: CloudProviderId.p2p,
+        label: 'Прямая доска',
+      );
+
+      final repo = await p2pSessions.open(p2pKey);
+      final post = await repo.sendText('Привет через P2P!');
+      expect(post.text, 'Привет через P2P!');
+
+      final fetched = await repo.fetchPosts();
+      expect(fetched.length, 1);
+      expect(fetched.first.text, 'Привет через P2P!');
     });
   });
 }

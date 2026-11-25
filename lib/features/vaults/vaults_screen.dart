@@ -11,6 +11,7 @@ import '../../app/widgets/empty_state_view.dart';
 import '../../app/vault_session_factory.dart';
 import '../../core/storage/cloud_account.dart';
 import '../../core/storage/cloud_connection_service.dart';
+import '../../core/storage/cloud_provider_id.dart';
 import '../../core/vault/reader_key.dart';
 import '../../core/vault/vault_key.dart';
 import '../cloud_connect/connect_cloud_screen.dart';
@@ -551,6 +552,18 @@ class _VaultTile extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
             ),
           ),
+          if (vault.provider == CloudProviderId.p2p)
+            Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: Tooltip(
+                message: l.providerP2p,
+                child: Icon(
+                  Icons.wifi_tethering,
+                  size: 14,
+                  color: colorScheme.primary,
+                ),
+              ),
+            ),
           if (isPinned)
             Padding(
               padding: const EdgeInsets.only(left: 6),

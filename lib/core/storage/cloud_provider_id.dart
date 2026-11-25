@@ -6,12 +6,16 @@
 enum CloudProviderId {
   googleDrive('gdrive', 'Google Drive'),
   dropbox('dropbox', 'Dropbox'),
-  mega('mega', 'MEGA');
+  mega('mega', 'MEGA'),
+  p2p('p2p', 'P2P');
 
   const CloudProviderId(this.code, this.title);
 
   final String code;
   final String title;
+
+  /// Является ли облачным сервисом (в отличие от прямой P2P-связи).
+  bool get isCloud => this != CloudProviderId.p2p;
 
   static CloudProviderId fromCode(String code) => values.firstWhere(
     (p) => p.code == code,

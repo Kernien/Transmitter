@@ -494,6 +494,24 @@ abstract class AppLocalizations {
   /// **'{provider} (coming soon)'**
   String cloudComingSoon(String provider);
 
+  /// No description provided for @providerP2p.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct (P2P)'**
+  String get providerP2p;
+
+  /// No description provided for @p2pPeersCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 device online} other{{count} devices online}}'**
+  String p2pPeersCount(int count);
+
+  /// No description provided for @p2pWaitingPeers.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for devices online'**
+  String get p2pWaitingPeers;
+
   /// No description provided for @maxFileSizeLabel.
   ///
   /// In en, this message translates to:

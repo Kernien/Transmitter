@@ -26,7 +26,8 @@ class CloudsScreen extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           children: [
             for (final provider in CloudProviderId.values)
-              if (!connections.isSupported(provider))
+              if (provider.isCloud)
+                if (!connections.isSupported(provider))
                 ListTile(
                   leading: const Icon(Icons.cloud_outlined),
                   title: Text(provider.title),

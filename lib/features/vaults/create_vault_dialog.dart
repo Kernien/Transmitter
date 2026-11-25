@@ -113,9 +113,11 @@ class _CreateVaultDialogState extends State<CreateVaultDialog> {
                     value: p,
                     enabled: connections.isSupported(p),
                     child: Text(
-                      connections.isSupported(p)
-                          ? p.title
-                          : l.cloudComingSoon(p.title),
+                      p == CloudProviderId.p2p
+                          ? l.providerP2p
+                          : connections.isSupported(p)
+                              ? p.title
+                              : l.cloudComingSoon(p.title),
                     ),
                   ),
               ],
@@ -131,7 +133,7 @@ class _CreateVaultDialogState extends State<CreateVaultDialog> {
                 }
               }),
             ),
-            if (accounts.length > 1) ...[
+            if (_provider?.isCloud == true && accounts.length > 1) ...[
               const SizedBox(height: 16),
               DropdownButtonFormField<CloudAccount>(
                 initialValue: accounts.contains(_selectedAccount)
