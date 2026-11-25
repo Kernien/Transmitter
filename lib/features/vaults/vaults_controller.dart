@@ -54,7 +54,10 @@ class VaultsController extends ChangeNotifier {
         changed = true;
       }
     }
-    if (changed) notifyListeners();
+    if (changed) {
+      _store.saveKnownTags(_knownTags);
+      notifyListeners();
+    }
   }
 
   /// Все уникальные теги среди баз пользователя, поддосок и ранее
@@ -162,6 +165,8 @@ class VaultsController extends ChangeNotifier {
 
   Future<void> load() async {
     _vaults = await _store.loadAll();
+    final savedTags = await _store.loadKnownTags();
+    _knownTags.addAll(savedTags);
     final stored = await _readers?.loadAll();
     _boards = stored?.keys ?? const [];
     _customLabels = stored?.customLabels ?? const {};
@@ -298,6 +303,7 @@ class VaultsController extends ChangeNotifier {
     }
 
     if (changed) {
+      await _store.saveKnownTags(_knownTags);
       notifyListeners();
     }
   }
@@ -412,6 +418,8 @@ class VaultsController extends ChangeNotifier {
     _subVaultIds.clear();
     _boards = const [];
     _customLabels = const {};
+    _knownTags.clear();
+    await _store.saveKnownTags(const {});
     notifyListeners();
   }
 

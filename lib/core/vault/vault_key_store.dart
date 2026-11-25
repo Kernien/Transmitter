@@ -10,6 +10,7 @@ class VaultKeyStore {
 
   static const String _storeKey = 'vault_keys';
   static const String _pinnedKey = 'pinned_vault_id';
+  static const String _tagsKey = 'user_known_tags';
 
   final SecureKeyValueStore _store;
   final VaultKeyCodec _codec;
@@ -34,4 +35,22 @@ class VaultKeyStore {
   /// Сохраняет или сбрасывает идентификатор закреплённой доски.
   Future<void> savePinnedId(String? id) =>
       id == null ? _store.delete(_pinnedKey) : _store.write(_pinnedKey, id);
+
+  /// Загружает сохранённые теги пользователя на этом устройстве.
+  Future<Set<String>> loadKnownTags() async {
+    final raw = await _store.read(_tagsKey);
+    if (raw == null) return const {};
+    try {
+      final list = jsonDecode(raw) as List;
+      return list.map((e) => e.toString()).toSet();
+    } catch (_) {
+      return const {};
+    }
+  }
+
+  /// Сохраняет известные теги пользователя на этом устройстве.
+  Future<void> saveKnownTags(Set<String> tags) => _store.write(
+    _tagsKey,
+    jsonEncode(tags.toList()),
+  );
 }

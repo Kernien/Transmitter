@@ -148,6 +148,7 @@ class _FeedScreenState extends State<FeedScreen> {
         }
         return ChangeNotifierProvider(
           create: (context) {
+            final vaults = context.read<VaultsController?>();
             final feed = FeedController(
               repository,
               files: context.read<FileTransferService>(),
@@ -157,6 +158,16 @@ class _FeedScreenState extends State<FeedScreen> {
               pollInterval: widget.pollInterval,
               exportTexts: exportTexts,
             )..start();
+
+            void syncTags() {
+              final tags = feed.allTags;
+              if (tags.isNotEmpty) {
+                vaults?.registerTags(tags);
+              }
+            }
+            syncTags();
+            feed.addListener(syncTags);
+
             final onOwnerLabel = widget.onOwnerLabel;
             if (onOwnerLabel != null && repository is PublicBoardRepository) {
               feed.addListener(() {
