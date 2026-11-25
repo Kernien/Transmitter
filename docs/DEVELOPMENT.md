@@ -178,6 +178,9 @@ wsl -d Ubuntu-24.04 --cd /mnt/f/Code/Projects/Transmitter -- bash tool/build_lin
   файлов из Windows в них не работает — это ограничение WSL.
 - Иконка и ярлык — `linux/packaging/`; идентификатор приложения
   `app.transmitter.transmitter` (как на Android).
+- **Обновление AppImage**: в пакет встроена информация для дельта-обновлений
+  (AppImageUpdate / zsync с GitHub Releases), а также поддерживается прямое
+  обновление через запуск с ключом `--update` (`-u`).
 
 #### Flatpak
 

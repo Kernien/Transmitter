@@ -54,6 +54,9 @@ Steam Deck подключён по сети (`deck@192.168.31.177`). На нём
 3. Для игрового режима (AppImage):
    - `scp build/dist/Transmitter-<версия>-linux-x86_64.AppImage deck@192.168.31.177:/home/deck/.var/app/AppImage/Transmitter-linux-x86_64.AppImage`
    - `ssh deck@192.168.31.177 "chmod +x /home/deck/.var/app/AppImage/Transmitter-linux-x86_64.AppImage"`
+   - Либо на самом Deck для обновления до последнего релиза:
+     `ssh deck@192.168.31.177 "~/.var/app/AppImage/Transmitter-linux-x86_64.AppImage --update"`
+     (также поддерживается дельта-обновление через `appimageupdatetool` по zsync).
 
 ## Релиз
 

@@ -60,6 +60,39 @@ cp web/icons/Icon-512.png "$appdir/$APP_ID.png"
 cat > "$appdir/AppRun" <<'EOF'
 #!/bin/sh
 HERE="$(dirname "$(readlink -f "$0")")"
+
+if [ "${1:-}" = "--update" ] || [ "${1:-}" = "-u" ]; then
+  if [ -z "${APPIMAGE:-}" ]; then
+    echo "Ошибка: запуск --update поддерживается только из упакованного AppImage." >&2
+    exit 1
+  fi
+  echo "== Проверка обновлений Transmitter..."
+  LATEST_JSON=$(curl -fsSL "https://api.github.com/repos/Kernien/Transmitter/releases/latest" 2>/dev/null || true)
+  if [ -z "$LATEST_JSON" ]; then
+    echo "Не удалось связаться с GitHub Releases. Проверьте подключение к интернету." >&2
+    exit 1
+  fi
+  TAG=$(echo "$LATEST_JSON" | grep -Po '"tag_name":\s*"\K[^"]+' || true)
+  DOWNLOAD_URL=$(echo "$LATEST_JSON" | grep -Po '"browser_download_url":\s*"\K[^"]*linux-x86_64\.AppImage' | head -n1 || true)
+  if [ -z "$DOWNLOAD_URL" ]; then
+    echo "Файл обновления не найден в релизе $TAG." >&2
+    exit 1
+  fi
+  echo "Найдена актуальная версия: $TAG"
+  TMP_FILE="${APPIMAGE}.part"
+  echo "Загрузка обновления из $DOWNLOAD_URL..."
+  if curl -fSL --progress-bar -o "$TMP_FILE" "$DOWNLOAD_URL"; then
+    chmod +x "$TMP_FILE"
+    mv -f "$TMP_FILE" "$APPIMAGE"
+    echo "== Transmitter успешно обновлён до версии $TAG!"
+    exit 0
+  else
+    rm -f "$TMP_FILE"
+    echo "Ошибка при скачивании обновления." >&2
+    exit 1
+  fi
+fi
+
 exec "$HERE/transmitter" "$@"
 EOF
 chmod +x "$appdir/AppRun"
@@ -78,7 +111,9 @@ if [ ! -s "$RUNTIME" ]; then
   mv "$RUNTIME.part" "$RUNTIME"
 fi
 out="$dist/Transmitter-$version-linux-x86_64.AppImage"
+UPDATE_INFO="gh-releases-zsync|Kernien|Transmitter|latest|Transmitter-*-linux-x86_64.AppImage.zsync"
 ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 "$APPIMAGETOOL" --no-appstream \
+  -u "$UPDATE_INFO" \
   --runtime-file "$RUNTIME" "$appdir" "$out" >/dev/null
 chmod +x "$out"
 
