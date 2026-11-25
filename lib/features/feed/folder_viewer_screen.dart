@@ -5,14 +5,15 @@ import '../../app/widgets/content_width.dart';
 import '../../app/widgets/context_menu_region.dart';
 import '../../app/widgets/empty_state_view.dart';
 import '../../domain/post.dart';
+import '../vaults/manage_tags_dialog.dart';
 import 'feed_controller.dart';
 import 'image_viewer_screen.dart';
 import 'media_player_screen.dart';
 import 'text_viewer_screen.dart';
 
-enum _EntryMenuAction { save, edit, replace, rename, move, delete }
+enum _EntryMenuAction { save, edit, replace, rename, move, tags, delete }
 
-enum _SubdirMenuAction { rename, move, delete }
+enum _SubdirMenuAction { rename, move, tags, delete }
 
 /// Экран просмотра и редактирования содержимого папки: проводник с поддержкой
 /// вложенных папок, хлебными крошками, открытием файлов, скачиванием,
@@ -42,6 +43,7 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
   final _searchController = TextEditingController();
   String _currentSubdir = '';
   String _searchQuery = '';
+  String? _selectedTag;
   bool _isSearching = false;
   bool _busy = false;
   late Post _fallbackPost = widget.post;
@@ -135,6 +137,13 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
 
     final isSearching = _isSearching;
     final searchQuery = _searchQuery;
+    final allFolderTags = folder.allTags.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    if (_selectedTag != null && !folder.allTags.contains(_selectedTag)) {
+      _selectedTag = null;
+    }
+    final tagFilter = _selectedTag;
+
     final subdirs = <String, ({int count, int size})>{};
     final directFiles = <FolderEntry>[];
     var currentFilesCount = 0;
@@ -143,27 +152,40 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
     for (final entry in folder.files) {
       final norm = entry.relativePath.replaceAll('\\', '/');
       if (isSearching) {
-        if (!norm.toLowerCase().contains(searchQuery)) continue;
+        final matchesSearch = norm.toLowerCase().contains(searchQuery) ||
+            entry.tags.any((t) => t.toLowerCase().contains(searchQuery));
+        if (!matchesSearch) continue;
+        if (tagFilter != null && !entry.tags.contains(tagFilter)) continue;
         directFiles.add(entry);
         currentFilesCount++;
         currentTotalSize += entry.size;
         continue;
       }
       if (!norm.startsWith(prefix)) continue;
-      currentFilesCount++;
-      currentTotalSize += entry.size;
 
       final remainder = norm.substring(prefix.length);
       final slashIndex = remainder.indexOf('/');
       if (slashIndex != -1) {
         final subName = remainder.substring(0, slashIndex);
-        final current = subdirs[subName] ?? (count: 0, size: 0);
-        subdirs[subName] = (
-          count: current.count + 1,
-          size: current.size + entry.size,
-        );
+        final subPath = prefix + subName;
+        final matchesTag = tagFilter == null ||
+            (folder.dirTags[subPath]?.contains(tagFilter) ?? false) ||
+            entry.tags.contains(tagFilter);
+        if (matchesTag) {
+          final current = subdirs[subName] ?? (count: 0, size: 0);
+          subdirs[subName] = (
+            count: current.count + 1,
+            size: current.size + entry.size,
+          );
+        }
+        currentFilesCount++;
+        currentTotalSize += entry.size;
       } else {
-        directFiles.add(entry);
+        currentFilesCount++;
+        currentTotalSize += entry.size;
+        if (tagFilter == null || entry.tags.contains(tagFilter)) {
+          directFiles.add(entry);
+        }
       }
     }
 
@@ -300,9 +322,36 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
           body: Column(
             children: [
               if (!isSearching) _buildBreadcrumbs(theme),
+              if (allFolderTags.isNotEmpty)
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    children: [
+                      FilterChip(
+                        label: Text(l.filterAll),
+                        selected: _selectedTag == null,
+                        onSelected: (_) => setState(() => _selectedTag = null),
+                      ),
+                      for (final tag in allFolderTags) ...[
+                        const SizedBox(width: 6),
+                        FilterChip(
+                          label: Text('#$tag'),
+                          selected: _selectedTag == tag,
+                          onSelected: (selected) => setState(() {
+                            _selectedTag = selected ? tag : null;
+                          }),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               Expanded(
                 child: totalItems == 0
-                    ? (isSearching
+                    ? (isSearching || tagFilter != null
                         ? EmptyStateView(
                             icon: Icons.search_off_outlined,
                             title: l.searchNoResults,
@@ -321,6 +370,8 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
                             final subName = sortedSubdirs[index];
                             final subInfo = subdirs[subName]!;
                             final subPath = prefix + subName;
+                            final dirTags =
+                                folder.dirTags[subPath] ?? const <String>[];
                             final tile = ListTile(
                               leading: Icon(
                                 Icons.folder,
@@ -334,8 +385,55 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              subtitle: Text(
-                                '${l.folderFilesCount(subInfo.count)} · ${l.fileSize(subInfo.size)}',
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${l.folderFilesCount(subInfo.count)} · ${l.fileSize(subInfo.size)}',
+                                  ),
+                                  if (dirTags.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Wrap(
+                                      spacing: 4,
+                                      runSpacing: 4,
+                                      children: [
+                                        for (final tag in dirTags)
+                                          InkWell(
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                            onTap: () => setState(
+                                              () => _selectedTag = tag,
+                                            ),
+                                            child: Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 6,
+                                                vertical: 2,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: theme
+                                                    .colorScheme
+                                                    .secondaryContainer
+                                                    .withValues(alpha: 0.6),
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                '#$tag',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: theme
+                                                      .colorScheme
+                                                      .onSecondaryContainer,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
                               ),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -391,7 +489,53 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            subtitle: Text(l.fileSize(entry.size)),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(l.fileSize(entry.size)),
+                                if (entry.tags.isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Wrap(
+                                    spacing: 4,
+                                    runSpacing: 4,
+                                    children: [
+                                      for (final tag in entry.tags)
+                                        InkWell(
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                          onTap: () => setState(
+                                            () => _selectedTag = tag,
+                                          ),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: theme
+                                                  .colorScheme
+                                                  .secondaryContainer
+                                                  .withValues(alpha: 0.6),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              '#$tag',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w500,
+                                                color: theme
+                                                    .colorScheme
+                                                    .onSecondaryContainer,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ],
+                            ),
                             trailing: isSaving
                                 ? const SizedBox.square(
                                     dimension: 20,
@@ -466,6 +610,10 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
       child: _menuRow(Icons.drive_file_move_outlined, l.moveItem),
     ),
     PopupMenuItem(
+      value: _SubdirMenuAction.tags,
+      child: _menuRow(Icons.label_outline, l.vaultTagsAction),
+    ),
+    PopupMenuItem(
       value: _SubdirMenuAction.delete,
       child: _menuRow(Icons.delete_outline, l.delete),
     ),
@@ -491,6 +639,10 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
     PopupMenuItem(
       value: _EntryMenuAction.replace,
       child: _menuRow(Icons.upload_file_outlined, l.replaceFile),
+    ),
+    PopupMenuItem(
+      value: _EntryMenuAction.tags,
+      child: _menuRow(Icons.label_outline, l.vaultTagsAction),
     ),
     PopupMenuItem(
       value: _EntryMenuAction.save,
@@ -536,9 +688,31 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
         await _moveEntry(context, entry);
       case _EntryMenuAction.replace:
         await _replaceEntry(context, entry);
+      case _EntryMenuAction.tags:
+        await _manageEntryTags(context, entry);
       case _EntryMenuAction.delete:
         await _deleteEntry(context, entry);
     }
+  }
+
+  Future<void> _manageEntryTags(
+    BuildContext context,
+    FolderEntry entry,
+  ) async {
+    final selected = await ManageTagsDialog.show(
+      context,
+      initialTags: entry.tags,
+      availableTags: folder.allTags.toList(),
+    );
+    if (selected == null || !mounted) return;
+    await _runBusy(() async {
+      final updatedFolder = folder.withFileTags(entry.id, selected);
+      final updated = await widget.feed.updateFolderStructure(
+        _currentPost,
+        updatedFolder,
+      );
+      if (updated != null) _fallbackPost = updated;
+    });
   }
 
   Future<void> _onSubdirAction(
@@ -552,19 +726,39 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
         await _renameSubdir(context, subName: subName, subPath: subPath);
       case _SubdirMenuAction.move:
         await _moveSubdir(context, subName: subName, subPath: subPath);
+      case _SubdirMenuAction.tags:
+        await _manageSubdirTags(context, subPath: subPath);
       case _SubdirMenuAction.delete:
         await _deleteSubdir(context, subPath: subPath);
     }
+  }
+
+  Future<void> _manageSubdirTags(
+    BuildContext context, {
+    required String subPath,
+  }) async {
+    final curTags = folder.dirTags[subPath] ?? const <String>[];
+    final selected = await ManageTagsDialog.show(
+      context,
+      initialTags: curTags,
+      availableTags: folder.allTags.toList(),
+    );
+    if (selected == null || !mounted) return;
+    await _runBusy(() async {
+      final updatedFolder = folder.withDirTags(subPath, selected);
+      final updated = await widget.feed.updateFolderStructure(
+        _currentPost,
+        updatedFolder,
+      );
+      if (updated != null) _fallbackPost = updated;
+    });
   }
 
   Future<void> _renameRootFolder(BuildContext context) async {
     final newName = await _promptName(context, initial: folder.name);
     if (newName == null || newName == folder.name || !mounted) return;
     await _runBusy(() async {
-      final updatedFolder = FolderAttachment(
-        name: newName,
-        files: folder.files,
-      );
+      final updatedFolder = folder.copyWith(name: newName);
       final updated = await widget.feed.updateFolderStructure(
         _currentPost,
         updatedFolder,
@@ -588,18 +782,11 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
     await _runBusy(() async {
       final updatedFiles = [
         for (final f in folder.files)
-          f.id == entry.id
-              ? FolderEntry(
-                  id: f.id,
-                  relativePath: newRelPath,
-                  size: f.size,
-                  mimeType: f.mimeType,
-                )
-              : f,
+          f.id == entry.id ? f.copyWith(relativePath: newRelPath) : f,
       ];
       final updated = await widget.feed.updateFolderStructure(
         _currentPost,
-        FolderAttachment(name: folder.name, files: updatedFiles),
+        folder.copyWith(files: updatedFiles),
       );
       if (updated != null) _fallbackPost = updated;
     });
@@ -622,18 +809,11 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
     await _runBusy(() async {
       final updatedFiles = [
         for (final f in folder.files)
-          f.id == entry.id
-              ? FolderEntry(
-                  id: f.id,
-                  relativePath: newRelPath,
-                  size: f.size,
-                  mimeType: f.mimeType,
-                )
-              : f,
+          f.id == entry.id ? f.copyWith(relativePath: newRelPath) : f,
       ];
       final updated = await widget.feed.updateFolderStructure(
         _currentPost,
-        FolderAttachment(name: folder.name, files: updatedFiles),
+        folder.copyWith(files: updatedFiles),
       );
       if (updated != null) _fallbackPost = updated;
     });
@@ -663,7 +843,7 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
       final remaining = folder.files.where((f) => f.id != entry.id).toList();
       final updated = await widget.feed.updateFolderStructure(
         _currentPost,
-        FolderAttachment(name: folder.name, files: remaining),
+        folder.copyWith(files: remaining),
         removedEntryIds: [entry.id],
       );
       if (!context.mounted) return;
@@ -693,25 +873,33 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
     final newPrefix = '$newSubPath/';
 
     await _runBusy(() async {
+      final nextDirTags = <String, List<String>>{};
+      for (final item in folder.dirTags.entries) {
+        if (item.key == subPath) {
+          nextDirTags[newSubPath] = item.value;
+        } else if (item.key.startsWith(oldPrefix)) {
+          final remainder = item.key.substring(oldPrefix.length);
+          nextDirTags['$newSubPath/$remainder'] = item.value;
+        } else {
+          nextDirTags[item.key] = item.value;
+        }
+      }
       final updatedFiles = [
         for (final f in folder.files)
           if (f.relativePath.replaceAll('\\', '/').startsWith(oldPrefix))
-            FolderEntry(
-              id: f.id,
+            f.copyWith(
               relativePath:
                   newPrefix +
                   f.relativePath
                       .replaceAll('\\', '/')
                       .substring(oldPrefix.length),
-              size: f.size,
-              mimeType: f.mimeType,
             )
           else
             f,
       ];
       final updated = await widget.feed.updateFolderStructure(
         _currentPost,
-        FolderAttachment(name: folder.name, files: updatedFiles),
+        folder.copyWith(files: updatedFiles, dirTags: nextDirTags),
       );
       if (updated != null) _fallbackPost = updated;
     });
@@ -736,25 +924,33 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
     final newPrefix = '$newSubPath/';
 
     await _runBusy(() async {
+      final nextDirTags = <String, List<String>>{};
+      for (final item in folder.dirTags.entries) {
+        if (item.key == subPath) {
+          nextDirTags[newSubPath] = item.value;
+        } else if (item.key.startsWith(oldPrefix)) {
+          final remainder = item.key.substring(oldPrefix.length);
+          nextDirTags['$newSubPath/$remainder'] = item.value;
+        } else {
+          nextDirTags[item.key] = item.value;
+        }
+      }
       final updatedFiles = [
         for (final f in folder.files)
           if (f.relativePath.replaceAll('\\', '/').startsWith(oldPrefix))
-            FolderEntry(
-              id: f.id,
+            f.copyWith(
               relativePath:
                   newPrefix +
                   f.relativePath
                       .replaceAll('\\', '/')
                       .substring(oldPrefix.length),
-              size: f.size,
-              mimeType: f.mimeType,
             )
           else
             f,
       ];
       final updated = await widget.feed.updateFolderStructure(
         _currentPost,
-        FolderAttachment(name: folder.name, files: updatedFiles),
+        folder.copyWith(files: updatedFiles, dirTags: nextDirTags),
       );
       if (updated != null) _fallbackPost = updated;
     });
@@ -780,9 +976,14 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
     }
 
     await _runBusy(() async {
+      final nextDirTags = <String, List<String>>{
+        for (final item in folder.dirTags.entries)
+          if (item.key != subPath && !item.key.startsWith(oldPrefix))
+            item.key: item.value,
+      };
       final updated = await widget.feed.updateFolderStructure(
         _currentPost,
-        FolderAttachment(name: folder.name, files: remaining),
+        folder.copyWith(files: remaining, dirTags: nextDirTags),
         removedEntryIds: removedIds,
       );
       if (!context.mounted) return;

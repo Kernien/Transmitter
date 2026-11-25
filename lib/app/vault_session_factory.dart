@@ -195,6 +195,8 @@ class VaultSessionFactory implements VaultSettingsRemote, SubVaultsRemote {
         : child.copyWith(
             label: settings.label,
             maxFileSize: settings.maxFileSize,
+            icon: settings.icon ?? child.icon,
+            tags: settings.tags.isNotEmpty ? settings.tags : child.tags,
           );
   }
 
@@ -226,6 +228,8 @@ class VaultSessionFactory implements VaultSettingsRemote, SubVaultsRemote {
         label: next.label,
         maxFileSize: next.maxFileSize,
         updatedAt: DateTime.now().toUtc(),
+        icon: next.icon,
+        tags: next.tags,
       ),
     );
     await (await _subVaults(parent)).update(next);
@@ -246,6 +250,30 @@ class VaultSessionFactory implements VaultSettingsRemote, SubVaultsRemote {
         label: next.label,
         maxFileSize: next.maxFileSize,
         updatedAt: DateTime.now().toUtc(),
+        icon: next.icon,
+        tags: next.tags,
+      ),
+    );
+    await (await _subVaults(parent)).update(next);
+    _updateCachedSubVault(parent, next);
+    return next;
+  }
+
+  @override
+  Future<VaultKey> setSubVaultTags(
+    VaultKey parent,
+    VaultKey child,
+    List<String> tags,
+  ) async {
+    final next = child.copyWith(tags: tags);
+    await saveSettings(
+      next,
+      VaultSettings(
+        label: next.label,
+        maxFileSize: next.maxFileSize,
+        updatedAt: DateTime.now().toUtc(),
+        icon: next.icon,
+        tags: tags,
       ),
     );
     await (await _subVaults(parent)).update(next);

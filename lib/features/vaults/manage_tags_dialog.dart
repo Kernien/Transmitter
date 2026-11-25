@@ -1,31 +1,50 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../app/l10n.dart';
 import '../../core/vault/vault_key.dart';
+import 'vaults_controller.dart';
 
-/// Диалог управления тегами базы.
+/// Диалог управления тегами базы или отдельного элемента.
 class ManageTagsDialog extends StatefulWidget {
   const ManageTagsDialog({
     super.key,
     required this.initialTags,
-    required this.availableTags,
+    this.availableTags = const [],
+    this.title,
   });
 
   final List<String> initialTags;
   final List<String> availableTags;
+  final String? title;
 
   static Future<List<String>?> show(
     BuildContext context, {
     required List<String> initialTags,
-    required List<String> availableTags,
-  }) {
-    return showDialog<List<String>>(
+    List<String> availableTags = const [],
+    String? title,
+  }) async {
+    final vaults = Provider.of<VaultsController?>(context, listen: false);
+    final globalTags = vaults?.allTags ?? const <String>[];
+    final merged = <String>{
+      ...availableTags,
+      ...globalTags,
+    }.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+    final result = await showDialog<List<String>>(
       context: context,
       builder: (_) => ManageTagsDialog(
         initialTags: initialTags,
-        availableTags: availableTags,
+        availableTags: merged,
+        title: title,
       ),
     );
+
+    if (result != null && result.isNotEmpty) {
+      vaults?.registerTags(result);
+    }
+    return result;
   }
 
   @override
@@ -79,7 +98,7 @@ class _ManageTagsDialogState extends State<ManageTagsDialog> {
         .toList();
 
     return AlertDialog(
-      title: Text(l.manageTagsTitle),
+      title: Text(widget.title ?? l.manageTagsTitle),
       contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
       content: SizedBox(
         width: 360,
@@ -168,7 +187,15 @@ class _ManageTagsDialogState extends State<ManageTagsDialog> {
           child: Text(l.cancel),
         ),
         FilledButton(
-          onPressed: () => Navigator.of(context).pop(_tags),
+          onPressed: () {
+            final pending = _textController.text;
+            final tag = VaultKey.normalizeTag(pending);
+            if (tag != null &&
+                !_tags.any((t) => t.toLowerCase() == tag.toLowerCase())) {
+              _tags.add(tag);
+            }
+            Navigator.of(context).pop(_tags);
+          },
           child: Text(l.save),
         ),
       ],

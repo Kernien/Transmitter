@@ -954,6 +954,22 @@ class FeedController extends ChangeNotifier {
     }
   }
 
+  /// Задаёт явные теги записи.
+  /// Возвращает `true`, если изменение сохранено в облаке.
+  Future<bool> setPostTags(Post post, List<String> tags) async {
+    try {
+      final updated = await _repository.updatePostTags(post, tags);
+      _posts = [for (final p in _posts) p.id == post.id ? updated : p];
+      _error = null;
+      return true;
+    } catch (e) {
+      _error = e;
+      return false;
+    } finally {
+      _notify();
+    }
+  }
+
   /// Обновляет содержимое файла поста (например, после редактирования текста
   /// прямо в приложении) и синхронизирует кеш превью.
   Future<Post?> updateFileContent(

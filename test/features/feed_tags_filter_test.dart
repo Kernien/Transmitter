@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -106,5 +108,62 @@ void main() {
     // Снова видны оба поста
     expect(find.textContaining('Пост 1'), findsOneWidget);
     expect(find.textContaining('Пост 2'), findsOneWidget);
+  });
+
+  testWidgets('вкладка файлов: бейджи тегов и фильтрация чипами', (tester) async {
+    final cloud = InMemoryCloudStorage();
+    final repo = EncryptedCloudPostRepository(
+      storage: cloud,
+      vaultId: 'v',
+      cipher: AesGcmCipher(List<int>.filled(32, 1)),
+      deviceName: 'Device',
+    );
+    final files = FakeFileTransferService();
+
+    final postFile = await repo.sendFile(
+      fileName: 'document.pdf',
+      bytes: Uint8List.fromList([1, 2, 3]),
+      caption: 'Документ #важно',
+    );
+    await repo.updatePostTags(postFile, ['отчёт']);
+
+    final key = VaultKey(
+      secret: List<int>.filled(32, 1),
+      provider: CloudProviderId.dropbox,
+      label: 'Доска',
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<VaultSessionFactory>(
+            create: (_) => _FakeSessionFactory(repo),
+          ),
+          Provider<FileTransferService>(create: (_) => files),
+          Provider<MediaPicker>(create: (_) => const NoMediaPicker()),
+          Provider<ExternalOpener>(create: (_) => const NoExternalOpener()),
+          Provider<ShareSender>(create: (_) => const DisabledShareSender()),
+        ],
+        child: MaterialApp(
+          locale: const Locale('ru'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: FeedScreen.vault(key),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Переключаемся на вкладку «Файлы»
+    await tester.tap(find.byIcon(Icons.folder_outlined));
+    await tester.pumpAndSettle();
+
+    // Виден файл document.pdf
+    expect(find.text('document.pdf'), findsOneWidget);
+
+    // На карточке видны бейджи #важно и #отчёт
+    expect(find.text('#важно'), findsAtLeastNWidgets(1));
+    expect(find.text('#отчёт'), findsAtLeastNWidgets(1));
   });
 }

@@ -31,14 +31,17 @@ class VaultSettings {
       icon != key.icon ||
       !listEquals(tags, key.tags);
 
-  Map<String, Object> toJson() => {
-    'v': 1,
-    'label': label,
-    'm': maxFileSize,
-    'ts': updatedAt.toUtc().toIso8601String(),
-    if (icon != null) 'icon': icon!,
-    if (tags.isNotEmpty) 'tags': tags,
-  };
+  Map<String, Object> toJson() {
+    final iconValue = icon;
+    return {
+      'v': 1,
+      'label': label,
+      'm': maxFileSize,
+      'ts': updatedAt.toUtc().toIso8601String(),
+      if (iconValue != null) 'icon': iconValue,
+      if (tags.isNotEmpty) 'tags': tags,
+    };
+  }
 
   /// Бросает [FormatException], если данные не похожи на настройки.
   factory VaultSettings.fromJson(Map<String, dynamic> json) {

@@ -211,6 +211,9 @@ class PublicBoardRepository implements PostRepository {
   Future<Post> setPinned(Post post, bool isPinned) => _readOnly();
 
   @override
+  Future<Post> updatePostTags(Post post, List<String> tags) => _readOnly();
+
+  @override
   Future<Post> updateFileContent({
     required Post post,
     required Uint8List bytes,

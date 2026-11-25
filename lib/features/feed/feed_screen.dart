@@ -19,6 +19,7 @@ import '../../data/post_repository.dart';
 import '../../data/public_board_repository.dart';
 import '../../data/sub_vault_store.dart';
 import '../../domain/post.dart';
+import '../vaults/manage_tags_dialog.dart';
 import '../vaults/sub_vaults_screen.dart';
 import '../vaults/vaults_controller.dart';
 import '../vaults/vaults_screen.dart' show kWideScreenBreakpoint;
@@ -990,11 +991,13 @@ class _FilesListViewState extends State<_FilesListView> {
       if (tagFilter != null && !it.post.tags.contains(tagFilter)) return false;
       if (q.isEmpty) return true;
       if (it.name.toLowerCase().contains(q)) return true;
+      if (it.post.tags.any((t) => t.toLowerCase().contains(q))) return true;
       if (it.isFolder) {
         return it.folder!.files.any(
           (f) =>
               f.fileName.toLowerCase().contains(q) ||
-              f.relativePath.toLowerCase().contains(q),
+              f.relativePath.toLowerCase().contains(q) ||
+              f.tags.any((t) => t.toLowerCase().contains(q)),
         );
       }
       return false;
@@ -1157,11 +1160,45 @@ class _FilesListViewState extends State<_FilesListView> {
                     ),
                   ],
                 ),
-                subtitle: Text(
-                  subtitleText,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      subtitleText,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    if (item.post.tags.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Wrap(
+                        spacing: 4,
+                        runSpacing: 4,
+                        children: [
+                          for (final tag in item.post.tags)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.secondaryContainer
+                                    .withValues(alpha: 0.6),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                '#$tag',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: theme.colorScheme.onSecondaryContainer,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ],
                 ),
                 onTap: isPending ? null : () => _openItem(context, feed, item),
                 trailing: isPending
@@ -1228,6 +1265,17 @@ class _FilesListViewState extends State<_FilesListView> {
             const Icon(Icons.open_in_new, size: 20),
             const SizedBox(width: 12),
             Text(l.openWith),
+          ],
+        ),
+      ),
+    if (!isReadOnly)
+      PopupMenuItem(
+        value: _FileItemAction.tags,
+        child: Row(
+          children: [
+            const Icon(Icons.label_outline, size: 20),
+            const SizedBox(width: 12),
+            Text(l.vaultTagsAction),
           ],
         ),
       ),
@@ -1306,6 +1354,15 @@ class _FilesListViewState extends State<_FilesListView> {
         }
       case _FileItemAction.openWith:
         await feed.openExternally(item.post);
+      case _FileItemAction.tags:
+        final selected = await ManageTagsDialog.show(
+          context,
+          initialTags: item.post.explicitTags,
+          availableTags: feed.allTags,
+        );
+        if (selected != null) {
+          await feed.setPostTags(item.post, selected);
+        }
       case _FileItemAction.pin:
         await feed.togglePin(item.post);
       case _FileItemAction.delete:
@@ -1344,4 +1401,4 @@ class _FilesListViewState extends State<_FilesListView> {
   }
 }
 
-enum _FileItemAction { save, openWith, pin, delete }
+enum _FileItemAction { save, openWith, tags, pin, delete }

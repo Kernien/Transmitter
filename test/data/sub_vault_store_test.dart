@@ -77,16 +77,18 @@ void main() {
     final child = await store.create('Старое название');
     expect((await store.list()).single.label, 'Старое название');
 
-    // Обновление названия и лимита размера файла
+    // Обновление названия, лимита размера файла и тегов
     final updated = child.copyWith(
       label: 'Новое название',
       maxFileSize: 50 * 1024 * 1024,
+      tags: ['проект', 'важно'],
     );
     await store.update(updated);
 
     final reloaded = (await store.list()).single;
     expect(reloaded.label, 'Новое название');
     expect(reloaded.maxFileSize, 50 * 1024 * 1024);
+    expect(reloaded.tags, ['проект', 'важно']);
 
     // Добавляем повреждённый файл в облако: список не ломается, повреждённый пропускается
     final brokenFileName = 'sub-vault-v1-${secrets.vaultId}-broken.bin';

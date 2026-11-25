@@ -759,6 +759,12 @@ class EncryptedCloudPostRepository implements PostRepository {
   }
 
   @override
+  Future<Post> updatePostTags(Post post, List<String> tags) async {
+    final updated = post.withExplicitTags(tags);
+    return _replacePostRecord(post, updated);
+  }
+
+  @override
   Future<Post> updateFileContent({
     required Post post,
     required Uint8List bytes,

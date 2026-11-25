@@ -20,6 +20,11 @@ abstract interface class SubVaultsRemote {
     VaultKey child,
     int maxFileSize,
   );
+  Future<VaultKey> setSubVaultTags(
+    VaultKey parent,
+    VaultKey child,
+    List<String> tags,
+  );
   Future<void> deleteSubVault(VaultKey parent, VaultKey child);
 }
 
@@ -71,7 +76,11 @@ class SubVaultStore {
           limit > VaultKey.absoluteMaxFileSize) {
         return null;
       }
-      return await _key(id, record['label'] as String, limit);
+      final rawTags = record['tags'];
+      final tags = (rawTags is List)
+          ? rawTags.map((e) => e.toString()).toList()
+          : const <String>[];
+      return await _key(id, record['label'] as String, limit, tags: tags);
     } catch (_) {
       // Пропускаем повреждённый файл записи поддоски, чтобы не ломать весь список.
       return null;
@@ -91,13 +100,13 @@ class SubVaultStore {
     return child;
   }
 
-  /// Обновляет название или лимит размера файла в записи поддоски.
+  /// Обновляет название, лимит размера файла или теги в записи поддоски.
   Future<void> update(VaultKey child) async {
     final name = child.label.trim();
     if (name.isEmpty) throw ArgumentError.value(child.label, 'label');
     final id = await _findChildId(child);
     if (id == null) return;
-    await _writeRecord(id, name, child.maxFileSize);
+    await _writeRecord(id, name, child.maxFileSize, tags: child.tags);
   }
 
   /// Удаляет связь родительской доски с поддоской из облака.
@@ -118,18 +127,33 @@ class SubVaultStore {
     return null;
   }
 
-  Future<void> _writeRecord(String id, String name, int limit) async {
+  Future<void> _writeRecord(
+    String id,
+    String name,
+    int limit, {
+    List<String> tags = const [],
+  }) async {
     await storage.upload(
       '$_prefix$id.bin',
       await cipher.encrypt(
         utf8.encode(
-          jsonEncode({'id': id, 'label': name, 'limit': limit}),
+          jsonEncode({
+            'id': id,
+            'label': name,
+            'limit': limit,
+            if (tags.isNotEmpty) 'tags': tags,
+          }),
         ),
       ),
     );
   }
 
-  Future<VaultKey> _key(String id, String label, int limit) async => VaultKey(
+  Future<VaultKey> _key(
+    String id,
+    String label,
+    int limit, {
+    List<String> tags = const [],
+  }) async => VaultKey(
     secret: await derivation.subVaultSecret(parent.secret, id),
     provider: parent.provider,
     label: label,
@@ -137,5 +161,6 @@ class SubVaultStore {
     isEncrypted: parent.isEncrypted,
     accountId: parent.accountId,
     accountEmail: parent.accountEmail,
+    tags: tags,
   );
 }

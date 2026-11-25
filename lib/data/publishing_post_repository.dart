@@ -134,6 +134,10 @@ class PublishingPostRepository implements PostRepository {
       _changed(_inner.setPinned(post, isPinned));
 
   @override
+  Future<Post> updatePostTags(Post post, List<String> tags) =>
+      _changed(_inner.updatePostTags(post, tags));
+
+  @override
   Future<Post> updateFileContent({
     required Post post,
     required Uint8List bytes,

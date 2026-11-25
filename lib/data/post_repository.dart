@@ -91,6 +91,9 @@ abstract interface class PostRepository {
   /// статусом [Post.isPinned].
   Future<Post> setPinned(Post post, bool isPinned);
 
+  /// Задаёт явные теги записи [post].
+  Future<Post> updatePostTags(Post post, List<String> tags);
+
   /// Заменяет содержимое отдельного поста-файла новыми байтами [bytes].
   Future<Post> updateFileContent({
     required Post post,

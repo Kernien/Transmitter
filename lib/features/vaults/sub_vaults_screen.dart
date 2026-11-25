@@ -8,11 +8,12 @@ import '../../app/widgets/empty_state_view.dart';
 import '../../core/vault/vault_key.dart';
 import '../../data/sub_vault_store.dart';
 import 'board_access_sheet.dart';
+import 'manage_tags_dialog.dart';
 import 'share_vault_sheet.dart';
 import 'vault_icon.dart';
 import 'vaults_controller.dart';
 
-enum _SubVaultAction { share, board, rename, fileSize, delete }
+enum _SubVaultAction { share, board, rename, tags, fileSize, delete }
 
 /// Список поддосок одного уровня. Каждый новый уровень открывается
 /// обычным маршрутом, поэтому системная кнопка «Назад» сохраняет путь.
@@ -38,12 +39,22 @@ class _SubVaultsScreenState extends State<SubVaultsScreen> {
   List<VaultKey>? _cached;
   late Future<List<VaultKey>> _children;
   bool _busy = false;
+  String? _selectedTag;
+  String _searchQuery = '';
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _cached = widget.remote.cachedSubVaults(widget.parent);
     _children = _load();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<List<VaultKey>> _load() async {
@@ -104,6 +115,20 @@ class _SubVaultsScreenState extends State<SubVaultsScreen> {
         if (!mounted || label == null || label == child.label) return;
         await _runMutation(
           () => widget.remote.renameSubVault(widget.parent, child, label),
+        );
+      case _SubVaultAction.tags:
+        final allSubVaultTags = <String>{};
+        for (final c in (_cached ?? const <VaultKey>[])) {
+          allSubVaultTags.addAll(c.tags);
+        }
+        final selected = await ManageTagsDialog.show(
+          context,
+          initialTags: child.tags,
+          availableTags: allSubVaultTags.toList(),
+        );
+        if (!mounted || selected == null) return;
+        await _runMutation(
+          () => widget.remote.setSubVaultTags(widget.parent, child, selected),
         );
       case _SubVaultAction.fileSize:
         final size = await _askFileSize(child.maxFileSize);
@@ -199,16 +224,52 @@ class _SubVaultsScreenState extends State<SubVaultsScreen> {
     final l = context.l10n;
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l.subVaults),
-        actions: [
-          IconButton(
-            tooltip: l.createSubVault,
-            icon: const Icon(Icons.add),
-            onPressed: _busy ? null : _create,
-          ),
-        ],
-      ),
+      appBar: _isSearching
+          ? AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => setState(() {
+                  _isSearching = false;
+                  _searchQuery = '';
+                  _searchController.clear();
+                }),
+              ),
+              title: TextField(
+                controller: _searchController,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: l.searchAction,
+                  border: InputBorder.none,
+                ),
+                onChanged: (val) => setState(() => _searchQuery = val),
+              ),
+              actions: [
+                if (_searchQuery.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.clear),
+                    tooltip: l.clearSearch,
+                    onPressed: () => setState(() {
+                      _searchQuery = '';
+                      _searchController.clear();
+                    }),
+                  ),
+              ],
+            )
+          : AppBar(
+              title: Text(l.subVaults),
+              actions: [
+                IconButton(
+                  tooltip: l.searchAction,
+                  icon: const Icon(Icons.search),
+                  onPressed: () => setState(() => _isSearching = true),
+                ),
+                IconButton(
+                  tooltip: l.createSubVault,
+                  icon: const Icon(Icons.add),
+                  onPressed: _busy ? null : _create,
+                ),
+              ],
+            ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _busy ? null : _create,
         icon: const Icon(Icons.add),
@@ -265,6 +326,31 @@ class _SubVaultsScreenState extends State<SubVaultsScreen> {
                     );
                   }
                   final children = list ?? const <VaultKey>[];
+                  final allTags = <String>{};
+                  for (final c in children) {
+                    allTags.addAll(c.tags);
+                  }
+                  final sortedTags = allTags.toList()
+                    ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+                  if (_selectedTag != null && !allTags.contains(_selectedTag)) {
+                    _selectedTag = null;
+                  }
+
+                  final tagFilter = _selectedTag;
+                  final q = _searchQuery.trim().toLowerCase();
+                  final filteredChildren = children.where((c) {
+                    if (tagFilter != null && !c.tags.contains(tagFilter)) {
+                      return false;
+                    }
+                    if (q.isNotEmpty) {
+                      final matchesName = c.label.toLowerCase().contains(q);
+                      final matchesTag =
+                          c.tags.any((t) => t.toLowerCase().contains(q));
+                      return matchesName || matchesTag;
+                    }
+                    return true;
+                  }).toList();
+
                   return RefreshIndicator(
                     onRefresh: () async {
                       setState(() => _children = _load());
@@ -296,56 +382,177 @@ class _SubVaultsScreenState extends State<SubVaultsScreen> {
                               ),
                             ),
                           )
-                        : ListView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.only(bottom: 88),
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              for (final child in children)
-                                ContextMenuRegion<_SubVaultAction>(
-                                  itemBuilder: (ctx) => _menuItems(ctx, l),
-                                  onSelected: (action) =>
-                                      _onAction(child, action),
-                                  child: ListTile(
-                                    leading: Container(
-                                      width: 36,
-                                      height: 36,
-                                      decoration: ShapeDecoration(
-                                        color: theme.colorScheme
-                                            .surfaceContainerHighest,
-                                        shape: const ContinuousRectangleBorder(
-                                          borderRadius: BorderRadius.all(
-                                            Radius.circular(16),
-                                          ),
+                              if (sortedTags.isNotEmpty)
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 4,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      FilterChip(
+                                        label: Text(l.filterAll),
+                                        selected: _selectedTag == null,
+                                        onSelected: (_) => setState(
+                                          () => _selectedTag = null,
                                         ),
                                       ),
-                                      alignment: Alignment.center,
-                                      child: VaultIcon.buildWidget(
-                                        child.icon,
-                                        isEncrypted: child.isEncrypted,
-                                        color:
-                                            theme.colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                    title: Text(child.label),
-                                    subtitle: Text(
-                                      l.vaultConnectedSubtitle(
-                                        child,
-                                        context.read<VaultsController?>() ==
-                                                null
-                                            ? null
-                                            : null,
-                                      ),
-                                    ),
-                                    onTap: () => _open(child),
-                                    trailing: PopupMenuButton<_SubVaultAction>(
-                                      onSelected: (action) =>
-                                          _onAction(child, action),
-                                      itemBuilder: (ctx) => _menuItems(ctx, l),
-                                    ),
+                                      for (final tag in sortedTags) ...[
+                                        const SizedBox(width: 6),
+                                        FilterChip(
+                                          label: Text('#$tag'),
+                                          selected: _selectedTag == tag,
+                                          onSelected: (selected) => setState(() {
+                                            _selectedTag =
+                                                selected ? tag : null;
+                                          }),
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                 ),
-                      ],
-                    ),
+                              Expanded(
+                                child: filteredChildren.isEmpty
+                                    ? (q.isNotEmpty || tagFilter != null
+                                        ? EmptyStateView(
+                                            icon: Icons.search_off_outlined,
+                                            title: l.searchNoResults,
+                                            subtitle:
+                                                l.searchNoResultsSubtitle,
+                                          )
+                                        : EmptyStateView(
+                                            icon: Icons.account_tree_outlined,
+                                            title: l.noSubVaults,
+                                            subtitle: l.noSubVaultsSubtitle,
+                                          ))
+                                    : ListView(
+                                        physics:
+                                            const AlwaysScrollableScrollPhysics(),
+                                        padding:
+                                            const EdgeInsets.only(bottom: 88),
+                                        children: [
+                                          for (final child in filteredChildren)
+                                            ContextMenuRegion<_SubVaultAction>(
+                                              itemBuilder: (ctx) =>
+                                                  _menuItems(ctx, l),
+                                              onSelected: (action) =>
+                                                  _onAction(child, action),
+                                              child: ListTile(
+                                                leading: Container(
+                                                  width: 36,
+                                                  height: 36,
+                                                  decoration: ShapeDecoration(
+                                                    color: theme.colorScheme
+                                                        .surfaceContainerHighest,
+                                                    shape:
+                                                        const ContinuousRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.all(
+                                                        Radius.circular(16),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  alignment: Alignment.center,
+                                                  child: VaultIcon.buildWidget(
+                                                    child.icon,
+                                                    isEncrypted:
+                                                        child.isEncrypted,
+                                                    color: theme.colorScheme
+                                                        .onSurfaceVariant,
+                                                  ),
+                                                ),
+                                                title: Text(child.label),
+                                                subtitle: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      l.vaultConnectedSubtitle(
+                                                        child,
+                                                        null,
+                                                      ),
+                                                    ),
+                                                    if (child.tags.isNotEmpty) ...[
+                                                      const SizedBox(height: 4),
+                                                      Wrap(
+                                                        spacing: 4,
+                                                        runSpacing: 4,
+                                                        children: [
+                                                          for (final tag
+                                                              in child.tags)
+                                                            InkWell(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                4,
+                                                              ),
+                                                              onTap: () =>
+                                                                  setState(
+                                                                () =>
+                                                                    _selectedTag =
+                                                                        tag,
+                                                              ),
+                                                              child: Container(
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                        .symmetric(
+                                                                  horizontal: 6,
+                                                                  vertical: 2,
+                                                                ),
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  color: theme
+                                                                      .colorScheme
+                                                                      .secondaryContainer
+                                                                      .withValues(
+                                                                        alpha:
+                                                                            0.6,
+                                                                      ),
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                    4,
+                                                                  ),
+                                                                ),
+                                                                child: Text(
+                                                                  '#$tag',
+                                                                  style:
+                                                                      TextStyle(
+                                                                    fontSize: 11,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w500,
+                                                                    color: theme
+                                                                        .colorScheme
+                                                                        .onSecondaryContainer,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
+                                                onTap: () => _open(child),
+                                                trailing: PopupMenuButton<
+                                                    _SubVaultAction>(
+                                                  onSelected: (action) =>
+                                                      _onAction(child, action),
+                                                  itemBuilder: (ctx) =>
+                                                      _menuItems(ctx, l),
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                              ),
+                            ],
+                          ),
                   );
                 },
               ),
@@ -371,6 +578,10 @@ class _SubVaultsScreenState extends State<SubVaultsScreen> {
     PopupMenuItem(
       value: _SubVaultAction.rename,
       child: Text(l.rename),
+    ),
+    PopupMenuItem(
+      value: _SubVaultAction.tags,
+      child: Text(l.vaultTagsAction),
     ),
     PopupMenuItem(
       value: _SubVaultAction.fileSize,

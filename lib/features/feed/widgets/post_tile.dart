@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/l10n.dart';
 import '../../../domain/post.dart';
+import '../../vaults/manage_tags_dialog.dart';
 import '../attachment_previews.dart';
 import '../feed_controller.dart';
 import '../folder_viewer_screen.dart';
@@ -16,6 +17,7 @@ enum _PostAction {
   select,
   pin,
   note,
+  tags,
   share,
   save,
   openFolder,
@@ -66,6 +68,7 @@ class PostTile extends StatelessWidget {
     _PostAction.select,
     if (!readOnly) _PostAction.pin,
     if (!readOnly) _PostAction.note,
+    if (!readOnly) _PostAction.tags,
     if (canShare) _PostAction.share,
     if (post.attachment != null) ...[
       _PostAction.save,
@@ -313,6 +316,15 @@ class PostTile extends StatelessWidget {
           builder: (_) => _NoteDialog(initial: post.note?.text ?? ''),
         );
         if (text != null) await feed.setNote(post, text);
+      case _PostAction.tags:
+        final selected = await ManageTagsDialog.show(
+          context,
+          initialTags: post.explicitTags,
+          availableTags: feed.allTags,
+        );
+        if (selected != null) {
+          await feed.setPostTags(post, selected);
+        }
       case _PostAction.share:
         await feed.sharePost(post);
       case _PostAction.openFolder:
@@ -534,6 +546,7 @@ class _ActionLabel extends StatelessWidget {
         hasNote ? Icons.edit_note : Icons.add_comment_outlined,
         hasNote ? l.actionEditNote : l.actionAddNote,
       ),
+      _PostAction.tags => (Icons.label_outline, l.vaultTagsAction),
       _PostAction.share => (Icons.share, l.share),
       _PostAction.openFolder => (Icons.folder_open, l.openFolder),
       _PostAction.save => (

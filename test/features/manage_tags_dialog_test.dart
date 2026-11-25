@@ -141,4 +141,39 @@ void main() {
 
     expect(result, isNull);
   });
+
+  testWidgets('ManageTagsDialog: текст из поля ввода автоматически сохраняется при клике «Сохранить»', (
+    tester,
+  ) async {
+    List<String>? result;
+
+    await tester.pumpWidget(
+      buildApp(
+        Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () async {
+              result = await ManageTagsDialog.show(
+                context,
+                initialTags: [],
+              );
+            },
+            child: const Text('Открыть'),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Открыть'));
+    await tester.pumpAndSettle();
+
+    // Пользователь вводит тег '#vault', но не жмёт ни Enter, ни кнопку '+'
+    await tester.enterText(find.byType(TextField), '#vault');
+    await tester.pumpAndSettle();
+
+    // Сразу нажимаем «Сохранить»
+    await tester.tap(find.text('Сохранить'));
+    await tester.pumpAndSettle();
+
+    expect(result, ['vault']);
+  });
 }

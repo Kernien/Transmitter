@@ -42,11 +42,32 @@ class VaultsController extends ChangeNotifier {
 
   List<VaultKey> get vaults => List.unmodifiable(_vaults);
 
-  /// Все уникальные теги среди баз пользователя, отсортированные по алфавиту.
+  final Set<String> _knownTags = {};
+  final Map<String, List<VaultKey>> _subVaultsMap = {};
+
+  /// Регистрирует известные теги в глобальном пуле тегов устройства.
+  void registerTags(Iterable<String> tags) {
+    var changed = false;
+    for (final tag in tags) {
+      final norm = VaultKey.normalizeTag(tag);
+      if (norm != null && _knownTags.add(norm)) {
+        changed = true;
+      }
+    }
+    if (changed) notifyListeners();
+  }
+
+  /// Все уникальные теги среди баз пользователя, поддосок и ранее
+  /// созданных тегов, отсортированные по алфавиту.
   List<String> get allTags {
-    final set = <String>{};
+    final set = <String>{..._knownTags};
     for (final v in _vaults) {
       set.addAll(v.tags);
+    }
+    for (final list in _subVaultsMap.values) {
+      for (final v in list) {
+        set.addAll(v.tags);
+      }
     }
     final list = set.toList();
     list.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
@@ -78,6 +99,10 @@ class VaultsController extends ChangeNotifier {
   void rememberSubVaults(VaultKey parent, List<VaultKey> children) {
     final id = idOfKey(parent);
     final childIds = children.map(idOfKey).toSet();
+    _subVaultsMap[id] = children;
+    for (final child in children) {
+      registerTags(child.tags);
+    }
     if (setEquals(_subVaultIds[id], childIds)) return;
     _subVaultIds[id] = childIds;
     notifyListeners();

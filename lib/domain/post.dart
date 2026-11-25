@@ -107,6 +107,7 @@ class FolderEntry {
     required this.relativePath,
     required this.size,
     this.mimeType,
+    this.tags = const [],
   });
 
   factory FolderEntry.fromJson(Map<String, dynamic> json) => FolderEntry(
@@ -114,6 +115,8 @@ class FolderEntry {
     relativePath: json['path'] as String,
     size: (json['size'] as num).toInt(),
     mimeType: json['mime'] as String?,
+    tags: (json['tags'] as List?)?.map((e) => e.toString()).toList() ??
+        const [],
   );
 
   final String id;
@@ -124,8 +127,34 @@ class FolderEntry {
   final int size;
   final String? mimeType;
 
+  /// Явные теги файла для поиска и группировки.
+  final List<String> tags;
+
   /// Имя файла без пути.
   String get fileName => relativePath.split('/').last;
+
+  /// Возвращает ту же запись файла с обновлёнными тегами.
+  FolderEntry withTags(List<String> tags) => FolderEntry(
+    id: id,
+    relativePath: relativePath,
+    size: size,
+    mimeType: mimeType,
+    tags: tags,
+  );
+
+  FolderEntry copyWith({
+    String? id,
+    String? relativePath,
+    int? size,
+    String? mimeType,
+    List<String>? tags,
+  }) => FolderEntry(
+    id: id ?? this.id,
+    relativePath: relativePath ?? this.relativePath,
+    size: size ?? this.size,
+    mimeType: mimeType ?? this.mimeType,
+    tags: tags ?? this.tags,
+  );
 
   /// Преобразует элемент папки во вложение [Attachment] для открытия
   /// во встроенных просмотрщиках или сохранения отдельного файла.
@@ -141,6 +170,7 @@ class FolderEntry {
     'path': relativePath,
     'size': size,
     if (mimeType != null) 'mime': mimeType,
+    if (tags.isNotEmpty) 'tags': tags,
   };
 }
 
@@ -150,6 +180,7 @@ class FolderAttachment {
   const FolderAttachment({
     required this.name,
     required this.files,
+    this.dirTags = const {},
   });
 
   factory FolderAttachment.fromJson(Map<String, dynamic> json) =>
@@ -159,17 +190,79 @@ class FolderAttachment {
           for (final item in (json['files'] as List))
             FolderEntry.fromJson(item as Map<String, dynamic>),
         ],
+        dirTags: json['dirs'] is Map
+            ? {
+                for (final entry in (json['dirs'] as Map).entries)
+                  if (entry.value is List)
+                    entry.key.toString(): (entry.value as List)
+                        .map((x) => x.toString())
+                        .toList(),
+              }
+            : const {},
       );
 
   final String name;
   final List<FolderEntry> files;
 
+  /// Явные теги подпапок: ключ — относительный путь подпапки без начального
+  /// и конечного слэша (например, `photos` или `docs/work`), значение — список тегов.
+  final Map<String, List<String>> dirTags;
+
   int get fileCount => files.length;
   int get totalSize => files.fold(0, (sum, f) => sum + f.size);
+
+  /// Все уникальные теги внутри папки (файлов и подпапок).
+  Set<String> get allTags {
+    final result = <String>{};
+    for (final f in files) {
+      result.addAll(f.tags);
+    }
+    for (final tags in dirTags.values) {
+      result.addAll(tags);
+    }
+    return result;
+  }
+
+  /// Возвращает ту же структуру папки с обновлёнными тегами файла [fileId].
+  FolderAttachment withFileTags(String fileId, List<String> tags) =>
+      FolderAttachment(
+        name: name,
+        files: [
+          for (final f in files)
+            if (f.id == fileId) f.withTags(tags) else f,
+        ],
+        dirTags: dirTags,
+      );
+
+  /// Возвращает ту же структуру папки с обновлёнными тегами подпапки [dirPath].
+  FolderAttachment withDirTags(String dirPath, List<String> tags) {
+    final nextDirs = Map<String, List<String>>.from(dirTags);
+    if (tags.isEmpty) {
+      nextDirs.remove(dirPath);
+    } else {
+      nextDirs[dirPath] = tags;
+    }
+    return FolderAttachment(
+      name: name,
+      files: files,
+      dirTags: nextDirs,
+    );
+  }
+
+  FolderAttachment copyWith({
+    String? name,
+    List<FolderEntry>? files,
+    Map<String, List<String>>? dirTags,
+  }) => FolderAttachment(
+    name: name ?? this.name,
+    files: files ?? this.files,
+    dirTags: dirTags ?? this.dirTags,
+  );
 
   Map<String, dynamic> toJson() => {
     'name': name,
     'files': [for (final f in files) f.toJson()],
+    if (dirTags.isNotEmpty) 'dirs': dirTags,
   };
 }
 
@@ -254,6 +347,7 @@ class Post {
     this.folder,
     this.note,
     this.isPinned = false,
+    this.explicitTags = const [],
   });
 
   factory Post.fromJson(Map<String, dynamic> json) => Post(
@@ -272,6 +366,8 @@ class Post {
         ? null
         : FolderAttachment.fromJson(json['folder'] as Map<String, dynamic>),
     isPinned: (json['pinned'] as bool?) ?? false,
+    explicitTags: (json['tags'] as List?)?.map((e) => e.toString()).toList() ??
+        const [],
   );
 
   final String id;
@@ -290,12 +386,16 @@ class Post {
   /// Закреплена ли запись наверху доски.
   final bool isPinned;
 
+  /// Явные теги записи, назначенные пользователем через диалог управления тегами.
+  final List<String> explicitTags;
+
   static final RegExp _tagRegex = RegExp(
     r'(?:^|\s)#([\p{L}\p{N}_-]+)',
     unicode: true,
   );
 
-  /// Все уникальные теги, найденные в тексте записи и комментарии.
+  /// Все уникальные теги, найденные в тексте записи, комментарии,
+  /// явных тегах записи, а также тегах содержимого папки (если это папка).
   List<String> get tags {
     final result = <String>{};
     final combined = note != null ? '$text ${note!.text}' : text;
@@ -304,6 +404,10 @@ class Post {
       if (tag != null && tag.isNotEmpty) {
         result.add(tag);
       }
+    }
+    result.addAll(explicitTags);
+    if (folder != null) {
+      result.addAll(folder!.allTags);
     }
     return List.unmodifiable(result.toList());
   }
@@ -319,6 +423,7 @@ class Post {
     folder: folder,
     note: note,
     isPinned: isPinned,
+    explicitTags: explicitTags,
   );
 
   /// Та же запись с изменённым статусом закрепления.
@@ -332,6 +437,7 @@ class Post {
     folder: folder,
     note: note,
     isPinned: pinned,
+    explicitTags: explicitTags,
   );
 
   /// Та же запись с обновлённым прикреплённым файлом.
@@ -345,6 +451,7 @@ class Post {
     folder: folder,
     note: note,
     isPinned: isPinned,
+    explicitTags: explicitTags,
   );
 
   /// Та же запись с обновлённой прикреплённой папкой.
@@ -358,6 +465,21 @@ class Post {
     folder: folder,
     note: note,
     isPinned: isPinned,
+    explicitTags: explicitTags,
+  );
+
+  /// Та же запись с обновлёнными явными тегами.
+  Post withExplicitTags(List<String> tags) => Post(
+    id: id,
+    kind: kind,
+    createdAt: createdAt,
+    senderDevice: senderDevice,
+    text: text,
+    attachment: attachment,
+    folder: folder,
+    note: note,
+    isPinned: isPinned,
+    explicitTags: tags,
   );
 
   Map<String, dynamic> toJson() => {
@@ -370,5 +492,6 @@ class Post {
     if (attachment != null) 'file': attachment!.toJson(),
     if (folder != null) 'folder': folder!.toJson(),
     if (isPinned) 'pinned': true,
+    if (explicitTags.isNotEmpty) 'tags': explicitTags,
   };
 }
