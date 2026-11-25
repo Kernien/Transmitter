@@ -18,7 +18,7 @@ Bytes.
 | 🐧 **Linux** | Flatpak mit automatischen Updates oder AppImage — eine einzige Datei ohne Installation; getestet auf dem Steam Deck |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — keine Installation nötig |
 
-Version **1.7.0**.
+Version **1.7.1**.
 
 > **Sprache der Oberfläche.** Die App gibt es auf Englisch und Russisch; auf
 > einem deutschen System ist sie auf Englisch (umschalten unter ⚙ „Settings“).
