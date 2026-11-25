@@ -74,6 +74,10 @@ enum AppTheme {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
       ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
     );
   }
 }

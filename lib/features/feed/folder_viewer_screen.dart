@@ -363,6 +363,7 @@ class _FolderViewerScreenState extends State<FolderViewerScreen> {
                             subtitle: isReadOnly ? null : l.folderEmptySubtitle,
                           ))
                     : ListView.separated(
+                        padding: const EdgeInsets.only(bottom: 88),
                         itemCount: totalItems,
                         separatorBuilder: (_, _) => const Divider(height: 1),
                         itemBuilder: (context, index) {

@@ -1167,7 +1167,7 @@ class _FilesListViewState extends State<_FilesListView> {
         const Divider(height: 1),
         Expanded(
           child: ListView.separated(
-            padding: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.fromLTRB(0, 4, 0, 80),
             itemCount: items.length,
             separatorBuilder: (_, _) => const Divider(height: 1),
             itemBuilder: (context, index) {
