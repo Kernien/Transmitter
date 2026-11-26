@@ -19,24 +19,46 @@ class OpenFileProvider : FileProvider()
 class FileOpener(private val activity: Activity, messenger: BinaryMessenger) {
     init {
         MethodChannel(messenger, CHANNEL).setMethodCallHandler { call, result ->
-            if (call.method != "open") return@setMethodCallHandler result.notImplemented()
-            val path = call.argument<String>("path")
-            val mimeType = call.argument<String>("mimeType") ?: "*/*"
-            if (path == null) return@setMethodCallHandler result.error("bad_args", "No path", null)
-            try {
-                val uri = FileProvider.getUriForFile(
-                    activity, "${activity.packageName}.open", File(path),
-                )
-                val view = Intent(Intent.ACTION_VIEW).apply {
-                    setDataAndType(uri, mimeType)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            when (call.method) {
+                "open" -> {
+                    val path = call.argument<String>("path")
+                    val mimeType = call.argument<String>("mimeType") ?: "*/*"
+                    if (path == null) return@setMethodCallHandler result.error("bad_args", "No path", null)
+                    try {
+                        val uri = FileProvider.getUriForFile(
+                            activity, "${activity.packageName}.open", File(path),
+                        )
+                        val view = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(uri, mimeType)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        activity.startActivity(Intent.createChooser(view, null))
+                        result.success(null)
+                    } catch (_: ActivityNotFoundException) {
+                        result.error("no_app", "No app can open this file", null)
+                    } catch (e: Exception) {
+                        result.error("open_failed", e.message, null)
+                    }
                 }
-                activity.startActivity(Intent.createChooser(view, null))
-                result.success(null)
-            } catch (_: ActivityNotFoundException) {
-                result.error("no_app", "No app can open this file", null)
-            } catch (e: Exception) {
-                result.error("open_failed", e.message, null)
+                "installApk" -> {
+                    val path = call.argument<String>("path")
+                    if (path == null) return@setMethodCallHandler result.error("bad_args", "No path", null)
+                    try {
+                        val uri = FileProvider.getUriForFile(
+                            activity, "${activity.packageName}.open", File(path),
+                        )
+                        val installIntent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(uri, "application/vnd.android.package-archive")
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        activity.startActivity(installIntent)
+                        result.success(null)
+                    } catch (e: Exception) {
+                        result.error("install_failed", e.message, null)
+                    }
+                }
+                else -> result.notImplemented()
             }
         }
     }

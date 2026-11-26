@@ -6,7 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../app/l10n.dart';
 import '../../core/update/app_update_service.dart';
 
-/// Диалог «О программе» с проверкой обновлений и обновлением AppImage.
+/// Диалог «О программе» с проверкой обновлений и их установкой.
 Future<void> showAboutAppDialog(
   BuildContext context, {
   AppUpdateService? updateService,
@@ -79,7 +79,7 @@ class _AboutAppDialogState extends State<_AboutAppDialog> {
     }
   }
 
-  Future<void> _startAppImageUpdate(String url) async {
+  Future<void> _startUpdate(String url) async {
     setState(() {
       _isDownloading = true;
       _downloadProgress = 0.0;
@@ -87,7 +87,25 @@ class _AboutAppDialogState extends State<_AboutAppDialog> {
     });
 
     try {
-      await for (final progress in widget.service.downloadAndApplyAppImage(url)) {
+      final Stream<double> stream;
+      switch (widget.service.platform) {
+        case UpdatePlatform.appImage:
+          stream = widget.service.downloadAndApplyAppImage(url);
+          break;
+        case UpdatePlatform.windows:
+          stream = widget.service.downloadWindowsInstaller(
+            url,
+            version: _latestRelease?.version,
+          );
+          break;
+        case UpdatePlatform.android:
+          stream = widget.service.downloadAndroidApk(url);
+          break;
+        case UpdatePlatform.other:
+          throw StateError('Auto-update is not supported on this platform');
+      }
+
+      await for (final progress in stream) {
         if (!mounted) return;
         setState(() {
           _downloadProgress = progress;
@@ -107,6 +125,40 @@ class _AboutAppDialogState extends State<_AboutAppDialog> {
     }
   }
 
+  Widget _buildRestartOrInstallButton(AppLocalizations l) {
+    switch (widget.service.platform) {
+      case UpdatePlatform.appImage:
+        return FilledButton.icon(
+          onPressed: () => widget.service.restartAppImage(),
+          icon: const Icon(Icons.restart_alt),
+          label: Text(l.restartNow),
+        );
+      case UpdatePlatform.windows:
+        return FilledButton.icon(
+          onPressed: () => widget.service.runWindowsInstaller(
+            version: _latestRelease?.version,
+          ),
+          icon: const Icon(Icons.system_update_rounded),
+          label: Text(l.installAndRestart),
+        );
+      case UpdatePlatform.android:
+        return FilledButton.icon(
+          onPressed: () => widget.service.installAndroidApk(),
+          icon: const Icon(Icons.system_update_rounded),
+          label: Text(l.installUpdate),
+        );
+      case UpdatePlatform.other:
+        return const SizedBox.shrink();
+    }
+  }
+
+  String _getSuccessMessage(AppLocalizations l) {
+    if (widget.service.platform == UpdatePlatform.android) {
+      return l.updateSuccessReady;
+    }
+    return l.updateSuccessRestart;
+  }
+
   Future<void> _openReleaseUrl(String url) async {
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
@@ -119,7 +171,9 @@ class _AboutAppDialogState extends State<_AboutAppDialog> {
     final l = context.l10n;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isAppImage = widget.service.isAppImage;
+    final downloadUrl = _latestRelease != null
+        ? widget.service.getDownloadUrlForCurrentPlatform(_latestRelease!)
+        : null;
 
     return AlertDialog(
       title: Row(
@@ -218,7 +272,7 @@ class _AboutAppDialogState extends State<_AboutAppDialog> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            l.updateSuccessRestart,
+                            _getSuccessMessage(l),
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w500,
                             ),
@@ -227,11 +281,7 @@ class _AboutAppDialogState extends State<_AboutAppDialog> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    FilledButton.icon(
-                      onPressed: () => widget.service.restartAppImage(),
-                      icon: const Icon(Icons.restart_alt),
-                      label: Text(l.restartNow),
-                    ),
+                    _buildRestartOrInstallButton(l),
                   ],
                 ),
               ),
@@ -264,11 +314,9 @@ class _AboutAppDialogState extends State<_AboutAppDialog> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    if (isAppImage && _latestRelease!.appImageUrl != null) ...[
+                    if (downloadUrl != null) ...[
                       FilledButton.icon(
-                        onPressed: () => _startAppImageUpdate(
-                          _latestRelease!.appImageUrl!,
-                        ),
+                        onPressed: () => _startUpdate(downloadUrl),
                         icon: const Icon(Icons.download_rounded),
                         label: Text(l.updateAppAction),
                       ),

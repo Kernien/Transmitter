@@ -260,7 +260,10 @@
     }
   },
   "updateSuccessRestart": "Update downloaded! Click to restart.",
+  "updateSuccessReady": "Update downloaded and ready to install.",
   "restartNow": "Restart",
+  "installAndRestart": "Install and restart",
+  "installUpdate": "Install update",
   "viewReleaseNotes": "Release notes on GitHub",
   "updateCheckFailed": "Could not check for updates",
   "appLockTitle": "App lock",

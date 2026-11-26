@@ -229,7 +229,10 @@
     }
   },
   "updateSuccessRestart": "Обновление загружено! Нажмите для перезапуска.",
+  "updateSuccessReady": "Обновление загружено и готово к установке.",
   "restartNow": "Перезапустить",
+  "installAndRestart": "Установить и перезапустить",
+  "installUpdate": "Установить обновление",
   "viewReleaseNotes": "Список изменений на GitHub",
   "updateCheckFailed": "Не удалось проверить обновления",
   "appLockTitle": "Блокировка приложения",

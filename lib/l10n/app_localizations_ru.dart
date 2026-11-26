@@ -699,7 +699,16 @@ class AppLocalizationsRu extends AppLocalizations {
       'Обновление загружено! Нажмите для перезапуска.';
 
   @override
+  String get updateSuccessReady => 'Обновление загружено и готово к установке.';
+
+  @override
   String get restartNow => 'Перезапустить';
+
+  @override
+  String get installAndRestart => 'Установить и перезапустить';
+
+  @override
+  String get installUpdate => 'Установить обновление';
 
   @override
   String get viewReleaseNotes => 'Список изменений на GitHub';

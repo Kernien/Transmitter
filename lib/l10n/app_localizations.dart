@@ -1262,11 +1262,29 @@ abstract class AppLocalizations {
   /// **'Update downloaded! Click to restart.'**
   String get updateSuccessRestart;
 
+  /// No description provided for @updateSuccessReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Update downloaded and ready to install.'**
+  String get updateSuccessReady;
+
   /// No description provided for @restartNow.
   ///
   /// In en, this message translates to:
   /// **'Restart'**
   String get restartNow;
+
+  /// No description provided for @installAndRestart.
+  ///
+  /// In en, this message translates to:
+  /// **'Install and restart'**
+  String get installAndRestart;
+
+  /// No description provided for @installUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Install update'**
+  String get installUpdate;
 
   /// No description provided for @viewReleaseNotes.
   ///

@@ -695,7 +695,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get updateSuccessRestart => 'Update downloaded! Click to restart.';
 
   @override
+  String get updateSuccessReady => 'Update downloaded and ready to install.';
+
+  @override
   String get restartNow => 'Restart';
+
+  @override
+  String get installAndRestart => 'Install and restart';
+
+  @override
+  String get installUpdate => 'Install update';
 
   @override
   String get viewReleaseNotes => 'Release notes on GitHub';
