@@ -49,7 +49,7 @@ class AppUpdateService {
     this.windowsInstallerFileProvider,
   }) : _client = client ?? http.Client();
 
-  static const String defaultCurrentVersion = '1.7.1';
+  static const String defaultCurrentVersion = '1.7.2';
   static const String _latestReleaseApiUrl =
       'https://api.github.com/repos/Kernien/Transmitter/releases/latest';
 

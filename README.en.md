@@ -17,7 +17,7 @@ right on the device: the cloud only ever sees meaningless bytes.
 | 🐧 **Linux** | Flatpak with automatic updates, or AppImage — a single file, no installation; tested on Steam Deck |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — nothing to install |
 
-Version **1.7.1**. The interface is in **English and Russian** — it follows the
+Version **1.7.2**. The interface is in **English and Russian** — it follows the
 system language, or pick one in ⚙ *Settings*.
 
 ## Why
@@ -49,6 +49,7 @@ On any board, open **⋮ → Sub-boards** to create a separate feed inside it. A
 - **Custom board icons & personalization.** Select a custom icon from the catalog or any emoji for each board (⋮ → *Board icon…*), seamlessly synced across all devices.
 - **Extended tagging system.** Assign tags to any element: boards, sub-boards, folders, and individual files via context menus (right-click / long-press / ⋮ → *Tags…*). Automatic hashtag extraction (`#work`, `#project`) from posts and comments, a unified global pool of existing tags, cross-cutting chip filtering, and fast tag search in the folder explorer, Files tab, and feed.
 - **Direct peer-to-peer file transfer (P2P).** Create P2P boards for instant file sharing directly between your devices on the same local network (Wi-Fi). Devices automatically discover each other via UDP broadcast and symmetrically sync posts and attachments over an encrypted TCP connection. No cloud accounts, storage quotas, or third-party servers required — transfers run at full local network speed even without an active internet connection.
+- **One-click in-app updates.** Built-in update checking and installation right from the "About" dialog (⚙ *Settings*) for Windows, Android, and Linux AppImage without manual installer downloads.
 - **Refined and compact UI.** Polished squircle board tiles, concise labels, desktop-friendly action placements, and a modern smooth compose bar.
 - **“Share” both ways (Android).** From your browser, gallery or any app
   straight into Transmitter — and from Transmitter into any app.

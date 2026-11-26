@@ -18,7 +18,7 @@ Bytes.
 | 🐧 **Linux** | Flatpak mit automatischen Updates oder AppImage — eine einzige Datei ohne Installation; getestet auf dem Steam Deck |
 | 🌐 **Browser** | https://kernien.github.io/transmitter-web/ — keine Installation nötig |
 
-Version **1.7.1**.
+Version **1.7.2**.
 
 > **Sprache der Oberfläche.** Die App gibt es auf Englisch und Russisch; auf
 > einem deutschen System ist sie auf Englisch (umschalten unter ⚙ „Settings“).
@@ -56,6 +56,7 @@ Computer und Browser.
 - **Eigene Board-Symbole und Personalisierung.** Wähle ein Symbol aus dem Katalog oder ein beliebiges Emoji für jedes Board (⋮ → *Board icon…*), synchronisiert über die Cloud.
 - **Erweitertes Tag-System.** Weise beliebigen Elementen Tags zu: Boards, Sub-Boards, Ordnern und einzelnen Dateien über Kontextmenüs (Rechtsklick / langes Drücken / ⋮ → „Tags…“). Automatische Extraktion von Hashtags (`#arbeit`, `#projekt`) aus Beiträgen und Kommentaren, einheitlicher globaler Tag-Pool, Filterung per Chips und schnelle Tag-Suche im Ordner-Explorer, Dateireiter und Feed.
 - **Direkte Peer-to-Peer-Dateiübertragung (P2P).** Erstellen Sie P2P-Boards für den sofortigen Dateiaustausch direkt zwischen Ihren Geräten im selben lokalen Netzwerk (WLAN). Geräte finden sich automatisch per UDP-Broadcast und synchronisieren Beiträge und Anhänge über eine verschlüsselte TCP-Verbindung. Keine Cloud-Konten, Speicherlimits oder Drittanbieter-Server erforderlich — Übertragungen laufen mit voller Geschwindigkeit des lokalen Netzwerks, selbst ohne Internetverbindung.
+- **1-Klick-In-App-Updates.** Integrierte Update-Prüfung und -Installation direkt im Menü „About“ (⚙ *Settings*) für Windows, Android und Linux AppImage ohne manuelle Downloads.
 - **Kompakte und optimierte Oberfläche.** Elegante Squircle-Kacheln, prägnante Beschriftungen und eine moderne Eingabeleiste.
 - **„Teilen“ in beide Richtungen (Android).** Aus Browser, Galerie oder jeder
   anderen App direkt in Transmitter — und aus Transmitter in jede App.
