@@ -47,6 +47,7 @@ class AppUpdateService {
     this.isArm32Override,
     this.apkFileProvider,
     this.windowsInstallerFileProvider,
+    this.chmodRunner,
   }) : _client = client ?? http.Client();
 
   static const String defaultCurrentVersion = '1.7.2';
@@ -63,6 +64,7 @@ class AppUpdateService {
   final bool? isArm32Override;
   final Future<File> Function()? apkFileProvider;
   final File Function(String? version)? windowsInstallerFileProvider;
+  final Future<void> Function(String path)? chmodRunner;
 
   /// Запущено ли приложение как AppImage в Linux.
   bool get isAppImage {
@@ -250,7 +252,9 @@ class AppUpdateService {
     yield* downloadFile(downloadUrl, tempFile);
 
     // Делаем исполняемым (на Linux/macOS)
-    if (!Platform.isWindows) {
+    if (chmodRunner != null) {
+      await chmodRunner!(tempPath);
+    } else if (!Platform.isWindows) {
       await Process.run('chmod', ['+x', tempPath]);
     }
 

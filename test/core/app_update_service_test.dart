@@ -118,6 +118,7 @@ void main() {
         client: mockClient,
         currentVersion: '1.7.1',
         appImageOverride: targetAppImage.path,
+        chmodRunner: (_) async {},
       );
 
       expect(service.isAppImage, isTrue);

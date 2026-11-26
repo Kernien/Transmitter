@@ -103,6 +103,7 @@ void main() {
       client: mockClient,
       currentVersion: '1.7.1',
       appImageOverride: dummyAppImage.path,
+      chmodRunner: (_) async {},
     );
 
     await tester.pumpWidget(
@@ -135,6 +136,8 @@ void main() {
           if (content == 'NEW_CONTENT') break;
         } catch (_) {}
       }
+      // Даём виджету и стриму завершить переход состояния
+      await Future<void>.delayed(const Duration(milliseconds: 300));
     });
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
