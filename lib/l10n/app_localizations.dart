@@ -1208,6 +1208,18 @@ abstract class AppLocalizations {
   /// **'About'**
   String get aboutAppTitle;
 
+  /// No description provided for @appDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure post and file transfer between devices via personal cloud storage with end-to-end encryption or directly over local P2P.'**
+  String get appDescription;
+
+  /// No description provided for @githubRepository.
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub repository'**
+  String get githubRepository;
+
   /// No description provided for @appVersionLabel.
   ///
   /// In en, this message translates to:

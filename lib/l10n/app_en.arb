@@ -236,6 +236,8 @@
   "playbackFailed": "This file can't be played here — open it in another app",
   "settings": "Settings",
   "aboutAppTitle": "About",
+  "appDescription": "Secure post and file transfer between devices via personal cloud storage with end-to-end encryption or directly over local P2P.",
+  "githubRepository": "GitHub repository",
   "appVersionLabel": "Version {version}",
   "@appVersionLabel": {
     "placeholders": {

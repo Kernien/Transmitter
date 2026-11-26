@@ -55,6 +55,8 @@ void main() {
 
     expect(find.text('Transmitter'), findsOneWidget);
     expect(find.text('Версия 1.7.1'), findsOneWidget);
+    expect(find.textContaining('Безопасная передача заметок'), findsOneWidget);
+    expect(find.text('Репозиторий на GitHub'), findsOneWidget);
     expect(find.text('У вас установлена актуальная версия'), findsOneWidget);
   });
 

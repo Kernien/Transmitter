@@ -665,6 +665,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get aboutAppTitle => 'О программе';
 
   @override
+  String get appDescription =>
+      'Безопасная передача заметок и файлов между устройствами через личные облака со сквозным шифрованием или напрямую по P2P.';
+
+  @override
+  String get githubRepository => 'Репозиторий на GitHub';
+
+  @override
   String appVersionLabel(String version) {
     return 'Версия $version';
   }

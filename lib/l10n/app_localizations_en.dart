@@ -662,6 +662,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aboutAppTitle => 'About';
 
   @override
+  String get appDescription =>
+      'Secure post and file transfer between devices via personal cloud storage with end-to-end encryption or directly over local P2P.';
+
+  @override
+  String get githubRepository => 'GitHub repository';
+
+  @override
   String appVersionLabel(String version) {
     return 'Version $version';
   }
